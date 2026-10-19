@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safaipay-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - PROJECT_NAME=SafaiPay
+      - API_V1_STR=/api/v1
+      - DATABASE_URL=sqlite:///./safaipay.db
+      - SECRET_KEY=${SECRET_KEY:-safai-production-super-secret-key-change-me}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","https://safaipay.vercel.app"]
+    volumes:
+      - backend-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - safaipay-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: safaipay-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - safaipay-network
+
+networks:
+  safaipay-network:
+    driver: bridge
+
+volumes:
+  backend-data:

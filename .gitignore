@@ -66,3 +66,4 @@ android/.gradle/
 .idea/
 .vscode/
 *.swp
+*.tsbuildinfo
