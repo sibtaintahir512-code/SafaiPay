@@ -166,9 +166,13 @@ Output:
 
 ## 7. Production Deployment (Vercel)
 
+- **Live Production URL:** [https://safaipay.vercel.app](https://safaipay.vercel.app)
+- **GitHub Repository:** [https://github.com/sibtaintahir512-code/SafaiPay](https://github.com/sibtaintahir512-code/SafaiPay)
+
 The frontend is configured with zero-config Vercel presets in `frontend/vercel.json`:
 ```bash
 cd frontend
 vercel deploy --prod
 ```
 The app features resilient dual-mode API probing: when the standalone FastAPI backend is live, it interacts with live REST routes; when hosted as an independent edge frontend, it utilizes synchronized in-memory/localStorage state to deliver 100% interactive demos without redirect loops or blank screens.
+
