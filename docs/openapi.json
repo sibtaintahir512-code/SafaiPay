@@ -1,0 +1,4222 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SafaiPay Core Backend API",
+    "description": "\n# SafaiPay Phase 2 Foundation API\nCircular economy waste collection & digital financial identity platform for informal waste workers.\n\n## Key Capabilities:\n- **Authentication & Authorization:** Phone OTP ready, bcrypt password hashing, JWT with embedded role claims.\n- **Role-Based Access Control (RBAC):** Customer, Collector, Recycler, Admin.\n- **Material Catalog & Scrap Pricing:** Daily benchmark rates for PET Plastic and Cardboard.\n- **Security & Auditing:** Immutable audit logs, strict privacy boundaries.\n    ",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication & Verification"
+        ],
+        "summary": "Register",
+        "description": "Register a new user with role and profile. Returns JWT access & refresh tokens.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication & Verification"
+        ],
+        "summary": "Login",
+        "description": "Authenticate with phone number or email and password. Returns JWT tokens.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/request-otp": {
+      "post": {
+        "tags": [
+          "Authentication & Verification"
+        ],
+        "summary": "Request Otp",
+        "description": "Send a phone verification OTP code. In mock mode, uses sandbox default code.",
+        "operationId": "request_otp_api_v1_auth_request_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OTPRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OTPResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "tags": [
+          "Authentication & Verification"
+        ],
+        "summary": "Verify Otp",
+        "description": "Verify submitted phone verification OTP code.",
+        "operationId": "verify_otp_api_v1_auth_verify_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OTPVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OTPResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication & Verification"
+        ],
+        "summary": "Get Me",
+        "description": "Retrieve full profile details for the currently authenticated user.",
+        "operationId": "get_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserWithProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "User Profiles & RBAC"
+        ],
+        "summary": "Get My Profile",
+        "description": "Retrieve private profile details for the authenticated user.",
+        "operationId": "get_my_profile_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserWithProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/profile": {
+      "get": {
+        "tags": [
+          "User Profiles & RBAC"
+        ],
+        "summary": "Get User Profile By Id",
+        "description": "Retrieve private profile by ID.\nEnforces Security Rule: A user may access only their own private profile unless authorized as ADMIN.",
+        "operationId": "get_user_profile_by_id_api_v1_users__user_id__profile_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserWithProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/role/collector-portal": {
+      "get": {
+        "tags": [
+          "User Profiles & RBAC"
+        ],
+        "summary": "Get Collector Portal",
+        "description": "Collector-only protected route.",
+        "operationId": "get_collector_portal_api_v1_users_role_collector_portal_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/role/customer-portal": {
+      "get": {
+        "tags": [
+          "User Profiles & RBAC"
+        ],
+        "summary": "Get Customer Portal",
+        "description": "Customer-only protected route.",
+        "operationId": "get_customer_portal_api_v1_users_role_customer_portal_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/role/recycler-portal": {
+      "get": {
+        "tags": [
+          "User Profiles & RBAC"
+        ],
+        "summary": "Get Recycler Portal",
+        "description": "Recycler-only protected route.",
+        "operationId": "get_recycler_portal_api_v1_users_role_recycler_portal_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecyclerProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "List All Users",
+        "description": "Admin-only: List registered users with optional role filtering.",
+        "operationId": "list_all_users_api_v1_admin_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RoleEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserWithProfileResponse"
+                  },
+                  "title": "Response List All Users Api V1 Admin Users Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}/roles": {
+      "post": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "Assign User Role",
+        "description": "Admin-only: Assign an additional role to a user. Logs audit trail.",
+        "operationId": "assign_user_role_api_v1_admin_users__user_id__roles_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleAssignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserWithProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pickups": {
+      "get": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "List All Pickups",
+        "description": "Admin-only: View all pickup requests with optional status filtering.",
+        "operationId": "list_all_pickups_api_v1_admin_pickups_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupDetailResponse"
+                  },
+                  "title": "Response List All Pickups Api V1 Admin Pickups Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/suspicious-records": {
+      "get": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "Review Suspicious Records",
+        "description": "Admin-only: Review suspicious records (weight variance > 50% or low quality factor).",
+        "operationId": "review_suspicious_records_api_v1_admin_suspicious_records_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/disputes": {
+      "get": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "List Disputes",
+        "description": "Admin-only: Review all dispute tickets.",
+        "operationId": "list_disputes_api_v1_admin_disputes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DisputeResponse"
+                  },
+                  "title": "Response List Disputes Api V1 Admin Disputes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/disputes/{id}/resolve": {
+      "patch": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "Resolve Dispute",
+        "description": "Admin-only: Mediate and resolve an open dispute ticket.",
+        "operationId": "resolve_dispute_api_v1_admin_disputes__id__resolve_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeResolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/payments": {
+      "get": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "List All Payments",
+        "description": "Admin-only: View payment records.",
+        "operationId": "list_all_payments_api_v1_admin_payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentResponse"
+                  },
+                  "title": "Response List All Payments Api V1 Admin Payments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "tags": [
+          "Admin Operations & System Governance"
+        ],
+        "summary": "List Audit Logs",
+        "description": "Admin-only: View immutable system security and activity audit logs.",
+        "operationId": "list_audit_logs_api_v1_admin_audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLogResponse"
+                  },
+                  "title": "Response List Audit Logs Api V1 Admin Audit Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/materials": {
+      "get": {
+        "tags": [
+          "Waste Categories & Benchmark Pricing"
+        ],
+        "summary": "List Materials",
+        "description": "List all active recyclable materials with benchmark scrap rates.",
+        "operationId": "list_materials_api_v1_materials_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Materials Api V1 Materials Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Waste Categories & Benchmark Pricing"
+        ],
+        "summary": "Create Material",
+        "description": "Admin-only: Register a new recyclable waste category.",
+        "operationId": "create_material_api_v1_materials_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/materials/{code}/rate": {
+      "patch": {
+        "tags": [
+          "Waste Categories & Benchmark Pricing"
+        ],
+        "summary": "Update Benchmark Rate",
+        "description": "Admin-only: Update material benchmark rate and log price audit history.",
+        "operationId": "update_benchmark_rate_api_v1_materials__code__rate_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkRateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "System Health & Diagnostics"
+        ],
+        "summary": "System Health",
+        "description": "Basic health check endpoint returning system status and metadata.",
+        "operationId": "system_health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/db": {
+      "get": {
+        "tags": [
+          "System Health & Diagnostics"
+        ],
+        "summary": "Database Health",
+        "description": "Database connectivity health check performing a SELECT 1 query.",
+        "operationId": "database_health_api_v1_health_db_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "tags": [
+          "System Health & Diagnostics"
+        ],
+        "summary": "Readiness Check",
+        "description": "Kubernetes/Container readiness probe.",
+        "operationId": "readiness_check_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Create Pickup",
+        "description": "Customer: Create a new recyclable waste pickup request.",
+        "operationId": "create_pickup_api_v1_pickups_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pickups/my-requests": {
+      "get": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "List Customer Requests",
+        "description": "Customer: List all pickup requests created by the authenticated customer.",
+        "operationId": "list_customer_requests_api_v1_pickups_my_requests_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PickupDetailResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Customer Requests Api V1 Pickups My Requests Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pickups/available": {
+      "get": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "List Available Jobs For Collector",
+        "description": "Collector: View available nearby jobs (status REQUESTED or ASSIGNED to self).",
+        "operationId": "list_available_jobs_for_collector_api_v1_pickups_available_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PickupDetailResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Available Jobs For Collector Api V1 Pickups Available Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pickups/{id}": {
+      "get": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Get Pickup Details",
+        "description": "Get pickup details. Accessible by owner customer, assigned collector, or Admin.",
+        "operationId": "get_pickup_details_api_v1_pickups__id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/assign": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Assign Collector",
+        "description": "Admin: Assign or reassign a collector to a pickup request.",
+        "operationId": "assign_collector_api_v1_pickups__id__assign_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupAssignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/accept": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Accept Job",
+        "description": "Collector: Accept an assigned or requested pickup job.",
+        "operationId": "accept_job_api_v1_pickups__id__accept_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/reject": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Reject Job",
+        "description": "Collector: Reject an assigned pickup job.",
+        "operationId": "reject_job_api_v1_pickups__id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupRejectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/start": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Start Pickup",
+        "description": "Collector: Start pickup journey / mark in-progress with GPS coordinates.",
+        "operationId": "start_pickup_api_v1_pickups__id__start_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupStartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/upload-photo": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Upload Pickup Photo",
+        "description": "Upload before, after, or scale display photo evidence.",
+        "operationId": "upload_pickup_photo_api_v1_pickups__id__upload_photo_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WasteImageUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/verify-weight": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Verify Pickup Weight",
+        "description": "Collector / Admin: Record verified physical weight and quality factor.\nSecurity Rule: Customer CANNOT change collector-verified weight.",
+        "operationId": "verify_pickup_weight_api_v1_pickups__id__verify_weight_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeightVerificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/confirm-completion": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Confirm Completion By Customer",
+        "description": "Customer: Confirm verified weight and price breakdown, advancing to customer_confirmed and triggering mock payment intent.",
+        "operationId": "confirm_completion_by_customer_api_v1_pickups__id__confirm_completion_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Cancel Pickup",
+        "description": "Customer or Admin: Cancel a pickup request.",
+        "operationId": "cancel_pickup_api_v1_pickups__id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickupCancelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/rate": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Rate Collector",
+        "description": "Customer: Rate collector after completion.",
+        "operationId": "rate_collector_api_v1_pickups__id__rate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pickups/{id}/dispute": {
+      "post": {
+        "tags": [
+          "Pickup Operations & Workflow"
+        ],
+        "summary": "Raise Dispute",
+        "description": "Raise a dispute ticket regarding verified weight, quality deduction, or no-show.",
+        "operationId": "raise_dispute_api_v1_pickups__id__dispute_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/{id}": {
+      "get": {
+        "tags": [
+          "Mock Payments & Settlement"
+        ],
+        "summary": "Get Payment",
+        "description": "Retrieve details of a mock payment transaction.",
+        "operationId": "get_payment_api_v1_payments__id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/{id}/process-mock": {
+      "post": {
+        "tags": [
+          "Mock Payments & Settlement"
+        ],
+        "summary": "Process Mock Payment",
+        "description": "Execute mock payment simulation. Supports simulating failure for testing.",
+        "operationId": "process_mock_payment_api_v1_payments__id__process_mock_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MockPaymentProcessRequest",
+                "default": {
+                  "simulate_failure": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/{id}/retry": {
+      "post": {
+        "tags": [
+          "Mock Payments & Settlement"
+        ],
+        "summary": "Retry Failed Payment",
+        "description": "Retry a failed mock payment transaction.",
+        "operationId": "retry_failed_payment_api_v1_payments__id__retry_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/pickups/{pickup_id}/ready-for-inventory": {
+      "post": {
+        "tags": [
+          "Mock Payments & Settlement"
+        ],
+        "summary": "Mark Inventory Ready",
+        "description": "Transition completed pickup to inventory_ready for recycler aggregation.",
+        "operationId": "mark_inventory_ready_api_v1_payments_pickups__pickup_id__ready_for_inventory_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pickup_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pickup Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/earnings/summary": {
+      "get": {
+        "tags": [
+          "Collector Earnings & Financial History"
+        ],
+        "summary": "Get Collector Earnings Summary",
+        "description": "Retrieve daily, weekly, and monthly aggregated earnings.\nSecurity Rule: Collector cannot access another collector's earnings.",
+        "operationId": "get_collector_earnings_summary_api_v1_earnings_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collector_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collector Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorEarningsSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/earnings/history": {
+      "get": {
+        "tags": [
+          "Collector Earnings & Financial History"
+        ],
+        "summary": "Get Collector Earnings History",
+        "description": "Retrieve completed pickup earning transaction history.",
+        "operationId": "get_collector_earnings_history_api_v1_earnings_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collector_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collector Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectorEarningRecord"
+                  },
+                  "title": "Response Get Collector Earnings History Api V1 Earnings History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "In-App Notifications"
+        ],
+        "summary": "List My Notifications",
+        "description": "Retrieve notifications for the current authenticated user.",
+        "operationId": "list_my_notifications_api_v1_notifications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List My Notifications Api V1 Notifications Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "tags": [
+          "In-App Notifications"
+        ],
+        "summary": "Mark Notification Read",
+        "description": "Mark a specific notification as read.",
+        "operationId": "mark_notification_read_api_v1_notifications__id__read_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System Health & Diagnostics"
+        ],
+        "summary": "System Health",
+        "description": "Basic health check endpoint returning system status and metadata.",
+        "operationId": "system_health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/db": {
+      "get": {
+        "tags": [
+          "System Health & Diagnostics"
+        ],
+        "summary": "Database Health",
+        "description": "Database connectivity health check performing a SELECT 1 query.",
+        "operationId": "database_health_health_db_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "System Health & Diagnostics"
+        ],
+        "summary": "Readiness Check",
+        "description": "Kubernetes/Container readiness probe.",
+        "operationId": "readiness_check_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminProfileCreate": {
+        "properties": {
+          "department": {
+            "type": "string",
+            "title": "Department",
+            "default": "Platform Operations"
+          },
+          "employee_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Id"
+          },
+          "permissions_level": {
+            "type": "string",
+            "title": "Permissions Level",
+            "default": "SUPERADMIN"
+          }
+        },
+        "type": "object",
+        "title": "AdminProfileCreate"
+      },
+      "AdminProfileResponse": {
+        "properties": {
+          "department": {
+            "type": "string",
+            "title": "Department",
+            "default": "Platform Operations"
+          },
+          "employee_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Id"
+          },
+          "permissions_level": {
+            "type": "string",
+            "title": "Permissions Level",
+            "default": "SUPERADMIN"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "AdminProfileResponse"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "action_name": {
+            "type": "string",
+            "title": "Action Name"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "action_name",
+          "entity_name",
+          "created_at"
+        ],
+        "title": "AuditLogResponse"
+      },
+      "BenchmarkRateUpdate": {
+        "properties": {
+          "benchmark_rate_pkr": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Benchmark Rate Pkr",
+            "description": "New wholesale rate per kg in PKR"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "benchmark_rate_pkr"
+        ],
+        "title": "BenchmarkRateUpdate"
+      },
+      "CollectorEarningRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "collector_id": {
+            "type": "string",
+            "title": "Collector Id"
+          },
+          "pickup_id": {
+            "type": "string",
+            "title": "Pickup Id"
+          },
+          "payment_id": {
+            "type": "string",
+            "title": "Payment Id"
+          },
+          "gross_amount_pkr": {
+            "type": "number",
+            "title": "Gross Amount Pkr"
+          },
+          "net_earnings_pkr": {
+            "type": "number",
+            "title": "Net Earnings Pkr"
+          },
+          "earned_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Earned Date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "collector_id",
+          "pickup_id",
+          "payment_id",
+          "gross_amount_pkr",
+          "net_earnings_pkr",
+          "earned_date",
+          "created_at"
+        ],
+        "title": "CollectorEarningRecord"
+      },
+      "CollectorEarningsSummary": {
+        "properties": {
+          "today_earnings_pkr": {
+            "type": "number",
+            "title": "Today Earnings Pkr"
+          },
+          "week_earnings_pkr": {
+            "type": "number",
+            "title": "Week Earnings Pkr"
+          },
+          "month_earnings_pkr": {
+            "type": "number",
+            "title": "Month Earnings Pkr"
+          },
+          "completed_jobs_count": {
+            "type": "integer",
+            "title": "Completed Jobs Count"
+          },
+          "total_verified_kg": {
+            "type": "number",
+            "title": "Total Verified Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "today_earnings_pkr",
+          "week_earnings_pkr",
+          "month_earnings_pkr",
+          "completed_jobs_count",
+          "total_verified_kg"
+        ],
+        "title": "CollectorEarningsSummary"
+      },
+      "CollectorProfileCreate": {
+        "properties": {
+          "cnic_number": {
+            "type": "string",
+            "pattern": "^\\d{5}-\\d{7}-\\d{1}$",
+            "title": "Cnic Number",
+            "description": "Pakistani CNIC in format XXXXX-XXXXXXX-X"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "title": "Vehicle Type",
+            "description": "HAND_CART, MOTOR_TRICYCLE, or PICKUP_TRUCK",
+            "default": "MOTOR_TRICYCLE"
+          },
+          "digital_scale_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digital Scale Id"
+          },
+          "is_online": {
+            "type": "boolean",
+            "title": "Is Online",
+            "default": false
+          },
+          "current_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Latitude"
+          },
+          "current_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Longitude"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cnic_number"
+        ],
+        "title": "CollectorProfileCreate"
+      },
+      "CollectorProfileResponse": {
+        "properties": {
+          "cnic_number": {
+            "type": "string",
+            "pattern": "^\\d{5}-\\d{7}-\\d{1}$",
+            "title": "Cnic Number",
+            "description": "Pakistani CNIC in format XXXXX-XXXXXXX-X"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "title": "Vehicle Type",
+            "description": "HAND_CART, MOTOR_TRICYCLE, or PICKUP_TRUCK",
+            "default": "MOTOR_TRICYCLE"
+          },
+          "digital_scale_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digital Scale Id"
+          },
+          "is_online": {
+            "type": "boolean",
+            "title": "Is Online",
+            "default": false
+          },
+          "current_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Latitude"
+          },
+          "current_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Longitude"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "kyc_status": {
+            "type": "string",
+            "title": "Kyc Status"
+          },
+          "rating_average": {
+            "type": "number",
+            "title": "Rating Average"
+          },
+          "total_pickups_completed": {
+            "type": "number",
+            "title": "Total Pickups Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cnic_number",
+          "user_id",
+          "kyc_status",
+          "rating_average",
+          "total_pickups_completed"
+        ],
+        "title": "CollectorProfileResponse"
+      },
+      "CustomerConfirmRequest": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "CustomerConfirmRequest"
+      },
+      "CustomerProfileCreate": {
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type",
+            "description": "COMMERCIAL_OFFICE, HOUSING_SOCIETY, or HOUSEHOLD",
+            "default": "COMMERCIAL_OFFICE"
+          },
+          "organization_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Name"
+          },
+          "street_address": {
+            "type": "string",
+            "title": "Street Address"
+          },
+          "city": {
+            "type": "string",
+            "title": "City",
+            "default": "Karachi"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "contact_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Person"
+          }
+        },
+        "type": "object",
+        "required": [
+          "street_address"
+        ],
+        "title": "CustomerProfileCreate"
+      },
+      "CustomerProfileResponse": {
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type",
+            "description": "COMMERCIAL_OFFICE, HOUSING_SOCIETY, or HOUSEHOLD",
+            "default": "COMMERCIAL_OFFICE"
+          },
+          "organization_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Name"
+          },
+          "street_address": {
+            "type": "string",
+            "title": "Street Address"
+          },
+          "city": {
+            "type": "string",
+            "title": "City",
+            "default": "Karachi"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "contact_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Person"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "street_address",
+          "user_id"
+        ],
+        "title": "CustomerProfileResponse"
+      },
+      "DisputeCreateRequest": {
+        "properties": {
+          "reason_category": {
+            "type": "string",
+            "title": "Reason Category",
+            "description": "WEIGHT_MISMATCH, QUALITY_DEDUCTION, NO_SHOW, etc."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5,
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason_category",
+          "description"
+        ],
+        "title": "DisputeCreateRequest"
+      },
+      "DisputeResolveRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "RESOLVED or DISMISSED"
+          },
+          "resolution_notes": {
+            "type": "string",
+            "minLength": 5,
+            "title": "Resolution Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "resolution_notes"
+        ],
+        "title": "DisputeResolveRequest"
+      },
+      "DisputeResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "pickup_id": {
+            "type": "string",
+            "title": "Pickup Id"
+          },
+          "raised_by_user_id": {
+            "type": "string",
+            "title": "Raised By User Id"
+          },
+          "reason_category": {
+            "type": "string",
+            "title": "Reason Category"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "resolution_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Notes"
+          },
+          "resolved_by_admin_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By Admin Id"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pickup_id",
+          "raised_by_user_id",
+          "reason_category",
+          "description",
+          "status",
+          "created_at"
+        ],
+        "title": "DisputeResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MaterialCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Unique material identifier, e.g. PET_PLASTIC"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Display title"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "default": "kg"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "benchmark_rate_pkr": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Benchmark Rate Pkr"
+          },
+          "tier_a_factor": {
+            "type": "number",
+            "maximum": 1.5,
+            "minimum": 0.0,
+            "title": "Tier A Factor",
+            "default": 1.0
+          },
+          "tier_b_factor": {
+            "type": "number",
+            "maximum": 1.5,
+            "minimum": 0.0,
+            "title": "Tier B Factor",
+            "default": 0.9
+          },
+          "tier_c_factor": {
+            "type": "number",
+            "maximum": 1.5,
+            "minimum": 0.0,
+            "title": "Tier C Factor",
+            "default": 0.75
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "benchmark_rate_pkr"
+        ],
+        "title": "MaterialCreate"
+      },
+      "MaterialResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Unique material identifier, e.g. PET_PLASTIC"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Display title"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "default": "kg"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "benchmark_rate_pkr": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Benchmark Rate Pkr"
+          },
+          "tier_a_factor": {
+            "type": "number",
+            "maximum": 1.5,
+            "minimum": 0.0,
+            "title": "Tier A Factor",
+            "default": 1.0
+          },
+          "tier_b_factor": {
+            "type": "number",
+            "maximum": 1.5,
+            "minimum": 0.0,
+            "title": "Tier B Factor",
+            "default": 0.9
+          },
+          "tier_c_factor": {
+            "type": "number",
+            "maximum": 1.5,
+            "minimum": 0.0,
+            "title": "Tier C Factor",
+            "default": 0.75
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "benchmark_rate_pkr",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MaterialResponse"
+      },
+      "MockPaymentProcessRequest": {
+        "properties": {
+          "simulate_failure": {
+            "type": "boolean",
+            "title": "Simulate Failure",
+            "default": false
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          }
+        },
+        "type": "object",
+        "title": "MockPaymentProcessRequest"
+      },
+      "NotificationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "notification_type": {
+            "type": "string",
+            "title": "Notification Type"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read"
+          },
+          "related_entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Entity Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "message",
+          "notification_type",
+          "is_read",
+          "created_at"
+        ],
+        "title": "NotificationResponse"
+      },
+      "OTPRequest": {
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "pattern": "^\\+92\\d{10}$",
+            "title": "Phone Number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_number"
+        ],
+        "title": "OTPRequest"
+      },
+      "OTPResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "phone_number",
+          "is_verified"
+        ],
+        "title": "OTPResponse"
+      },
+      "OTPVerifyRequest": {
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "pattern": "^\\+92\\d{10}$",
+            "title": "Phone Number"
+          },
+          "otp_code": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 4,
+            "title": "Otp Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_number",
+          "otp_code"
+        ],
+        "title": "OTPVerifyRequest"
+      },
+      "PaymentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "pickup_id": {
+            "type": "string",
+            "title": "Pickup Id"
+          },
+          "transaction_reference": {
+            "type": "string",
+            "title": "Transaction Reference"
+          },
+          "payer_id": {
+            "type": "string",
+            "title": "Payer Id"
+          },
+          "payee_id": {
+            "type": "string",
+            "title": "Payee Id"
+          },
+          "amount_pkr": {
+            "type": "number",
+            "title": "Amount Pkr"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "retry_count": {
+            "type": "integer",
+            "title": "Retry Count"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pickup_id",
+          "transaction_reference",
+          "payer_id",
+          "payee_id",
+          "amount_pkr",
+          "status",
+          "retry_count",
+          "created_at"
+        ],
+        "title": "PaymentResponse"
+      },
+      "PickupAssignRequest": {
+        "properties": {
+          "collector_id": {
+            "type": "string",
+            "title": "Collector Id",
+            "description": "UUID of verified collector"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "collector_id"
+        ],
+        "title": "PickupAssignRequest"
+      },
+      "PickupCancelRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "PickupCancelRequest"
+      },
+      "PickupCreateRequest": {
+        "properties": {
+          "material_code": {
+            "type": "string",
+            "title": "Material Code",
+            "description": "PET_PLASTIC or CARDBOARD_OCC"
+          },
+          "estimated_quantity_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Estimated Quantity Kg",
+            "description": "Approximate quantity in kg"
+          },
+          "street_address": {
+            "type": "string",
+            "minLength": 5,
+            "title": "Street Address"
+          },
+          "city": {
+            "type": "string",
+            "title": "City",
+            "default": "Karachi"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "preferred_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Preferred Time",
+            "description": "Scheduled collection window"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "material_code",
+          "estimated_quantity_kg",
+          "street_address",
+          "preferred_time"
+        ],
+        "title": "PickupCreateRequest"
+      },
+      "PickupDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tracking_number": {
+            "type": "string",
+            "title": "Tracking Number"
+          },
+          "customer_id": {
+            "type": "string",
+            "title": "Customer Id"
+          },
+          "assigned_collector_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Collector Id"
+          },
+          "material_code": {
+            "type": "string",
+            "title": "Material Code"
+          },
+          "estimated_quantity_kg": {
+            "type": "number",
+            "title": "Estimated Quantity Kg"
+          },
+          "street_address": {
+            "type": "string",
+            "title": "Street Address"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "preferred_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Preferred Time"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/WasteImageResponse"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
+          "pricing_calculations": {
+            "items": {
+              "$ref": "#/components/schemas/PricingCalculationResponse"
+            },
+            "type": "array",
+            "title": "Pricing Calculations",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tracking_number",
+          "customer_id",
+          "material_code",
+          "estimated_quantity_kg",
+          "street_address",
+          "city",
+          "preferred_time",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PickupDetailResponse"
+      },
+      "PickupRejectRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Reason",
+            "description": "Reason for rejecting job"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "PickupRejectRequest"
+      },
+      "PickupStartRequest": {
+        "properties": {
+          "gps_latitude": {
+            "type": "number",
+            "title": "Gps Latitude"
+          },
+          "gps_longitude": {
+            "type": "number",
+            "title": "Gps Longitude"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gps_latitude",
+          "gps_longitude"
+        ],
+        "title": "PickupStartRequest"
+      },
+      "PricingCalculationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "material_code": {
+            "type": "string",
+            "title": "Material Code"
+          },
+          "verified_weight_kg": {
+            "type": "number",
+            "title": "Verified Weight Kg"
+          },
+          "material_rate_applied": {
+            "type": "number",
+            "title": "Material Rate Applied"
+          },
+          "quality_factor": {
+            "type": "number",
+            "title": "Quality Factor"
+          },
+          "total_price": {
+            "type": "number",
+            "title": "Total Price"
+          },
+          "calculation_breakdown": {
+            "type": "string",
+            "title": "Calculation Breakdown"
+          },
+          "is_estimated": {
+            "type": "boolean",
+            "title": "Is Estimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "material_code",
+          "verified_weight_kg",
+          "material_rate_applied",
+          "quality_factor",
+          "total_price",
+          "calculation_breakdown",
+          "is_estimated"
+        ],
+        "title": "PricingCalculationResponse"
+      },
+      "RatingCreateRequest": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Score",
+            "description": "1 to 5 stars"
+          },
+          "review_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score"
+        ],
+        "title": "RatingCreateRequest"
+      },
+      "RecyclerProfileCreate": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "ntn_number": {
+            "type": "string",
+            "title": "Ntn Number",
+            "description": "National Tax Number"
+          },
+          "factory_address": {
+            "type": "string",
+            "title": "Factory Address"
+          },
+          "city": {
+            "type": "string",
+            "title": "City",
+            "default": "Karachi"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "ntn_number",
+          "factory_address"
+        ],
+        "title": "RecyclerProfileCreate"
+      },
+      "RecyclerProfileResponse": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "ntn_number": {
+            "type": "string",
+            "title": "Ntn Number",
+            "description": "National Tax Number"
+          },
+          "factory_address": {
+            "type": "string",
+            "title": "Factory Address"
+          },
+          "city": {
+            "type": "string",
+            "title": "City",
+            "default": "Karachi"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "verification_status": {
+            "type": "string",
+            "title": "Verification Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "ntn_number",
+          "factory_address",
+          "user_id",
+          "verification_status"
+        ],
+        "title": "RecyclerProfileResponse"
+      },
+      "RoleAssignRequest": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/RoleEnum"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "RoleAssignRequest"
+      },
+      "RoleEnum": {
+        "type": "string",
+        "enum": [
+          "CUSTOMER",
+          "COLLECTOR",
+          "RECYCLER",
+          "ADMIN"
+        ],
+        "title": "RoleEnum"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          },
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token",
+          "expires_in",
+          "user"
+        ],
+        "title": "TokenResponse"
+      },
+      "UserLoginRequest": {
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "description": "Phone number (+92...) or registered email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "identifier",
+          "password"
+        ],
+        "title": "UserLoginRequest"
+      },
+      "UserRegisterRequest": {
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "pattern": "^\\+92\\d{10}$",
+            "title": "Phone Number",
+            "description": "E.164 phone number, e.g. +923001234567"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "Minimum 8 characters"
+          },
+          "role": {
+            "$ref": "#/components/schemas/RoleEnum",
+            "default": "CUSTOMER"
+          },
+          "customer_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerProfileCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collector_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CollectorProfileCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recycler_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecyclerProfileCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "admin_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminProfileCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_number",
+          "full_name",
+          "password"
+        ],
+        "title": "UserRegisterRequest"
+      },
+      "UserWithProfileResponse": {
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ACTIVE"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "is_phone_verified": {
+            "type": "boolean",
+            "title": "Is Phone Verified",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "customer_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collector_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CollectorProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recycler_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecyclerProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "admin_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_number",
+          "full_name",
+          "id",
+          "roles",
+          "created_at"
+        ],
+        "title": "UserWithProfileResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WasteImageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "image_type": {
+            "type": "string",
+            "title": "Image Type"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "image_type",
+          "image_url",
+          "created_at"
+        ],
+        "title": "WasteImageResponse"
+      },
+      "WasteImageUploadRequest": {
+        "properties": {
+          "image_type": {
+            "type": "string",
+            "title": "Image Type",
+            "description": "customer_upload, before_pickup, after_pickup, scale_display"
+          },
+          "image_url": {
+            "type": "string",
+            "minLength": 5,
+            "title": "Image Url"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_type",
+          "image_url"
+        ],
+        "title": "WasteImageUploadRequest"
+      },
+      "WeightVerificationRequest": {
+        "properties": {
+          "verified_weight_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Verified Weight Kg",
+            "description": "Physical weight from calibrated scale"
+          },
+          "quality_factor": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Quality Factor",
+            "description": "Quality multiplier (0.0 to 1.0)",
+            "default": 1.0
+          },
+          "scale_photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scale Photo Url"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verified_weight_kg"
+        ],
+        "title": "WeightVerificationRequest"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

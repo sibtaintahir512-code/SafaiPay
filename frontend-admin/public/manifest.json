@@ -1,0 +1,21 @@
+{
+  "name": "SafaiPay - Waste-to-Value Marketplace",
+  "short_name": "SafaiPay",
+  "description": "Verified Waste Collection, Transparent Pricing & Settlement Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1B7F5C",
+  "background_color": "#F4FAF7",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
