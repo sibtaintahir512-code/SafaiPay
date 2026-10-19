@@ -1,1 +1,24 @@
+# Vercel
 .vercel
+
+# Node & Next.js build
+node_modules/
+.next/
+out/
+build/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db

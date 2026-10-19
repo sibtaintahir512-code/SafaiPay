@@ -1,22 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DEMO_USERS_MAP } from '@/lib/mockData';
-import { UserRole } from '@/lib/types';
+import { verifyJwt, VERIFIED_USERS } from '@/lib/serverAuth';
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization') || '';
-  let role: UserRole = 'customer';
-
-  if (authHeader.includes('admin')) {
-    role = 'admin';
-  } else if (authHeader.includes('collector')) {
-    role = 'collector';
-  } else if (authHeader.includes('recycler')) {
-    role = 'recycler';
-  } else {
-    role = 'customer';
+  if (!authHeader.startsWith('Bearer ')) {
+    return NextResponse.json(
+      { detail: 'Authentication token is required.' },
+      { status: 401 }
+    );
   }
 
-  const user = DEMO_USERS_MAP[role];
+  const token = authHeader.substring(7).trim();
+
+  // Try forwarding to external FastAPI backend if running and configured
+  const fastApiUrl = process.env.FASTAPI_BACKEND_URL;
+  if (fastApiUrl) {
+    try {
+      const response = await fetch(`${fastApiUrl}/api/v1/auth/me`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return NextResponse.json(data);
+      }
+    } catch {
+      // Fallback to verified JWT verification
+    }
+  }
+
+  // Validate signed JWT
+  const payload = verifyJwt(token);
+  if (!payload || !payload.sub) {
+    return NextResponse.json(
+      { detail: 'Invalid or expired session token.' },
+      { status: 401 }
+    );
+  }
+
+  const user = VERIFIED_USERS.find(
+    (u) => u.id === payload.sub || u.phone_number === payload.phone_number
+  );
+
+  if (!user || !user.is_active) {
+    return NextResponse.json(
+      { detail: 'User session not found or account deactivated.' },
+      { status: 401 }
+    );
+  }
+
   return NextResponse.json({
     id: user.id,
     phone_number: user.phone_number,
@@ -27,9 +59,6 @@ export async function GET(req: NextRequest) {
     is_phone_verified: user.is_phone_verified,
     is_active: user.is_active,
     created_at: user.created_at,
-    [`${role}_profile`]: {
-      status: 'VERIFIED',
-      verified_at: '2026-01-20T10:00:00Z',
-    },
+    [`${user.role}_profile`]: user.profile,
   });
 }

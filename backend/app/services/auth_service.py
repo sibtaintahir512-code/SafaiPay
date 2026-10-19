@@ -135,13 +135,52 @@ async def register_new_user(
 
     return new_user
 
+import time
+
+# Rate limiting & temporary account lockout tracker
+# Maps identifier -> list of failed attempt timestamps (epoch seconds)
+_FAILED_LOGIN_ATTEMPTS: dict[str, list[float]] = {}
+LOCKOUT_THRESHOLD = 5
+LOCKOUT_WINDOW_SECONDS = 900  # 15 minutes
+
+def check_login_rate_limit(identifier: str) -> None:
+    """Enforce rate limiting and lockout on repeated failed login attempts."""
+    now = time.time()
+    clean_id = identifier.strip().lower()
+    attempts = _FAILED_LOGIN_ATTEMPTS.get(clean_id, [])
+    # Filter attempts within lockout window
+    recent = [t for t in attempts if now - t < LOCKOUT_WINDOW_SECONDS]
+    _FAILED_LOGIN_ATTEMPTS[clean_id] = recent
+
+    if len(recent) >= LOCKOUT_THRESHOLD:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Account temporarily locked due to repeated failed login attempts. Please try again after 15 minutes."
+        )
+
+def record_failed_login(identifier: str) -> None:
+    """Record a failed login attempt for rate limiting."""
+    now = time.time()
+    clean_id = identifier.strip().lower()
+    if clean_id not in _FAILED_LOGIN_ATTEMPTS:
+        _FAILED_LOGIN_ATTEMPTS[clean_id] = []
+    _FAILED_LOGIN_ATTEMPTS[clean_id].append(now)
+
+def clear_failed_logins(identifier: str) -> None:
+    """Clear failed attempts on successful login."""
+    clean_id = identifier.strip().lower()
+    _FAILED_LOGIN_ATTEMPTS.pop(clean_id, None)
+
 async def authenticate_user(
     db: AsyncSession,
     identifier: str,
     password: str,
     ip_address: Optional[str] = None
 ) -> User:
-    """Authenticate user by phone or email, verifying password and recording audit log."""
+    """Authenticate user by phone or email, verifying password, enforcing lockout, and recording audit log."""
+    # Check rate limit / temporary lockout first
+    check_login_rate_limit(identifier)
+
     # Look up by phone or email
     query = select(User).where(
         or_(User.phone_number == identifier, User.email == identifier)
@@ -150,6 +189,7 @@ async def authenticate_user(
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(password, user.hashed_password):
+        record_failed_login(identifier)
         # Log failure in audit log
         await log_audit_event(
             db=db,
@@ -169,6 +209,9 @@ async def authenticate_user(
             detail="Account is deactivated. Please contact SafaiPay support."
         )
 
+    # Success: clear failed login attempts
+    clear_failed_logins(identifier)
+
     # Log login success
     await log_audit_event(
         db=db,
@@ -181,6 +224,48 @@ async def authenticate_user(
     )
 
     return user
+
+async def reset_user_password(
+    db: AsyncSession,
+    identifier: str,
+    new_password: str,
+    ip_address: Optional[str] = None
+) -> User:
+    """Reset user password after OTP verification, enforcing password complexity."""
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long."
+        )
+
+    query = select(User).where(
+        or_(User.phone_number == identifier, User.email == identifier)
+    )
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User account not found."
+        )
+
+    user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    await db.refresh(user)
+
+    await log_audit_event(
+        db=db,
+        action_name="PASSWORD_RESET",
+        entity_name="users",
+        actor_id=str(user.id),
+        entity_id=str(user.id),
+        details="User password successfully reset via OTP verification",
+        ip_address=ip_address
+    )
+
+    return user
+
 
 def generate_auth_tokens(user: User) -> Tuple[str, str]:
     """Generate signed access and refresh tokens for user."""

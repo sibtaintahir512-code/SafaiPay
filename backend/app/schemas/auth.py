@@ -47,3 +47,16 @@ class OTPResponse(BaseModel):
     message: str
     phone_number: str
     is_verified: bool
+
+class ForgotPasswordRequest(BaseModel):
+    identifier: str = Field(..., description="Phone number or registered email address")
+
+class ResetPasswordRequest(BaseModel):
+    identifier: str = Field(..., description="Phone number or registered email address")
+    otp_code: str = Field(..., min_length=4, max_length=6)
+    new_password: str = Field(..., min_length=8, description="Minimum 8 characters with numbers/symbols")
+
+class AuthSuccessResponse(BaseModel):
+    success: bool
+    message: str
+

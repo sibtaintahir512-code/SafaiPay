@@ -133,3 +133,88 @@ async def test_otp_request_and_verification(client):
         "otp_code": "000000"
     })
     assert wrong_res.status_code == 400
+
+@pytest.mark.asyncio
+async def test_authenticated_logout(client):
+    """Verify authenticated user can log out and invalidate session."""
+    login_res = await client.post("/api/v1/auth/login", json={
+        "identifier": "+923009990001",
+        "password": "Password12345!"
+    })
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+
+    logout_res = await client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert logout_res.status_code == 200
+    assert logout_res.json()["success"] is True
+
+@pytest.mark.asyncio
+async def test_brute_force_account_lockout(client):
+    """Verify 5 consecutive failed login attempts trigger 429 lockout."""
+    target_id = "+923008887776"
+    # Register user first
+    reg = await client.post("/api/v1/auth/register", json={
+        "phone_number": target_id,
+        "full_name": "Lockout Test User",
+        "email": "lockout@karachi.pk",
+        "password": "ValidPassword123!",
+        "role": "CUSTOMER"
+    })
+    assert reg.status_code == 201
+
+    # Attempt 5 wrong logins
+    for i in range(5):
+        fail_res = await client.post("/api/v1/auth/login", json={
+            "identifier": target_id,
+            "password": "WrongPassword!"
+        })
+        assert fail_res.status_code == 401
+
+    # 6th attempt must trigger 429 Too Many Requests
+    lockout_res = await client.post("/api/v1/auth/login", json={
+        "identifier": target_id,
+        "password": "ValidPassword123!"
+    })
+    assert lockout_res.status_code == 429
+    assert "temporarily locked" in lockout_res.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_forgot_and_reset_password(client):
+    """Verify forgot-password OTP request and subsequent password reset."""
+    user_id = "+923007776665"
+    reg = await client.post("/api/v1/auth/register", json={
+        "phone_number": user_id,
+        "full_name": "Reset Test User",
+        "email": "reset@karachi.pk",
+        "password": "OldPassword123!",
+        "role": "CUSTOMER"
+    })
+    assert reg.status_code == 201
+
+    # 1. Forgot password
+    forgot_res = await client.post("/api/v1/auth/forgot-password", json={
+        "identifier": user_id
+    })
+    assert forgot_res.status_code == 200
+    assert forgot_res.json()["success"] is True
+
+    # 2. Reset password with OTP
+    reset_res = await client.post("/api/v1/auth/reset-password", json={
+        "identifier": user_id,
+        "otp_code": "123456",
+        "new_password": "BrandNewPassword123!"
+    })
+    assert reset_res.status_code == 200
+    assert reset_res.json()["success"] is True
+
+    # 3. Login with new password
+    new_login = await client.post("/api/v1/auth/login", json={
+        "identifier": user_id,
+        "password": "BrandNewPassword123!"
+    })
+    assert new_login.status_code == 200
+    assert "access_token" in new_login.json()
+

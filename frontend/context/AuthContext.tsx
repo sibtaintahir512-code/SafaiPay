@@ -5,21 +5,18 @@ import { User, UserRole } from '@/lib/types';
 import { 
   getCurrentUser, 
   loginWithCredentials, 
+  logoutUser, 
   removeAuthToken, 
-  getAuthToken, 
-  getDashboardPath,
-  setAuthToken
+  getAuthToken 
 } from '@/lib/api';
-import { DEMO_USERS_MAP } from '@/lib/mockData';
 
 interface AuthContextType {
   user: User | null;
   role: UserRole | 'unknown' | null;
   isLoading: boolean;
   login: (identifier: string, pass: string) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
-  switchRole: (newRole: UserRole) => User;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,15 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(u);
       return u;
     } catch {
-      // If valid demo role stored, do not clear session on network glitch
-      if (typeof window !== 'undefined') {
-        const storedRole = localStorage.getItem('safaipay_active_role') as UserRole;
-        if (storedRole && DEMO_USERS_MAP[storedRole]) {
-          const fallback = DEMO_USERS_MAP[storedRole];
-          setUser(fallback);
-          return fallback;
-        }
-      }
       removeAuthToken();
       setUser(null);
       return null;
@@ -64,28 +52,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (identifier: string, pass: string): Promise<User> => {
     setIsLoading(true);
     try {
-      await loginWithCredentials(identifier, pass);
-      const u = await getCurrentUser();
-      setUser(u);
-      return u;
+      const authResult = await loginWithCredentials(identifier, pass);
+      setUser(authResult.user);
+      return authResult.user;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const switchRole = (newRole: UserRole): User => {
-    const demo = DEMO_USERS_MAP[newRole];
-    setAuthToken(`demo_jwt_token_${newRole}_${Date.now()}`);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('safaipay_active_role', newRole);
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await logoutUser();
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
-    setUser(demo);
-    return demo;
-  };
-
-  const logout = () => {
-    removeAuthToken();
-    setUser(null);
   };
 
   return (
@@ -97,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         refreshUser,
-        switchRole,
       }}
     >
       {children}

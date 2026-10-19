@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserRole, User as AuthUser } from '@/lib/types';
+import Link from 'next/link';
 import { SafaiPayLogo, SafaiPayLogoIcon } from '@/components/SafaiPayLogo';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
   Sparkles, 
   ShieldCheck, 
@@ -14,49 +15,53 @@ import {
   Eye, 
   EyeOff, 
   TrendingUp, 
-  Truck, 
-  Factory,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 interface LandingLoginPageProps {
   onLogin: (identifier: string, pass: string) => Promise<void>;
-  onQuickDemoLogin: (role: UserRole) => Promise<void>;
   isLoading: boolean;
   errorMessage: string | null;
-  currentUser?: AuthUser | null;
-  onLogout?: () => void;
-  onGoToDashboard?: () => void;
 }
 
 export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
   onLogin,
-  onQuickDemoLogin,
   isLoading,
   errorMessage,
-  currentUser,
-  onLogout,
-  onGoToDashboard,
 }) => {
-  const [identifier, setIdentifier] = useState('+923001110001');
-  const [password, setPassword] = useState('SafaiPassword123!');
+  const { language, setLanguage, t, isUrdu } = useLanguage();
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showRegisterAlert, setShowRegisterAlert] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
+
+  const validate = (): boolean => {
+    const errors: { identifier?: string; password?: string } = {};
+    if (!identifier.trim()) {
+      errors.identifier = isUrdu ? 'فون نمبر یا ای میل درج کریں' : 'Please enter your phone number or email address.';
+    }
+    if (!password) {
+      errors.password = isUrdu ? 'پاس ورڈ درج کریں' : 'Please enter your account password.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier || !password) return;
-    await onLogin(identifier, password);
+    if (isLoading) return;
+    if (!validate()) return;
+    await onLogin(identifier.trim(), password);
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#F4FAF7] text-[#0F3D3E] font-sans selection:bg-[#9FE6C6] selection:text-[#0B2F30]">
       
-      {/* ================= LEFT SECTION (HERO & FEATURES) ================= */}
-      {/* Background #F4FAF7 with large faint decorative circles in #E6F4EC */}
+      {/* ================= LEFT SECTION (HERO & VERIFIED PLATFORM VALUE) ================= */}
       <div className="flex-1 relative overflow-hidden bg-[#F4FAF7] px-6 sm:px-10 lg:px-14 py-10 lg:py-16 flex flex-col justify-center">
         
-        {/* Large Faint Decorative Circles in --mint-50 (#E6F4EC) */}
+        {/* Decorative Circles in #E6F4EC */}
         <div className="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-[#E6F4EC] pointer-events-none opacity-80" />
         <div className="absolute -bottom-40 right-10 w-[520px] h-[520px] rounded-full bg-[#E6F4EC] pointer-events-none opacity-60" />
         <div className="absolute top-1/2 left-1/3 w-[300px] h-[300px] rounded-full bg-[#E6F4EC] pointer-events-none opacity-40 blur-sm" />
@@ -77,7 +82,7 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
             </div>
           </div>
 
-          {/* Headline & Paragraph */}
+          {/* Headline & Mission */}
           <div className="space-y-3.5">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0F3D3E] leading-[1.14]">
               Turn waste into{' '}
@@ -91,32 +96,30 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
             </p>
           </div>
 
-          {/* ONE HERO DATA CARD: "Today's collection" */}
-          {/* Solid deep teal #0F3D3E with light text, soft shadow rgba(15,61,62,0.18), inner stats panel in rgba(7,32,33,0.55). Inside it: verified values in #6EE7B7, prices in gold #F2A900, labels in #9DB8AE */}
+          {/* HERO DATA CARD: Real-time collection metrics */}
           <div className="bg-[#0F3D3E] text-white rounded-3xl p-6 shadow-[0_15px_30px_rgba(15,61,62,0.18)] border border-[#1F4A4B] relative overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <div className="flex items-center space-x-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#6EE7B7] animate-ping" />
                 <span className="text-xs uppercase font-bold tracking-wider text-[#9FE6C6]">
-                  Today’s collection
+                  Verified Batch Operations
                 </span>
               </div>
               <span className="px-3 py-1 rounded-full bg-[#072021]/60 text-[#6EE7B7] border border-[#2FA37A]/40 text-xs font-semibold flex items-center space-x-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#6EE7B7]" />
-                <span>Ready for recycler</span>
+                <span>Ready for Industrial Recyclers</span>
               </span>
             </div>
 
-            {/* Inner Stats Panel in rgba(7,32,33,0.55) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#072021]/55 rounded-2xl p-4 border border-[#1F4A4B]/60 mb-4">
               <div>
                 <span className="text-[11px] text-[#9DB8AE] block mb-0.5">Material Stream</span>
                 <p className="text-base font-bold text-white">PET Plastic</p>
-                <span className="text-[10px] text-[#9FE6C6]">Post-consumer bottles</span>
+                <span className="text-[10px] text-[#9FE6C6]">Post-consumer resin</span>
               </div>
               <div>
                 <span className="text-[11px] text-[#9DB8AE] block mb-0.5">Scale Certified</span>
-                <p className="text-base font-bold text-[#6EE7B7] font-mono">10 kg verified</p>
+                <p className="text-base font-bold text-[#6EE7B7] font-mono">10.0 kg verified</p>
                 <span className="text-[10px] text-[#9FE6C6]/90">Sensor scale</span>
               </div>
               <div>
@@ -143,257 +146,222 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
             </div>
           </div>
 
-          {/* THREE FEATURE CARDS: "AI scan", "Verified", "Fair price" */}
-          {/* White (--surface), 1px --border (#D5E6DD), 5px colored left border (gold, emerald-400, teal-900), icons stroked in --emerald-600, titles --teal-900 */}
+          {/* THREE FEATURE HIGHLIGHTS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
-            
-            {/* Feature 1: AI scan (5px gold left border) */}
             <div className="bg-white border border-[#D5E6DD] border-l-[5px] border-l-[#F2A900] rounded-2xl p-4 shadow-eco-sm">
               <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#1B7F5C] flex items-center justify-center mb-2.5">
                 <ScanLine className="w-4 h-4 text-[#1B7F5C]" />
               </div>
               <h3 className="text-sm font-bold text-[#0F3D3E] mb-0.5">AI scan</h3>
               <p className="text-xs text-[#5B6B66] leading-snug">
-                Computer-vision detects resin grade and contamination in seconds.
+                Computer-vision identifies recyclable grade and contamination before dispatch.
               </p>
             </div>
 
-            {/* Feature 2: Verified (5px emerald-400 left border) */}
             <div className="bg-white border border-[#D5E6DD] border-l-[5px] border-l-[#2FA37A] rounded-2xl p-4 shadow-eco-sm">
               <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#1B7F5C] flex items-center justify-center mb-2.5">
                 <Scale className="w-4 h-4 text-[#1B7F5C]" />
               </div>
-              <h3 className="text-sm font-bold text-[#0F3D3E] mb-0.5">Verified</h3>
+              <h3 className="text-sm font-bold text-[#0F3D3E] mb-0.5">Verified scale</h3>
               <p className="text-xs text-[#5B6B66] leading-snug">
-                Calibrated hanging scales eliminate weight manipulation at the doorstep.
+                Calibrated sensor hanging scales eliminate doorstep weight disputes.
               </p>
             </div>
 
-            {/* Feature 3: Fair price (5px teal-900 left border) */}
             <div className="bg-white border border-[#D5E6DD] border-l-[5px] border-l-[#0F3D3E] rounded-2xl p-4 shadow-eco-sm">
               <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#1B7F5C] flex items-center justify-center mb-2.5">
                 <TrendingUp className="w-4 h-4 text-[#1B7F5C]" />
               </div>
               <h3 className="text-sm font-bold text-[#0F3D3E] mb-0.5">Fair price</h3>
               <p className="text-xs text-[#5B6B66] leading-snug">
-                Real-time scrap benchmark indices ensure guaranteed transparent payouts.
+                Real-time scrap benchmark rates ensure guaranteed transparent settlement.
               </p>
             </div>
-
           </div>
 
         </div>
 
       </div>
 
-      {/* ================= RIGHT SECTION (AUTH STRIP & FLOATING WHITE CARD) ================= */}
-      {/* Solid deep teal strip (--teal-900: #0F3D3E) with a floating white card (radius 28px, shadow rgba(0,0,0,0.25)) containing login form */}
+      {/* ================= RIGHT SECTION (CLEAN PRODUCTION SIGN-IN FORM) ================= */}
       <div className="w-full lg:w-[480px] xl:w-[520px] bg-[#0F3D3E] flex items-center justify-center p-4 sm:p-8 lg:p-10 shrink-0">
         
-        {/* Floating White Card (Radius 28px, shadow rgba(0,0,0,0.25), mx-3.5 on mobile for 14px side margins) */}
+        {/* Floating White Card (Radius 28px) */}
         <div className="w-full max-w-[430px] mx-3.5 sm:mx-0 bg-white rounded-[28px] p-7 sm:p-9 shadow-[0_20px_40px_rgba(0,0,0,0.25)] border border-[#D5E6DD] text-[#0F3D3E]">
           
-          {/* Logo Icon & Header */}
-          <div className="text-center mb-6">
-            <SafaiPayLogoIcon className="w-12 h-12 mx-auto mb-2.5 shadow-md shadow-[#1B7F5C]/20" />
+          {/* Top Bar with Language Switcher */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <SafaiPayLogoIcon className="w-9 h-9 shadow-md shadow-[#1B7F5C]/20" />
+              <span className="font-extrabold text-lg text-[#0F3D3E] tracking-tight">SafaiPay</span>
+            </div>
+
+            {/* Optional Language Switcher */}
+            <div className="flex items-center bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl p-0.5">
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`px-2 py-0.5 text-xs font-bold rounded-lg transition ${
+                  language === 'en'
+                    ? 'bg-[#1B7F5C] text-white shadow-xs'
+                    : 'text-[#5B6B66] hover:text-[#0F3D3E]'
+                }`}
+                title="Switch to English"
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('ur')}
+                className={`px-2 py-0.5 text-xs font-bold rounded-lg transition ${
+                  language === 'ur'
+                    ? 'bg-[#1B7F5C] text-white shadow-xs'
+                    : 'text-[#5B6B66] hover:text-[#0F3D3E]'
+                }`}
+                title="اردو میں تبدیل کریں"
+              >
+                اردو
+              </button>
+            </div>
+          </div>
+
+          {/* Welcome Heading */}
+          <div className="mb-6">
             <h2 className="text-2xl font-extrabold text-[#0F3D3E] tracking-tight">
-              Welcome to SafaiPay
+              {isUrdu ? 'صفائی پے میں خوش آمدید' : 'Welcome to SafaiPay'}
             </h2>
             <p className="text-xs text-[#5B6B66] mt-1 font-medium">
-              Sign in to manage your pickups and earnings.
+              {isUrdu 
+                ? 'اپنے ری سائیکلنگ اکاؤنٹ میں سائن ان کریں'
+                : 'Sign in to access your verified recycling portal.'}
             </p>
           </div>
 
-          {/* Error Message Alert */}
+          {/* Generic Error Message Alert */}
           {errorMessage && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-[#C0392B] rounded-xl text-xs font-semibold">
-              {errorMessage}
-            </div>
-          )}
-
-          {/* Register info popover */}
-          {showRegisterAlert && (
-            <div className="mb-4 p-3.5 bg-[#E6F4EC] border border-[#D5E6DD] text-[#0F3D3E] rounded-xl text-xs space-y-1">
-              <p className="font-bold text-[#146B4D]">Pilot User Onboarding</p>
-              <p className="text-[#3F5A52]">
-                SafaiPay pilot accounts are pre-verified. Use any of the 1-click demo buttons below to explore as Customer, Collector, Recycler, or Admin!
-              </p>
-            </div>
-          )}
-
-          {/* Active Session Notice (if user is already authenticated) */}
-          {currentUser && (
-            <div className="mb-5 p-3.5 bg-[#E6F4EC] border border-[#D5E6DD] rounded-2xl text-xs space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-[#1B7F5C] animate-pulse" />
-                  <span className="font-bold text-[#0F3D3E]">Active Session</span>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#1B7F5C] text-white">
-                  {currentUser.role}
-                </span>
-              </div>
-              <p className="text-[#3F5A52] text-[11px] truncate">
-                Signed in as <strong className="text-[#0F3D3E]">{currentUser.full_name || currentUser.phone_number}</strong>
-              </p>
-              <div className="flex space-x-2 pt-0.5">
-                <button
-                  type="button"
-                  onClick={onGoToDashboard}
-                  className="flex-1 bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition shadow-sm text-center flex items-center justify-center space-x-1"
-                >
-                  <span>Open Dashboard</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="bg-white hover:bg-slate-50 text-[#C0392B] border border-red-200 font-semibold py-1.5 px-3 rounded-xl text-xs transition"
-                >
-                  Sign Out
-                </button>
-              </div>
+            <div 
+              role="alert"
+              className="mb-5 p-3.5 bg-red-50 border border-red-200 text-[#C0392B] rounded-2xl text-xs font-medium flex items-start space-x-2"
+            >
+              <AlertCircle className="w-4 h-4 text-[#C0392B] shrink-0 mt-0.5" />
+              <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Sign-in Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            
+            {/* Phone or Email Field */}
             <div>
-              <label className="block text-xs font-bold text-[#0F3D3E] mb-1.5">
-                Phone or email
+              <label 
+                htmlFor="identifier"
+                className="block text-xs font-bold text-[#0F3D3E] mb-1.5"
+              >
+                {isUrdu ? 'فون نمبر یا ای میل' : 'Phone or email'}
               </label>
               <div className="relative">
-                {/* Inputs: background --bg (#F4FAF7), 1px --border (#D5E6DD), radius 14px */}
                 <input
+                  id="identifier"
                   type="text"
+                  autoComplete="username"
                   required
-                  placeholder="+923001110001 or user@example.com"
+                  placeholder="+92 300 1234567 or user@example.com"
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-[14px] px-4 py-3 text-xs text-[#0F3D3E] placeholder-[#5B6B66] focus:outline-none focus:border-[#1B7F5C] focus:bg-white transition"
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    if (fieldErrors.identifier) setFieldErrors({ ...fieldErrors, identifier: undefined });
+                  }}
+                  disabled={isLoading}
+                  className={`w-full bg-[#F4FAF7] border ${
+                    fieldErrors.identifier ? 'border-red-400 focus:border-red-500' : 'border-[#D5E6DD] focus:border-[#1B7F5C]'
+                  } rounded-[14px] px-4 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60`}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#5B6B66]">
                   <UserIcon className="w-4 h-4" />
                 </div>
               </div>
+              {fieldErrors.identifier && (
+                <p className="text-[11px] text-red-600 mt-1">{fieldErrors.identifier}</p>
+              )}
             </div>
 
+            {/* Password Field */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-[#0F3D3E]">
-                  Password
+                <label 
+                  htmlFor="password"
+                  className="text-xs font-bold text-[#0F3D3E]"
+                >
+                  {isUrdu ? 'پاس ورڈ' : 'Password'}
                 </label>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('Password reset OTP simulation: Demo password is "SafaiPassword123!" or "AdminPassword123!"');
-                  }}
+                <Link
+                  href="/forgot-password"
                   className="text-[11px] text-[#1B7F5C] hover:text-[#146B4D] font-semibold transition"
                 >
-                  Forgot password?
-                </a>
+                  {isUrdu ? 'پاس ورڈ بھول گئے؟' : 'Forgot password?'}
+                </Link>
               </div>
               <div className="relative">
                 <input
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   required
                   placeholder="••••••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-[14px] px-4 py-3 text-xs text-[#0F3D3E] placeholder-[#5B6B66] focus:outline-none focus:border-[#1B7F5C] focus:bg-white transition"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: undefined });
+                  }}
+                  disabled={isLoading}
+                  className={`w-full bg-[#F4FAF7] border ${
+                    fieldErrors.password ? 'border-red-400 focus:border-red-500' : 'border-[#D5E6DD] focus:border-[#1B7F5C]'
+                  } rounded-[14px] px-4 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60`}
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#5B6B66] hover:text-[#1B7F5C] transition"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="text-[11px] text-red-600 mt-1">{fieldErrors.password}</p>
+              )}
             </div>
 
-            {/* Primary button: emerald-600 background (#1B7F5C), white text, radius 14px */}
+            {/* Primary Sign-in Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-bold py-3.5 rounded-[14px] text-sm transition shadow-md shadow-[#1B7F5C]/25 flex items-center justify-center space-x-2 disabled:opacity-50 mt-2"
+              className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-bold py-3.5 rounded-[14px] text-sm transition shadow-md shadow-[#1B7F5C]/25 flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed mt-3"
             >
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                  <span>Signing in...</span>
+                  <span>{isUrdu ? 'سائن ان ہو رہا ہے...' : 'Signing in...'}</span>
                 </>
               ) : (
                 <>
-                  <span>Sign in</span>
+                  <span>{isUrdu ? 'سائن ان کریں' : 'Sign in'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick 1-Click Demo Accounts */}
-          {/* Selected role/demo buttons: --mint-50 background, --emerald-600 border, #146B4D text */}
-          <div className="mt-6 pt-5 border-t border-[#D5E6DD]">
-            <span className="text-[10px] font-bold text-[#5B6B66] uppercase tracking-wider block text-center mb-2.5">
-              Quick 1-Click Demo Access
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => onQuickDemoLogin('customer')}
-                disabled={isLoading}
-                className="px-3 py-2 rounded-xl bg-[#E6F4EC] hover:bg-[#D5E6DD] text-[#146B4D] border border-[#D5E6DD] hover:border-[#1B7F5C] text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-eco-sm"
-              >
-                <UserIcon className="w-3.5 h-3.5 text-[#1B7F5C]" />
-                <span>Customer</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onQuickDemoLogin('collector')}
-                disabled={isLoading}
-                className="px-3 py-2 rounded-xl bg-[#E6F4EC] hover:bg-[#D5E6DD] text-[#146B4D] border border-[#D5E6DD] hover:border-[#1B7F5C] text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-eco-sm"
-              >
-                <Truck className="w-3.5 h-3.5 text-[#1B7F5C]" />
-                <span>Collector</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onQuickDemoLogin('admin')}
-                disabled={isLoading}
-                className="px-3 py-2 rounded-xl bg-[#E6F4EC] hover:bg-[#D5E6DD] text-[#146B4D] border border-[#D5E6DD] hover:border-[#1B7F5C] text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-eco-sm"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-[#1B7F5C]" />
-                <span>Admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onQuickDemoLogin('recycler')}
-                disabled={isLoading}
-                className="px-3 py-2 rounded-xl bg-[#E6F4EC] hover:bg-[#D5E6DD] text-[#146B4D] border border-[#D5E6DD] hover:border-[#1B7F5C] text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-eco-sm"
-              >
-                <Factory className="w-3.5 h-3.5 text-[#1B7F5C]" />
-                <span>Recycler</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Bottom Register Callout */}
-          <div className="mt-5 text-center">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setShowRegisterAlert(!showRegisterAlert);
-              }}
-              className="text-xs text-[#1B7F5C] hover:text-[#146B4D] font-semibold transition"
+          {/* Create Account Link */}
+          <div className="mt-6 pt-5 border-t border-[#D5E6DD] text-center">
+            <Link
+              href="/register"
+              className="text-xs text-[#1B7F5C] hover:text-[#146B4D] font-semibold transition inline-block"
             >
-              New collector or customer? Create a SafaiPay account
-            </a>
+              {isUrdu 
+                ? 'نیا اکاؤنٹ بنائیں؟ صفائی پے رجسٹریشن' 
+                : 'New to SafaiPay? Create an account'}
+            </Link>
           </div>
 
         </div>

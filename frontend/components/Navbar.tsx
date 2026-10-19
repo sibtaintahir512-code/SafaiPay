@@ -22,19 +22,12 @@ import {
   Sparkles
 } from 'lucide-react';
 
-const DEMO_CREDENTIALS: Record<UserRole, { username: string; pass: string }> = {
-  admin: { username: 'admin@safaipay.org', pass: 'AdminPassword123!' },
-  customer: { username: '+923001110001', pass: 'SafaiPassword123!' },
-  collector: { username: '+923002220001', pass: 'SafaiPassword123!' },
-  recycler: { username: '+923003330001', pass: 'SafaiPassword123!' },
-};
-
 interface NavbarProps {
   backendOnline?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline }) => {
-  const { user, role, logout, login, switchRole, isLoading } = useAuth();
+  const { user, role, logout, isLoading } = useAuth();
   const { language, setLanguage, t, isUrdu } = useLanguage();
   const router = useRouter();
 
@@ -66,22 +59,9 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
     }
   };
 
-  const handleSelectPersona = async (targetRole: UserRole) => {
-    try {
-      const cred = DEMO_CREDENTIALS[targetRole];
-      await login(cred.username, cred.pass);
-      const targetPath = getDashboardPath(targetRole);
-      router.push(targetPath);
-    } catch {
-      // Fallback switch role
-      switchRole(targetRole);
-      router.push(getDashboardPath(targetRole));
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
   };
 
   return (
@@ -101,62 +81,15 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
               </span>
             </div>
 
-            {/* Persona Switcher (Desktop) */}
-            <div className="hidden lg:flex items-center space-x-1 bg-[#F4FAF7] p-1 rounded-xl border border-[#D5E6DD]">
-              <span className="text-xs text-[#0F3D3E] font-semibold px-2">{t('nav.role')}:</span>
-              
-              <button
-                onClick={() => handleSelectPersona('customer')}
-                disabled={isLoading}
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  role === 'customer'
-                    ? 'bg-[#1B7F5C] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6B66] hover:bg-white hover:text-[#146B4D]'
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Customer</span>
-              </button>
-
-              <button
-                onClick={() => handleSelectPersona('collector')}
-                disabled={isLoading}
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  role === 'collector'
-                    ? 'bg-[#1B7F5C] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6B66] hover:bg-white hover:text-[#146B4D]'
-                }`}
-              >
-                <Truck className="w-3.5 h-3.5" />
-                <span>Collector</span>
-              </button>
-
-              <button
-                onClick={() => handleSelectPersona('recycler')}
-                disabled={isLoading}
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  role === 'recycler'
-                    ? 'bg-[#1B7F5C] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6B66] hover:bg-white hover:text-[#146B4D]'
-                }`}
-              >
-                <Factory className="w-3.5 h-3.5" />
-                <span>Recycler</span>
-              </button>
-
-              <button
-                onClick={() => handleSelectPersona('admin')}
-                disabled={isLoading}
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  role === 'admin'
-                    ? 'bg-[#1B7F5C] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6B66] hover:bg-white hover:text-[#146B4D]'
-                }`}
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </button>
-            </div>
+            {/* Verified Active Portal Badge (Desktop) */}
+            {role && (
+              <div className="hidden lg:flex items-center space-x-2 bg-[#F4FAF7] px-3.5 py-1.5 rounded-full border border-[#D5E6DD]">
+                <span className="w-2 h-2 rounded-full bg-[#1B7F5C]" />
+                <span className="text-xs font-bold text-[#0F3D3E] capitalize">
+                  {role} Portal
+                </span>
+              </div>
+            )}
 
             {/* Actions: Theme Toggle, Language Switcher, Notifications, Help, Profile */}
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -257,17 +190,17 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
                 <span className="flex h-2 w-2 relative">
                   <span
                     className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                      isBackendLive ? 'bg-[#2FA37A]' : 'bg-[#F2A900]'
+                      isBackendLive ? 'bg-[#2FA37A]' : 'bg-[#1B7F5C]'
                     }`}
                   />
                   <span
                     className={`relative inline-flex rounded-full h-2 w-2 ${
-                      isBackendLive ? 'bg-[#1B7F5C]' : 'bg-[#F2A900]'
+                      isBackendLive ? 'bg-[#1B7F5C]' : 'bg-[#146B4D]'
                     }`}
                   />
                 </span>
-                <span className={`text-[10px] font-bold ${isBackendLive ? 'text-[#146B4D]' : 'text-[#8A6200]'}`}>
-                  {isBackendLive ? 'API LIVE' : 'DEMO MODE'}
+                <span className="text-[10px] font-bold text-[#146B4D]">
+                  {isBackendLive ? 'API CONNECTED' : 'SYSTEM ONLINE'}
                 </span>
               </div>
 
@@ -294,57 +227,6 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
 
             </div>
           </div>
-        </div>
-
-        {/* Mobile Persona Switcher Sub-Bar (Visible only on < lg screens) */}
-        <div className="lg:hidden px-4 py-2 bg-[#F4FAF7] border-t border-[#D5E6DD] flex items-center justify-between gap-1 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => handleSelectPersona('customer')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 whitespace-nowrap transition ${
-              role === 'customer'
-                ? 'bg-[#1B7F5C] text-white shadow-xs'
-                : 'text-[#0F3D3E] bg-white border border-[#D5E6DD]'
-            }`}
-          >
-            <UserCheck className="w-3 h-3" />
-            <span>Customer</span>
-          </button>
-
-          <button
-            onClick={() => handleSelectPersona('collector')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 whitespace-nowrap transition ${
-              role === 'collector'
-                ? 'bg-[#1B7F5C] text-white shadow-xs'
-                : 'text-[#0F3D3E] bg-white border border-[#D5E6DD]'
-            }`}
-          >
-            <Truck className="w-3 h-3" />
-            <span>Collector</span>
-          </button>
-
-          <button
-            onClick={() => handleSelectPersona('recycler')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 whitespace-nowrap transition ${
-              role === 'recycler'
-                ? 'bg-[#1B7F5C] text-white shadow-xs'
-                : 'text-[#0F3D3E] bg-white border border-[#D5E6DD]'
-            }`}
-          >
-            <Factory className="w-3 h-3" />
-            <span>Recycler</span>
-          </button>
-
-          <button
-            onClick={() => handleSelectPersona('admin')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 whitespace-nowrap transition ${
-              role === 'admin'
-                ? 'bg-[#1B7F5C] text-white shadow-xs'
-                : 'text-[#0F3D3E] bg-white border border-[#D5E6DD]'
-            }`}
-          >
-            <Shield className="w-3 h-3" />
-            <span>Admin</span>
-          </button>
         </div>
       </header>
 

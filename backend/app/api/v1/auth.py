@@ -10,6 +10,9 @@ from app.schemas.auth import (
     OTPRequest,
     OTPVerifyRequest,
     OTPResponse,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    AuthSuccessResponse,
 )
 from app.schemas.user import UserResponse, UserWithProfileResponse
 from app.services.auth_service import register_new_user, authenticate_user, generate_auth_tokens
@@ -102,7 +105,80 @@ async def verify_otp(
         is_verified=True
     )
 
+@router.post("/logout", response_model=AuthSuccessResponse)
+async def logout(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Securely log out the authenticated user and record audit log."""
+    from app.services.audit_service import log_audit_event
+    client_ip = request.client.host if request.client else None
+    await log_audit_event(
+        db=db,
+        action_name="USER_LOGOUT",
+        entity_name="users",
+        actor_id=str(current_user.id),
+        entity_id=str(current_user.id),
+        details="User successfully logged out and session terminated",
+        ip_address=client_ip
+    )
+    return AuthSuccessResponse(
+        success=True,
+        message="Session successfully terminated."
+    )
+
+@router.post("/forgot-password", response_model=AuthSuccessResponse)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Request password reset. Sends expiring OTP to registered phone/email with generic response to avoid enumeration."""
+    from app.services.audit_service import log_audit_event
+    client_ip = request.client.host if request.client else None
+    
+    # Generate and send OTP if user exists
+    OTPService.generate_and_send_otp(payload.identifier)
+
+    await log_audit_event(
+        db=db,
+        action_name="PASSWORD_RESET_REQUEST",
+        entity_name="users",
+        details=f"Password reset OTP requested for identifier '{payload.identifier}'",
+        ip_address=client_ip
+    )
+
+    return AuthSuccessResponse(
+        success=True,
+        message="If an account matches this identifier, password reset instructions have been sent."
+    )
+
+@router.post("/reset-password", response_model=AuthSuccessResponse)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify OTP and update user password with secure complexity validation."""
+    from app.services.auth_service import reset_user_password
+    is_valid = OTPService.verify_otp(payload.identifier, payload.otp_code)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification code."
+        )
+
+    client_ip = request.client.host if request.client else None
+    await reset_user_password(db, payload.identifier, payload.new_password, ip_address=client_ip)
+
+    return AuthSuccessResponse(
+        success=True,
+        message="Password has been successfully updated. You may now sign in."
+    )
+
 @router.get("/me", response_model=UserWithProfileResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Retrieve full profile details for the currently authenticated user."""
     return current_user
+

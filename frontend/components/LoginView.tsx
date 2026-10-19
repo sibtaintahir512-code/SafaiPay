@@ -1,24 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LandingLoginPage } from '@/components/LandingLoginPage';
-import { UserRole } from '@/lib/types';
 import { getDashboardPath } from '@/lib/api';
-
-const DEMO_CREDENTIALS: Record<UserRole, { username: string; pass: string }> = {
-  admin: { username: 'admin@safaipay.org', pass: 'AdminPassword123!' },
-  customer: { username: '+923001110001', pass: 'SafaiPassword123!' },
-  collector: { username: '+923002220001', pass: 'SafaiPassword123!' },
-  recycler: { username: '+923003330001', pass: 'SafaiPassword123!' },
-};
+import { RefreshCw } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { user, login, logout, isLoading: authLoading } = useAuth();
+  const { user, role, login, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Silently redirect if already authenticated with a verified role
+  useEffect(() => {
+    if (!authLoading && user && role && role !== 'unknown') {
+      const destination = getDashboardPath(role);
+      router.replace(destination);
+    }
+  }, [authLoading, user, role, router]);
 
   const handleLogin = async (identifier: string, pass: string) => {
     setIsSubmitting(true);
@@ -26,44 +27,33 @@ export const LoginView: React.FC = () => {
     try {
       const authenticatedUser = await login(identifier, pass);
       const destination = getDashboardPath(authenticatedUser.role);
-      router.push(destination);
+      router.replace(destination);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please check your credentials.');
+      setErrorMessage(err.message || 'Invalid credentials. Please check your phone/email and password.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleQuickDemoLogin = async (targetRole: UserRole) => {
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    try {
-      const cred = DEMO_CREDENTIALS[targetRole];
-      const authenticatedUser = await login(cred.username, cred.pass);
-      const destination = getDashboardPath(authenticatedUser.role);
-      router.push(destination);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Demo login failed.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoToDashboard = () => {
-    if (user) {
-      router.push(getDashboardPath(user.role));
-    }
-  };
+  // Prevent login page flickering while checking existing session
+  if (authLoading || (user && role && role !== 'unknown')) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#F4FAF7]">
+        <div className="flex flex-col items-center space-y-3">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#1B7F5C]" />
+          <p className="text-xs font-semibold text-[#5B6B66] tracking-wide">
+            Checking session...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <LandingLoginPage
       onLogin={handleLogin}
-      onQuickDemoLogin={handleQuickDemoLogin}
       isLoading={isSubmitting}
       errorMessage={errorMessage}
-      currentUser={user}
-      onLogout={logout}
-      onGoToDashboard={handleGoToDashboard}
     />
   );
 };
