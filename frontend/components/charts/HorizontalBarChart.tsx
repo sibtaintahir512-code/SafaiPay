@@ -31,37 +31,36 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   const maxValue = Math.max(...items.map((i) => i.value), 1);
   const total = items.reduce((acc, curr) => acc + curr.value, 0);
 
-  // Chart order per rule: emerald-600, gold-500, teal-900, mint-300, info blue
   const defaultColors = [
-    'from-[#1B7F5C] to-[#2FA37A]',
-    'from-[#F2A900] to-[#D99500]',
-    'from-[#0F3D3E] to-[#146B4D]',
-    'from-[#2FA37A] to-[#9FE6C6]',
-    'from-[#2E6F9E] to-[#3B82F6]',
+    'from-theme-primary to-theme-bright-green',
+    'from-theme-yellow to-[#D99500]',
+    'from-theme-deep-green to-theme-primary',
+    'from-theme-bright-green to-theme-bright-mint',
+    'from-sky-600 to-sky-400',
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-[#D5E6DD] p-5 shadow-eco-sm transition hover:shadow-eco-md">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#D5E6DD]/60">
+    <div className="bg-theme-surface rounded-2xl border border-theme-border p-5 shadow-xs transition-colors hover:shadow-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-theme-border/60">
         <div>
-          <h3 className="text-sm font-bold text-[#0F3D3E] tracking-tight flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1B7F5C]" />
+          <h3 className="text-sm font-bold text-theme-text tracking-tight flex items-center space-x-2 rtl:space-x-reverse">
+            <span className="w-2.5 h-2.5 rounded-full bg-theme-primary" />
             <span>{title}</span>
           </h3>
-          {subtitle && <p className="text-xs text-[#5B6B66] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-theme-secondary mt-0.5">{subtitle}</p>}
         </div>
 
         {totalValue ? (
-          <div className="bg-[#E6F4EC] border border-[#D5E6DD] rounded-xl px-3 py-1.5 text-left sm:text-right">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#146B4D] block">
+          <div className="bg-theme-soft-mint border border-theme-border rounded-xl px-3 py-1.5 text-left sm:text-right rtl:sm:text-left">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-theme-primary block">
               {totalLabel || 'Total Distributed'}
             </span>
-            <span className="text-sm font-extrabold text-[#0F3D3E] font-mono">
+            <span className="text-sm font-extrabold text-theme-text font-mono">
               {totalValue}
             </span>
           </div>
         ) : (
-          <span className="text-xs font-mono font-bold text-[#146B4D] bg-[#E6F4EC] px-2.5 py-1 rounded-lg border border-[#D5E6DD]">
+          <span className="text-xs font-mono font-bold text-theme-primary bg-theme-soft-mint px-2.5 py-1 rounded-lg border border-theme-border">
             {total} {unit}
           </span>
         )}
@@ -76,27 +75,27 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
           return (
             <div key={index} className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#0F3D3E] flex items-center space-x-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#5B6B66]" />
+                <span className="font-bold text-theme-text flex items-center space-x-1.5 rtl:space-x-reverse">
+                  <span className="w-2 h-2 rounded-full bg-theme-secondary" />
                   <span>{item.label}</span>
                   {item.secondaryText && (
-                    <span className="text-[11px] text-[#5B6B66] font-normal">
+                    <span className="text-[11px] text-theme-secondary font-normal">
                       ({item.secondaryText})
                     </span>
                   )}
                 </span>
-                <div className="flex items-center space-x-2 font-mono">
-                  <span className="font-extrabold text-[#0F3D3E]">
+                <div className="flex items-center space-x-2 rtl:space-x-reverse font-mono">
+                  <span className="font-extrabold text-theme-text">
                     {item.value.toLocaleString()} {unit}
                   </span>
-                  <span className="text-[11px] text-[#146B4D] bg-[#E6F4EC] px-1.5 py-0.5 rounded font-semibold border border-[#D5E6DD]">
+                  <span className="text-[11px] text-theme-primary bg-theme-soft-mint px-1.5 py-0.5 rounded font-semibold border border-theme-border">
                     {shareOfTotal}%
                   </span>
                 </div>
               </div>
 
               {/* Progress Track */}
-              <div className="w-full bg-[#F4FAF7] rounded-full h-3 overflow-hidden p-0.5 border border-[#D5E6DD]">
+              <div className="w-full bg-theme-bg rounded-full h-3 overflow-hidden p-0.5 border border-theme-border">
                 <div
                   style={{ width: `${percentage}%` }}
                   className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-500 shadow-2xs`}
@@ -107,9 +106,9 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
         })}
       </div>
 
-      <div className="flex items-center justify-between pt-4 mt-2 border-t border-[#D5E6DD]/60 text-[11px] text-[#5B6B66]">
+      <div className="flex items-center justify-between pt-4 mt-2 border-t border-theme-border/60 text-[11px] text-theme-secondary">
         <span>Verified Inventory Allocation</span>
-        <span className="font-semibold text-[#146B4D]">100% Traceable</span>
+        <span className="font-semibold text-theme-primary">100% Traceable</span>
       </div>
     </div>
   );

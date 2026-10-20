@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 export const metadata: Metadata = {
   title: 'SafaiPay - Intelligent Waste-to-Value Marketplace',
@@ -14,8 +15,32 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1B7F5C',
+  themeColor: '#16865F',
 };
+
+const antiFlickerScript = `
+(function() {
+  try {
+    var pref = localStorage.getItem('safaipay_theme_preference') || 'system';
+    var isDark = false;
+    if (pref === 'dark') {
+      isDark = true;
+    } else if (pref === 'light') {
+      isDark = false;
+    } else {
+      isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    var root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
+  } catch (e) {}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -23,13 +48,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-[var(--bg)] text-[var(--text)] min-h-screen antialiased selection:bg-[#9FE6C6] selection:text-[#0B2F30] font-sans transition-colors duration-200">
-        <AuthProvider>
-          <LanguageProvider>
-            {children}
-          </LanguageProvider>
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: antiFlickerScript }} />
+      </head>
+      <body className="bg-theme-bg text-theme-text min-h-screen antialiased selection:bg-theme-bright-mint selection:text-theme-deep-green font-sans transition-colors duration-200">
+        <ThemeProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              {children}
+            </LanguageProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

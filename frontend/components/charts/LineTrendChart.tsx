@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTheme } from '@/context/ThemeContext';
 
 export interface LineDataPoint {
   label: string;
@@ -27,6 +28,9 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
   highlightLabel,
   highlightValue,
 }) => {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   if (!data || data.length === 0) return null;
 
   const values = data.map((d) => d.value);
@@ -63,23 +67,28 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
 
+  const primaryStroke = isDark ? '#35B889' : '#16865F';
+  const gridStroke = isDark ? '#24514D' : '#E1F4EB';
+  const labelColor = isDark ? '#A9C2B9' : '#6B817C';
+  const pointTextColor = isDark ? '#F4FAF7' : '#0B3D3B';
+
   return (
-    <div className="bg-white rounded-2xl border border-[#D5E6DD] p-5 shadow-eco-sm transition hover:shadow-eco-md">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#D5E6DD]/60">
+    <div className="bg-theme-surface rounded-2xl border border-theme-border p-5 shadow-xs transition-colors hover:shadow-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-theme-border/60">
         <div>
-          <h3 className="text-sm font-bold text-[#0F3D3E] tracking-tight flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1B7F5C]" />
+          <h3 className="text-sm font-bold text-theme-text tracking-tight flex items-center space-x-2 rtl:space-x-reverse">
+            <span className="w-2.5 h-2.5 rounded-full bg-theme-primary" />
             <span>{title}</span>
           </h3>
-          {subtitle && <p className="text-xs text-[#5B6B66] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-theme-secondary mt-0.5">{subtitle}</p>}
         </div>
 
         {highlightValue && (
-          <div className="text-left sm:text-right bg-[#E6F4EC] border border-[#D5E6DD] rounded-xl px-3 py-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#146B4D] block">
+          <div className="text-left sm:text-right rtl:sm:text-left bg-theme-soft-mint border border-theme-border rounded-xl px-3 py-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-theme-primary block">
               {highlightLabel || 'Current Peak'}
             </span>
-            <span className="text-sm font-extrabold text-[#0F3D3E] font-mono">
+            <span className="text-sm font-extrabold text-theme-text font-mono">
               {highlightValue}
             </span>
           </div>
@@ -92,9 +101,9 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
           className="w-full h-auto min-w-[340px] max-h-[260px] overflow-visible"
         >
           <defs>
-            <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1B7F5C" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#1B7F5C" stopOpacity="0.0" />
+            <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={primaryStroke} stopOpacity={isDark ? 0.35 : 0.22} />
+              <stop offset="100%" stopColor={primaryStroke} stopOpacity={0.0} />
             </linearGradient>
           </defs>
 
@@ -109,7 +118,7 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
                   y1={y}
                   x2={width - paddingX}
                   y2={y}
-                  stroke="#E6F4EC"
+                  stroke={gridStroke}
                   strokeWidth="1"
                   strokeDasharray="4 4"
                 />
@@ -117,7 +126,8 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
                   x={paddingX - 10}
                   y={y + 4}
                   textAnchor="end"
-                  className="text-[10px] fill-[#5B6B66] font-mono"
+                  fill={labelColor}
+                  className="text-[10px] font-mono font-medium"
                 >
                   {prefix}{val}{unit ? ` ${unit}` : ''}
                 </text>
@@ -126,13 +136,13 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
           })}
 
           {/* Filled Area */}
-          <path d={areaD} fill="url(#emeraldGradient)" />
+          <path d={areaD} fill="url(--trendGradient, url(#trendGradient))" />
 
           {/* Trend Line */}
           <path
             d={pathD}
             fill="none"
-            stroke="#1B7F5C"
+            stroke={primaryStroke}
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -146,20 +156,21 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
                 cx={p.x}
                 cy={p.y}
                 r="6"
-                fill="#ffffff"
-                stroke="#1B7F5C"
+                fill={isDark ? '#0D3030' : '#FFFFFF'}
+                stroke={primaryStroke}
                 strokeWidth="2.5"
                 className="transition-transform group-hover:scale-125"
               />
               {/* Center dot */}
-              <circle cx={p.x} cy={p.y} r="2.5" fill="#146B4D" />
+              <circle cx={p.x} cy={p.y} r="2.5" fill={primaryStroke} />
 
               {/* Value label on top of point */}
               <text
                 x={p.x}
                 y={p.y - 12}
                 textAnchor="middle"
-                className="text-[11px] font-bold fill-[#0F3D3E] font-mono"
+                fill={pointTextColor}
+                className="text-[11px] font-bold font-mono"
               >
                 {prefix}{p.value}{unit ? ` ${unit}` : ''}
               </text>
@@ -169,7 +180,8 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
                 x={p.x}
                 y={height - paddingBottom + 20}
                 textAnchor="middle"
-                className="text-[11px] font-medium fill-[#5B6B66]"
+                fill={labelColor}
+                className="text-[11px] font-medium"
               >
                 {p.label}
               </text>
@@ -178,12 +190,12 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
         </svg>
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-[#D5E6DD]/60 text-[11px] text-[#5B6B66]">
-        <span className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-1 rounded-full bg-[#1B7F5C] inline-block" />
+      <div className="flex items-center justify-between pt-3 border-t border-theme-border/60 text-[11px] text-theme-secondary">
+        <span className="flex items-center space-x-1.5 rtl:space-x-reverse">
+          <span className="w-2.5 h-1 rounded-full bg-theme-primary inline-block" />
           <span>Verified Weight Logs</span>
         </span>
-        <span className="font-mono text-[#146B4D] font-semibold">
+        <span className="font-mono text-theme-primary font-semibold">
           High: {prefix}{maxValue}{unit ? ` ${unit}` : ''}
         </span>
       </div>

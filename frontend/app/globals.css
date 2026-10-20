@@ -4,98 +4,230 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Brand Tokens */
-  --emerald-600: #1B7F5C;
-  --emerald-700: #146B4D;
-  --emerald-400: #2FA37A;
-  --teal-900: #0F3D3E;
-  --teal-950: #0B2F30;
-  --gold-500: #F2A900;
-  --mint-300: #9FE6C6;
-  --mint-50: #E6F4EC;
+:root,
+[data-theme='light'] {
+  /* ==========================================================================
+     LIGHT THEME TOKENS (Official SafaiPay Specification)
+     ========================================================================== */
+  --theme-bg: #F4F8F5;
+  --theme-surface: #FFFFFF;
+  --theme-elevated: #FFFFFF;
+  --theme-deep-green: #073D3B;
+  --theme-primary: #16865F;
+  --theme-bright-green: #35B889;
+  --theme-text: #0B3D3B;
+  --theme-secondary-text: #6B817C;
+  --theme-border: #D7E8E1;
+  --theme-soft-mint: #E1F4EB;
+  --theme-bright-mint: #9EE3C4;
+  --theme-yellow: #F4B400;
+  --theme-error: #D64545;
+  --theme-success: #16865F;
+  --theme-warning: #F4B400;
+  --theme-input: #FFFFFF;
+  --theme-focus: #16865F;
+  --theme-icon: #6B817C;
+  --theme-shadow: 0 4px 20px -2px rgba(7, 61, 59, 0.08);
+  --theme-overlay: rgba(7, 61, 59, 0.45);
 
-  /* Light surfaces (default) */
-  --bg: #F4FAF7;
-  --surface: #FFFFFF;
-  --border: #D5E6DD;
-  --text: #0F3D3E;
-  --text-mute: #5B6B66;
+  /* Legacy & Utility Compatibility Aliases */
+  --bg: var(--theme-bg);
+  --surface: var(--theme-surface);
+  --border: var(--theme-border);
+  --text: var(--theme-text);
+  --text-mute: var(--theme-secondary-text);
   --text-soft: #3F5A52;
-
-  /* Dark surfaces */
-  --bg-dark: #0C2A2B;
-  --surface-dark: #12383A;
-  --border-dark: #1F4A4B;
-  --text-dark: #E6F4EC;
-  --text-mute-dk: #9DB8AE;
-
-  /* Status */
-  --success: #2FA37A;
-  --warning: #F2A900;
-  --danger: #C0392B;
+  --emerald-600: var(--theme-primary);
+  --emerald-700: #146B4D;
+  --emerald-400: var(--theme-bright-green);
+  --teal-900: var(--theme-deep-green);
+  --teal-950: #042524;
+  --gold-500: var(--theme-yellow);
+  --mint-300: var(--theme-bright-mint);
+  --mint-50: var(--theme-soft-mint);
+  --success: var(--theme-success);
+  --warning: var(--theme-warning);
+  --danger: var(--theme-error);
   --info: #2E6F9E;
 }
 
-[data-theme='dark'] {
-  --bg: var(--bg-dark);
-  --surface: var(--surface-dark);
-  --border: var(--border-dark);
-  --text: var(--text-dark);
-  --text-mute: var(--text-mute-dk);
-  --text-soft: var(--text-mute-dk);
+[data-theme='dark'],
+.dark {
+  /* ==========================================================================
+     DARK THEME TOKENS (Official SafaiPay Specification)
+     ========================================================================== */
+  --theme-bg: #071F1F;
+  --theme-surface: #0D3030;
+  --theme-elevated: #123D3B;
+  --theme-deep-green: #061A1A;
+  --theme-primary: #35B889;
+  --theme-bright-green: #65D7AE;
+  --theme-text: #F4FAF7;
+  --theme-secondary-text: #A9C2B9;
+  --theme-border: #24514D;
+  --theme-soft-mint: #173F3C;
+  --theme-bright-mint: #9EE3C4;
+  --theme-yellow: #F4B400;
+  --theme-error: #FF8B8B;
+  --theme-success: #65D7AE;
+  --theme-warning: #F4B400;
+  --theme-input: #123D3B;
+  --theme-focus: #35B889;
+  --theme-icon: #A9C2B9;
+  --theme-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+  --theme-overlay: rgba(0, 0, 0, 0.75);
+
+  /* Legacy & Utility Compatibility Aliases */
+  --bg: var(--theme-bg);
+  --surface: var(--theme-surface);
+  --border: var(--theme-border);
+  --text: var(--theme-text);
+  --text-mute: var(--theme-secondary-text);
+  --text-soft: #A9C2B9;
+  --emerald-600: var(--theme-primary);
+  --emerald-700: #2FA37A;
+  --emerald-400: var(--theme-bright-green);
+  --teal-900: #0D3030;
+  --teal-950: #071F1F;
+  --gold-500: var(--theme-yellow);
+  --mint-300: var(--theme-bright-mint);
+  --mint-50: var(--theme-soft-mint);
+  --success: var(--theme-success);
+  --warning: var(--theme-warning);
+  --danger: var(--theme-error);
+  --info: #38BDF8;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: var(--bg-dark);
-    --surface: var(--surface-dark);
-    --border: var(--border-dark);
-    --text: var(--text-dark);
-    --text-mute: var(--text-mute-dk);
-    --text-soft: var(--text-mute-dk);
+    --theme-bg: #071F1F;
+    --theme-surface: #0D3030;
+    --theme-elevated: #123D3B;
+    --theme-deep-green: #061A1A;
+    --theme-primary: #35B889;
+    --theme-bright-green: #65D7AE;
+    --theme-text: #F4FAF7;
+    --theme-secondary-text: #A9C2B9;
+    --theme-border: #24514D;
+    --theme-soft-mint: #173F3C;
+    --theme-bright-mint: #9EE3C4;
+    --theme-yellow: #F4B400;
+    --theme-error: #FF8B8B;
+    --theme-success: #65D7AE;
+    --theme-warning: #F4B400;
+    --theme-input: #123D3B;
+    --theme-focus: #35B889;
+    --theme-icon: #A9C2B9;
+    --theme-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+    --theme-overlay: rgba(0, 0, 0, 0.75);
+
+    --bg: var(--theme-bg);
+    --surface: var(--theme-surface);
+    --border: var(--theme-border);
+    --text: var(--theme-text);
+    --text-mute: var(--theme-secondary-text);
+    --text-soft: #A9C2B9;
   }
 }
 
+/* Base Body Styles with Smooth Non-Blocking Transitions */
 body {
-  color: var(--text);
-  background-color: var(--bg);
+  color: var(--theme-text);
+  background-color: var(--theme-bg);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
+/* Typography Helpers */
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Accessible Keyboard Focus Ring - 3px solid #F2A900 with 2px offset */
+/* Accessible Keyboard Focus Ring - 3px solid #F4B400 with 2px offset */
 *:focus-visible {
-  outline: 3px solid #F2A900 !important;
+  outline: 3px solid var(--theme-yellow) !important;
   outline-offset: 2px !important;
 }
 
-/* Eco emerald custom scrollbars */
+/* Custom Themed Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--mint-50);
+  background: var(--theme-soft-mint);
 }
 ::-webkit-scrollbar-thumb {
-  background: #A3D4C2;
+  background: var(--theme-primary);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1B7F5C;
+  background: var(--theme-bright-green);
 }
 
-/* Reduced motion preference */
+/* Circular Orbit Keyframe Animations */
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinSlowReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes floatSmooth {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.02);
+  }
+}
+
+@keyframes dashRotate {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 36s linear infinite;
+}
+
+.animate-spin-slow-reverse {
+  animation: spinSlowReverse 48s linear infinite;
+}
+
+.animate-orbit-float {
+  animation: floatSmooth 4s ease-in-out infinite;
+}
+
+.animate-dash-move {
+  animation: dashRotate 6s linear infinite;
+}
+
+/* Reduced Motion Safety */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+  .animate-spin-slow,
+  .animate-spin-slow-reverse,
+  .animate-orbit-float,
+  .animate-dash-move {
+    animation: none !important;
   }
 }

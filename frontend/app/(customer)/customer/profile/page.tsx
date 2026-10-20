@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Navbar } from '@/components/Navbar';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -17,11 +18,12 @@ import {
   ShieldCheck,
   Save,
   Trash2,
-  Plus
+  Plus,
+  Palette
 } from 'lucide-react';
 
 export default function CustomerProfilePage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { isUrdu } = useLanguage();
 
   const [fullName, setFullName] = useState(user?.full_name || 'SafaiPay Household');
@@ -44,192 +46,179 @@ export default function CustomerProfilePage() {
 
   return (
     <ProtectedRoute allowedRole={['customer', 'admin']}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
         <Navbar />
 
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-              <Link href="/customer/dashboard" className="hover:text-purple-600 transition">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse text-xs text-theme-secondary mb-1">
+              <Link href="/customer/dashboard" className="hover:text-theme-primary transition">
                 {isUrdu ? 'ڈیش بورڈ' : 'Dashboard'}
               </Link>
               <span>/</span>
-              <span className="text-purple-700 font-bold">{isUrdu ? 'پروفائل' : 'Profile & Settings'}</span>
+              <span className="text-theme-primary font-bold">{isUrdu ? 'پروفائل' : 'Profile & Settings'}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-text">
               {isUrdu ? 'کسٹمر پروفائل اور اکاؤنٹ' : 'Customer Account Profile'}
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-theme-secondary mt-1">
               {isUrdu
-                ? 'اپنی رابطہ معلومات، محفوظ شدہ پتے، اور فوری ڈیجیٹل ادائیگی کے طریقے منظم کریں۔'
-                : 'Manage verified contact details, delivery addresses, and payout wallets.'}
+                ? 'اپنی رابطہ معلومات، ڈسپلے تھیم، محفوظ شدہ پتے، اور فوری ڈیجیٹل ادائیگی کے طریقے منظم کریں۔'
+                : 'Manage verified contact details, display appearance theme, delivery addresses, and payout wallets.'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Profile Card */}
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs text-center">
-                <div className="w-20 h-20 bg-purple-100 border-2 border-purple-200 rounded-full flex items-center justify-center text-purple-700 font-black text-2xl mx-auto mb-4">
+              <div className="bg-theme-surface p-6 rounded-3xl border border-theme-border shadow-xs text-center transition-colors">
+                <div className="w-20 h-20 bg-theme-soft-mint border-2 border-theme-border rounded-full flex items-center justify-center text-theme-primary font-black text-2xl mx-auto mb-4">
                   {fullName.charAt(0)}
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">{fullName}</h3>
-                <p className="text-xs text-slate-500">{phone}</p>
+                <h3 className="text-lg font-bold text-theme-text">{fullName}</h3>
+                <p className="text-xs text-theme-secondary font-mono">{phone}</p>
 
-                <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
+                <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-theme-soft-mint text-theme-primary rounded-full text-xs font-bold border border-theme-border">
                   <ShieldCheck className="w-4 h-4" />
                   <span>Verified Citizen Partner</span>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 gap-3 text-left">
-                  <div className="bg-slate-50 p-3 rounded-xl">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Total Pickups</span>
-                    <p className="text-lg font-bold text-slate-900 mt-0.5">14</p>
+                <div className="mt-6 pt-6 border-t border-theme-border/60 grid grid-cols-2 gap-3 text-left rtl:text-right">
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
+                    <span className="text-[10px] text-theme-secondary uppercase font-bold">Total Pickups</span>
+                    <p className="text-lg font-bold text-theme-text mt-0.5">14</p>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Eco Tier</span>
-                    <p className="text-lg font-bold text-emerald-700 mt-0.5">Gold</p>
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
+                    <span className="text-[10px] text-theme-secondary uppercase font-bold">Eco Tier</span>
+                    <p className="text-lg font-bold text-theme-primary mt-0.5">Gold</p>
                   </div>
                 </div>
               </div>
 
               {/* Eco Impact Badge */}
-              <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white p-6 rounded-3xl shadow-sm">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Award className="w-5 h-5 text-emerald-300" />
-                  <h4 className="font-bold text-sm">Carbon Offset Champion</h4>
+              <div className="bg-gradient-to-br from-theme-deep-green to-theme-surface text-white p-6 rounded-3xl border border-theme-border shadow-sm">
+                <div className="flex items-center space-x-2 rtl:space-x-reverse mb-2">
+                  <Award className="w-5 h-5 text-theme-bright-green" />
+                  <h4 className="font-bold text-sm text-theme-text">Carbon Offset Champion</h4>
                 </div>
-                <p className="text-xs text-emerald-100 leading-relaxed">
+                <p className="text-xs text-theme-secondary leading-relaxed">
                   Your recycled materials have diverted over 230 kg from Karachi landfills, offsetting an estimated 310 kg of CO2 equivalent.
                 </p>
               </div>
             </div>
 
-            {/* Right Column: Edit Forms */}
+            {/* Right Column: Edit Forms & Theme Switcher */}
             <div className="lg:col-span-2 space-y-6">
-              <form onSubmit={handleSave} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <User className="w-4 h-4 text-purple-600" />
+              
+              {/* Appearance / Theme Switcher Card */}
+              <div className="bg-theme-surface p-6 sm:p-8 rounded-3xl border border-theme-border shadow-xs space-y-4 transition-colors">
+                <h3 className="text-base font-bold text-theme-text flex items-center gap-2 border-b border-theme-border/60 pb-3">
+                  <Palette className="w-4 h-4 text-theme-primary" />
+                  <span>{isUrdu ? 'پلیٹ فارم ڈسپلے تھیم' : 'Theme & Visual Appearance'}</span>
+                </h3>
+                <p className="text-xs text-theme-secondary">
+                  {isUrdu 
+                    ? 'صفائی پے پورٹل کو لائٹ، ڈارک، یا اپنے ڈیوائس کے سسٹم ڈیفالٹ میں دیکھیں:' 
+                    : 'View SafaiPay in Light Mode, Dark Mode, or match your Operating System default:'}
+                </p>
+                <ThemeSwitcher variant="full" />
+              </div>
+
+              {/* Personal Information Form */}
+              <form onSubmit={handleSave} className="bg-theme-surface p-6 sm:p-8 rounded-3xl border border-theme-border shadow-xs space-y-6 transition-colors">
+                <h3 className="text-base font-bold text-theme-text flex items-center gap-2 border-b border-theme-border/60 pb-3">
+                  <User className="w-4 h-4 text-theme-primary" />
                   <span>{isUrdu ? 'ذاتی معلومات' : 'Personal Information'}</span>
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name</label>
+                    <label className="block text-xs font-bold text-theme-secondary uppercase mb-1">Full Name</label>
                     <input
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                      className="w-full bg-theme-input border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary min-h-[44px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Phone Number</label>
+                    <label className="block text-xs font-bold text-theme-secondary uppercase mb-1">Phone Number</label>
                     <input
                       type="text"
-                      disabled
                       value={phone}
-                      className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-500 cursor-not-allowed"
+                      disabled
+                      className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-secondary cursor-not-allowed font-mono min-h-[44px]"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-theme-secondary uppercase mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-theme-input border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary min-h-[44px]"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div className="pt-4 border-t border-slate-100">
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
-                    <CreditCard className="w-4 h-4 text-purple-600" />
-                    <span>{isUrdu ? 'فوری ادائیگی اکاؤنٹ' : 'Direct Payout Wallet'}</span>
+                {/* Digital Payout Wallet */}
+                <div className="pt-4 border-t border-theme-border/60">
+                  <h3 className="text-base font-bold text-theme-text flex items-center gap-2 mb-3">
+                    <CreditCard className="w-4 h-4 text-theme-primary" />
+                    <span>{isUrdu ? 'ڈیجیٹل ادائیگی کا والیٹ' : 'Digital Payout Destination'}</span>
                   </h3>
 
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     {[
-                      { id: 'easypaisa', label: 'EasyPaisa' },
-                      { id: 'jazzcash', label: 'JazzCash' },
-                      { id: 'bank', label: 'Bank Account' }
-                    ].map((p) => (
+                      { id: 'easypaisa', name: 'Easypaisa' },
+                      { id: 'jazzcash', name: 'JazzCash' },
+                      { id: 'bank', name: 'Raast / Bank' }
+                    ].map((m) => (
                       <button
                         type="button"
-                        key={p.id}
-                        onClick={() => setPayoutMethod(p.id as any)}
-                        className={`p-3 rounded-xl border text-xs font-bold transition text-center ${
-                          payoutMethod === p.id
-                            ? 'bg-purple-50 border-purple-600 text-purple-900 ring-2 ring-purple-600/20'
-                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                        key={m.id}
+                        onClick={() => setPayoutMethod(m.id as any)}
+                        className={`min-h-[44px] p-3 rounded-xl border text-xs font-bold transition text-center ${
+                          payoutMethod === m.id
+                            ? 'bg-theme-soft-mint border-theme-primary text-theme-primary ring-2 ring-theme-primary/20'
+                            : 'bg-theme-surface border-theme-border text-theme-secondary hover:border-theme-primary/40'
                         }`}
                       >
-                        {p.label}
+                        {m.name}
                       </button>
                     ))}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                      {payoutMethod === 'bank' ? 'IBAN / Account Number' : 'Registered Mobile Number'}
+                    <label className="block text-xs font-bold text-theme-secondary uppercase mb-1">
+                      {payoutMethod === 'bank' ? 'IBAN / Raast ID' : `${payoutMethod.toUpperCase()} Mobile Account`}
                     </label>
                     <input
                       type="text"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600 font-mono"
+                      className="w-full bg-theme-input border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text font-mono focus:outline-none focus:border-theme-primary min-h-[44px]"
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-4 border-t border-theme-border/60 flex items-center justify-between">
                   {saved ? (
-                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <span className="text-xs font-bold text-theme-primary flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Profile updated successfully!</span>
+                      <span>{isUrdu ? 'پروفائل کامیابی سے محفوظ ہوگئی!' : 'Profile saved successfully!'}</span>
                     </span>
                   ) : <span />}
 
                   <button
                     type="submit"
-                    className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition shadow-md shadow-purple-600/20"
+                    className="inline-flex items-center space-x-2 rtl:space-x-reverse px-6 py-3 rounded-xl bg-theme-primary hover:opacity-95 text-white font-bold text-xs transition shadow-md min-h-[44px]"
                   >
                     <Save className="w-4 h-4" />
                     <span>{isUrdu ? 'محفوظ کریں' : 'Save Changes'}</span>
                   </button>
                 </div>
               </form>
-
-              {/* Saved Addresses */}
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-purple-600" />
-                    <span>{isUrdu ? 'محفوظ پتے' : 'Saved Pickup Addresses'}</span>
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {addresses.map((addr) => (
-                    <div
-                      key={addr.id}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-bold text-slate-900">{addr.title}</span>
-                          {addr.isDefault && (
-                            <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">Default</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">{addr.address}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </main>
