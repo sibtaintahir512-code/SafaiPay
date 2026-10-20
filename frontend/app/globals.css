@@ -30,6 +30,15 @@
   --theme-shadow: 0 4px 20px -2px rgba(7, 61, 59, 0.08);
   --theme-overlay: rgba(7, 61, 59, 0.45);
 
+  /* Floating Pill Title Bar Tokens */
+  --pill-page-bg: #F4FAF7;
+  --pill-bg: #FFFFFF;
+  --pill-border: #DCE9E2;
+  --pill-text: #12302A;
+  --pill-inset: #EEF6F2;
+  --pill-accent: #1B7F5C;
+  --pill-shadow: 0 1px 2px rgba(15, 61, 62, 0.08);
+
   /* Legacy & Utility Compatibility Aliases */
   --bg: var(--theme-bg);
   --surface: var(--theme-surface);
@@ -77,6 +86,15 @@
   --theme-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
   --theme-overlay: rgba(0, 0, 0, 0.75);
 
+  /* Floating Pill Title Bar Tokens */
+  --pill-page-bg: #07110F;
+  --pill-bg: #0F2420;
+  --pill-border: #234239;
+  --pill-text: #E8F3EE;
+  --pill-inset: #07110F;
+  --pill-accent: #6CCB9D;
+  --pill-shadow: none;
+
   /* Legacy & Utility Compatibility Aliases */
   --bg: var(--theme-bg);
   --surface: var(--theme-surface);
@@ -120,6 +138,15 @@
     --theme-icon: #A9C2B9;
     --theme-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
     --theme-overlay: rgba(0, 0, 0, 0.75);
+
+    /* Floating Pill Title Bar Tokens */
+    --pill-page-bg: #07110F;
+    --pill-bg: #0F2420;
+    --pill-border: #234239;
+    --pill-text: #E8F3EE;
+    --pill-inset: #07110F;
+    --pill-accent: #6CCB9D;
+    --pill-shadow: none;
 
     --bg: var(--theme-bg);
     --surface: var(--theme-surface);
@@ -214,6 +241,12 @@ body {
 
 .animate-dash-move {
   animation: dashRotate 6s linear infinite;
+}
+
+/* Accessible Floating Pill Nav Focus Ring */
+.pill-focus:focus-visible {
+  outline: 2px solid #9FE6C6 !important;
+  outline-offset: 2px !important;
 }
 
 /* Reduced Motion Safety */

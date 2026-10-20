@@ -2,35 +2,26 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage, Language } from '@/context/LanguageContext';
 import { useTheme } from '@/context/ThemeContext';
-import { UserRole } from '@/lib/types';
 import { getDashboardPath, checkBackendHealth, fetchUnreadCount } from '@/lib/api';
-import { SafaiPayLogo } from '@/components/SafaiPayLogo';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { ProfileModal, ProfileModalTab } from '@/components/ProfileModal';
 import { NotificationPanel } from '@/components/NotificationPanel';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { 
-  Shield, 
-  Truck, 
-  UserCheck, 
-  Factory, 
-  LogOut, 
   Bell, 
   HelpCircle, 
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  User as UserIcon,
-  Menu,
-  X,
-  Settings,
-  KeyRound,
-  FileText,
-  ChevronDown,
-  Palette
+  ChevronDown, 
+  Menu, 
+  X, 
+  User as UserIcon, 
+  FileText, 
+  KeyRound, 
+  LogOut,
+  Globe
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -38,10 +29,12 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline }) => {
-  const { user, role, logout, isLoading } = useAuth();
+  const { user, role, logout } = useAuth();
   const { language, setLanguage, t, isUrdu } = useLanguage();
   const { resolvedTheme } = useTheme();
   const router = useRouter();
+
+  const isDark = resolvedTheme === 'dark';
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -56,14 +49,14 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check health asynchronously
+    // Health check
     checkBackendHealth().then((live) => {
       setIsBackendLive(live);
     }).catch(() => {
       setIsBackendLive(false);
     });
 
-    // Fetch initial unread notifications count
+    // Fetch initial unread count
     if (user) {
       fetchUnreadCount().then((cnt) => setUnreadCount(cnt)).catch(() => {});
     } else {
@@ -95,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [user]);
 
   const openProfileWithTab = (tab: ProfileModalTab) => {
     setShowProfileMenu(false);
@@ -109,256 +102,457 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
     router.replace('/login');
   };
 
-  const getProfilePath = () => {
-    if (!role) return '/login';
-    return `/${role}/profile`;
+  const handleHomeClick = () => {
+    router.push(user ? getDashboardPath(role) : '/login');
   };
+
+  // Portal sub-label text
+  const portalLabel = role ? `${role.toUpperCase()} PORTAL` : 'RECYCLER PORTAL';
 
   return (
     <>
-      <header className="border-b border-theme-border bg-theme-surface/95 backdrop-blur-md sticky top-0 z-40 shadow-xs transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            
-            {/* Logo & Brand */}
-            <div 
-              className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer select-none" 
-              onClick={() => router.push(user ? getDashboardPath(role) : '/login')}
-            >
-              <SafaiPayLogo size="md" showWordmark={true} isDark={resolvedTheme === 'dark'} />
-              <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary border border-theme-border">
-                {role ? role.toUpperCase() : 'PORTAL'}
-              </span>
+      {/* Page Wrapper: Full width, sticky top 0, z-index 40 */}
+      <header
+        className="w-full sticky top-0 z-40 transition-colors duration-150 py-3 sm:py-5 px-3 sm:px-6 select-none"
+        style={{ backgroundColor: 'var(--pill-page-bg)' }}
+      >
+        {/* Floating Pill: 72px (60px mobile), 36px radius (30px mobile), exact colors */}
+        <nav
+          role="navigation"
+          aria-label="Main Navigation"
+          className="max-w-7xl mx-auto h-[60px] md:h-[72px] rounded-[30px] md:rounded-[36px] px-3 md:px-[14px] md:pl-[18px] rtl:md:pr-[18px] rtl:md:pl-[14px] flex items-center gap-2 md:gap-4 transition-all duration-150"
+          style={{
+            backgroundColor: 'var(--pill-bg)',
+            border: '1px solid var(--pill-border)',
+            color: 'var(--pill-text)',
+            boxShadow: 'var(--pill-shadow)',
+          }}
+        >
+          {/* 1. SafaiPay Logo Lockup & Portal Sub-label */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={handleHomeClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleHomeClick();
+              }
+            }}
+            className="flex items-center gap-3 cursor-pointer group pill-focus rounded-full p-1 -m-1 shrink-0"
+            aria-label="SafaiPay - Go to Dashboard"
+          >
+            {/* Logo Mark: 24px, correct asset based on theme, no orange dot */}
+            <div className="w-[24px] h-[24px] shrink-0 flex items-center justify-center">
+              <Image
+                src={isDark ? '/logo/safaipay-mark-small.svg' : '/logo/safaipay-mark-light.svg'}
+                alt="SafaiPay"
+                width={24}
+                height={24}
+                priority
+                className="w-[24px] h-[24px] object-contain group-hover:scale-105 transition-transform duration-150"
+              />
             </div>
 
-            {/* Verified Active Portal Badge (Desktop) */}
-            {role && (
-              <div className="hidden lg:flex items-center space-x-2 rtl:space-x-reverse bg-theme-bg px-3.5 py-1.5 rounded-full border border-theme-border">
-                <span className="w-2 h-2 rounded-full bg-theme-primary animate-pulse" />
-                <span className="text-xs font-bold text-theme-text capitalize">
-                  {role} Portal
-                </span>
-              </div>
-            )}
-
-            {/* Actions: Theme Switcher, Language Switcher, Notifications, Help, Profile */}
-            <div className="flex items-center space-x-2 sm:space-x-3 rtl:space-x-reverse">
+            {/* Wordmark and Portal Sub-label */}
+            <div className="flex flex-col justify-center">
+              <span className="font-sans font-extrabold text-[18px] tracking-[-0.02em] leading-none">
+                <span style={{ color: isDark ? '#E8F3EE' : '#12302A' }}>Safai</span>
+                <span style={{ color: isDark ? '#9FE6C6' : '#1B7F5C' }}>Pay</span>
+              </span>
               
-              {/* Centralized Production Theme Switcher */}
-              <div className="hidden sm:block">
-                <ThemeSwitcher variant="compact" />
-              </div>
+              {/* Recycler Portal Sub-label: >=1100px visible, hidden <1100px */}
+              <span
+                className="hidden min-[1100px]:block text-[11px] font-bold tracking-[0.12em] uppercase leading-tight mt-0.5"
+                style={{ color: isDark ? '#8FD9B4' : '#4B6B60' }}
+              >
+                {portalLabel}
+              </span>
+            </div>
+          </div>
 
-              {/* Language Switcher Toggle */}
-              <div className="flex items-center bg-theme-bg border border-theme-border rounded-xl p-0.5 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setLanguage('en')}
-                  className={`min-h-[44px] min-w-[36px] sm:min-h-0 sm:min-w-0 px-2.5 py-1 text-xs font-bold rounded-lg transition ${
-                    language === 'en'
-                      ? 'bg-theme-primary text-white shadow-xs'
-                      : 'text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint'
-                  }`}
-                  title="Switch to English"
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLanguage('ur')}
-                  className={`min-h-[44px] min-w-[36px] sm:min-h-0 sm:min-w-0 px-2.5 py-1 text-xs font-bold rounded-lg transition ${
-                    language === 'ur'
-                      ? 'bg-theme-primary text-white shadow-xs'
-                      : 'text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint'
-                  }`}
-                  title="اردو میں تبدیل کریں"
-                >
-                  اردو
-                </button>
-              </div>
+          {/* 2. Flex Spacer */}
+          <div className="flex-1" />
 
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNotifications(!showNotifications);
-                    setShowProfileMenu(false);
+          {/* 3. API LIVE Status Chip */}
+          <div
+            className="hidden md:inline-flex items-center h-[44px] px-[14px] rounded-[22px] transition-colors duration-150 select-none shrink-0"
+            style={{
+              backgroundColor: isDark ? '#07110F' : '#E3F4EB',
+            }}
+            title={isBackendLive ? 'API LIVE: Server Operational' : 'API OFFLINE: Sandbox Mode'}
+            aria-label={isBackendLive ? 'API status: Live' : 'API status: Offline'}
+          >
+            <span
+              className="w-[8px] h-[8px] rounded-full shrink-0 animate-pulse"
+              style={{
+                backgroundColor: isBackendLive
+                  ? isDark ? '#6CCB9D' : '#1F7A55'
+                  : isDark ? '#FF8B8B' : '#D64545',
+              }}
+            />
+            {/* Text hidden on 768px-1099px, visible on >=1100px */}
+            <span
+              className="hidden min-[1100px]:inline text-[12px] font-bold tracking-[0.08em] ml-2 rtl:mr-2 rtl:ml-0"
+              style={{
+                color: isBackendLive
+                  ? isDark ? '#8FD9B4' : '#17603F'
+                  : isDark ? '#FF8B8B' : '#D64545',
+              }}
+            >
+              {isBackendLive ? 'API LIVE' : 'SANDBOX'}
+            </span>
+          </div>
+
+          {/* 4. Light/Dark Icon-Only Toggle: Strictly 2 options */}
+          <div className="hidden md:inline-flex shrink-0">
+            <ThemeSwitcher variant="pill" />
+          </div>
+
+          {/* 5. Language Control: Single 44px Pill (EN · اردو) */}
+          <div
+            className="hidden md:inline-flex items-center h-[44px] px-1 rounded-[22px] transition-colors duration-150 shrink-0"
+            style={{
+              backgroundColor: isDark ? '#07110F' : '#EEF6F2',
+            }}
+            role="group"
+            aria-label="Language selector"
+          >
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className="h-[36px] px-3 rounded-[18px] text-[12px] font-bold transition-all duration-150 pill-focus"
+              style={{
+                backgroundColor: language === 'en' ? (isDark ? '#6CCB9D' : '#1F7A55') : 'transparent',
+                color: language === 'en'
+                  ? (isDark ? '#07110F' : '#FFFFFF')
+                  : (isDark ? '#9FB8AF' : '#4B6B60'),
+              }}
+              aria-label="Switch to English"
+              aria-pressed={language === 'en'}
+            >
+              EN
+            </button>
+            <span
+              className="text-[11px] font-semibold px-0.5 select-none"
+              style={{ color: isDark ? '#234239' : '#CFE0D8' }}
+            >
+              ·
+            </span>
+            <button
+              type="button"
+              onClick={() => setLanguage('ur')}
+              className="h-[36px] px-3 rounded-[18px] text-[12px] font-bold transition-all duration-150 pill-focus"
+              style={{
+                backgroundColor: language === 'ur' ? (isDark ? '#6CCB9D' : '#1F7A55') : 'transparent',
+                color: language === 'ur'
+                  ? (isDark ? '#07110F' : '#FFFFFF')
+                  : (isDark ? '#9FB8AF' : '#4B6B60'),
+              }}
+              aria-label="اردو میں تبدیل کریں"
+              aria-pressed={language === 'ur'}
+            >
+              اردو
+            </button>
+          </div>
+
+          {/* 6. Notification Bell: 44px x 44px round button, mint unread dot */}
+          <div className="relative shrink-0" ref={notifRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setShowProfileMenu(false);
+              }}
+              className="w-[44px] h-[44px] rounded-full flex items-center justify-center transition-colors duration-150 relative pill-focus hover:opacity-85"
+              style={{
+                color: isDark ? '#C9DDD4' : '#12302A',
+                backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+              }}
+              aria-label={
+                unreadCount > 0
+                  ? (isUrdu ? `اطلاعات، ${unreadCount} نئی` : `Notifications, ${unreadCount} unread`)
+                  : (isUrdu ? 'اطلاعات' : 'Notifications')
+              }
+              title={t('nav.notifications')}
+            >
+              <Bell className="w-5 h-5 stroke-[1.8] stroke-linecap-round stroke-linejoin-round" />
+              
+              {/* Unread Indicator: 9px mint dot, 2px ring using button background, NEVER gold/orange */}
+              {unreadCount > 0 && (
+                <span
+                  className="absolute top-2 right-2 w-[9px] h-[9px] rounded-full ring-2"
+                  style={{
+                    backgroundColor: isDark ? '#9FE6C6' : '#1F7A55',
+                    // Ring matches button background
+                    boxShadow: isDark
+                      ? '0 0 0 2px #142C26'
+                      : '0 0 0 2px #EEF6F2',
                   }}
-                  className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition relative flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
-                  aria-label={
-                    unreadCount > 0
-                      ? (isUrdu ? `اطلاعات، ${unreadCount} نئی` : `Notifications, ${unreadCount} unread`)
-                      : (isUrdu ? 'اطلاعات' : 'Notifications')
-                  }
-                  title={t('nav.notifications')}
-                >
-                  <Bell className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span 
-                      className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-theme-primary text-white text-[10px] font-black flex items-center justify-center ring-2 ring-theme-surface shadow-xs pointer-events-none"
-                      aria-hidden="true"
-                    >
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                <NotificationPanel
-                  isOpen={showNotifications}
-                  onClose={() => setShowNotifications(false)}
-                  onUnreadChange={(count) => setUnreadCount(count)}
+                  aria-hidden="true"
                 />
-              </div>
+              )}
+            </button>
 
-              {/* Help & Support */}
+            {/* Notification Panel */}
+            <NotificationPanel
+              isOpen={showNotifications}
+              onClose={() => setShowNotifications(false)}
+              onUnreadChange={(count) => setUnreadCount(count)}
+            />
+          </div>
+
+          {/* 7. Help Icon: 44px x 44px round button, matching notification styling */}
+          <button
+            type="button"
+            onClick={() => setShowHelp(true)}
+            className="w-[44px] h-[44px] rounded-full hidden md:flex items-center justify-center transition-colors duration-150 pill-focus hover:opacity-85 shrink-0"
+            style={{
+              color: isDark ? '#C9DDD4' : '#12302A',
+              backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+            }}
+            title={t('nav.help')}
+            aria-label="Help and platform guidelines"
+          >
+            <HelpCircle className="w-5 h-5 stroke-[1.8] stroke-linecap-round stroke-linejoin-round" />
+          </button>
+
+          {/* 8. Profile Card: 52px height, 26px radius, responsive states */}
+          {user && (
+            <div className="relative shrink-0" ref={profileMenuRef}>
               <button
                 type="button"
-                onClick={() => setShowHelp(true)}
-                className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition hidden sm:inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
-                title={t('nav.help')}
+                onClick={() => {
+                  setShowProfileMenu(!showProfileMenu);
+                  setShowNotifications(false);
+                }}
+                className="h-[44px] md:h-[52px] rounded-[22px] md:rounded-[26px] pl-[4px] md:pl-[6px] pr-2 md:pr-[14px] rtl:pl-2 rtl:pr-[4px] rtl:md:pr-[6px] rtl:md:pl-[14px] flex items-center gap-2.5 transition-all duration-150 pill-focus hover:opacity-95"
+                style={{
+                  backgroundColor: isDark ? '#1A362F' : '#FFFFFF',
+                  border: isDark ? 'none' : '1px solid #CFE0D8',
+                }}
+                aria-expanded={showProfileMenu}
+                aria-haspopup="menu"
+                aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User profile and settings'}
               >
-                <HelpCircle className="w-4 h-4" />
+                {/* 40px Circular Avatar */}
+                <div
+                  className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full flex items-center justify-center font-extrabold text-[13px] md:text-[14px] shrink-0 overflow-hidden"
+                  style={{
+                    backgroundColor: isDark ? '#6CCB9D' : '#1F7A55',
+                    color: isDark ? '#07110F' : '#FFFFFF',
+                  }}
+                >
+                  {user.profile_photo_url ? (
+                    <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    (user.full_name?.charAt(0) || 'U').toUpperCase()
+                  )}
+                </div>
+
+                {/* Business / User Details: >=1100px visible, hidden on 768px-1099px */}
+                <div className="hidden min-[1100px]:flex flex-col text-left rtl:text-right min-w-0">
+                  <span
+                    className="text-[14px] font-[800] leading-tight truncate max-w-[170px]"
+                    style={{ color: isDark ? '#E8F3EE' : '#12302A' }}
+                  >
+                    {user.full_name || 'Pilot User'}
+                  </span>
+                  <span
+                    className="text-[12px] font-mono leading-tight truncate max-w-[170px]"
+                    style={{ color: isDark ? '#8FD9B4' : '#6B817C' }}
+                  >
+                    {user.phone_number || user.email}
+                  </span>
+                </div>
+
+                {/* 16px Chevron-down */}
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-150 ${showProfileMenu ? 'rotate-180' : ''}`}
+                  style={{ color: isDark ? '#8FD9B4' : '#4B6B60' }}
+                />
               </button>
 
-              {/* API Online Badge */}
-              <div className="hidden md:flex items-center space-x-1.5 rtl:space-x-reverse text-xs bg-theme-surface px-2.5 py-1 rounded-full border border-theme-border shadow-2xs">
-                <span className="flex h-2 w-2 relative">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                      isBackendLive ? 'bg-theme-bright-green' : 'bg-theme-primary'
-                    }`}
-                  />
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${
-                      isBackendLive ? 'bg-theme-primary' : 'bg-theme-secondary'
-                    }`}
-                  />
-                </span>
-                <span className="text-[10px] font-bold text-theme-primary font-mono">
+              {/* Profile Dropdown Menu */}
+              <ProfileDropdown
+                isOpen={showProfileMenu}
+                onClose={() => setShowProfileMenu(false)}
+                onOpenModalTab={(tab) => {
+                  setProfileModalTab(tab);
+                  setProfileModalOpen(true);
+                }}
+              />
+            </div>
+          )}
+
+          {/* 9. Mobile Overflow Menu Button (<768px) */}
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden w-[44px] h-[44px] rounded-full flex items-center justify-center transition-colors duration-150 pill-focus"
+            style={{
+              color: isDark ? '#C9DDD4' : '#12302A',
+              backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+            }}
+            aria-label="Toggle navigation menu"
+          >
+            {showMobileMenu ? <X className="w-5 h-5 stroke-[1.8]" /> : <Menu className="w-5 h-5 stroke-[1.8]" />}
+          </button>
+        </nav>
+
+        {/* Mobile Overflow Drawer (<768px) */}
+        {showMobileMenu && (
+          <div
+            className="md:hidden mt-3 max-w-7xl mx-auto rounded-[24px] p-4 space-y-4 border transition-all duration-150 shadow-lg"
+            style={{
+              backgroundColor: 'var(--pill-bg)',
+              borderColor: 'var(--pill-border)',
+              color: 'var(--pill-text)',
+            }}
+          >
+            {/* Status and Portal Header */}
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--pill-border)' }}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-[8px] h-[8px] rounded-full animate-pulse"
+                  style={{
+                    backgroundColor: isBackendLive
+                      ? isDark ? '#6CCB9D' : '#1F7A55'
+                      : isDark ? '#FF8B8B' : '#D64545',
+                  }}
+                />
+                <span
+                  className="text-[12px] font-bold tracking-[0.08em]"
+                  style={{
+                    color: isBackendLive
+                      ? isDark ? '#8FD9B4' : '#17603F'
+                      : isDark ? '#FF8B8B' : '#D64545',
+                  }}
+                >
                   {isBackendLive ? 'API LIVE' : 'SANDBOX'}
                 </span>
               </div>
 
-              {/* User Profile Menu & Dropdown Trigger */}
-              {user && (
-                <div className="relative flex items-center pl-2 rtl:pr-2 border-l rtl:border-r rtl:border-l-0 border-theme-border">
+              <span
+                className="text-[11px] font-bold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
+                style={{
+                  backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                  color: isDark ? '#8FD9B4' : '#4B6B60',
+                }}
+              >
+                {portalLabel}
+              </span>
+            </div>
+
+            {/* Theme & Language Controls Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Theme Toggle in Mobile Drawer */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: isDark ? '#8FD9B4' : '#4B6B60' }}>
+                  {isUrdu ? 'تھیم' : 'Theme'}
+                </p>
+                <ThemeSwitcher variant="pill" className="w-full justify-around" />
+              </div>
+
+              {/* Language Toggle in Mobile Drawer */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: isDark ? '#8FD9B4' : '#4B6B60' }}>
+                  {isUrdu ? 'زبان' : 'Language'}
+                </p>
+                <div
+                  className="flex items-center h-[48px] px-1 rounded-[24px] justify-around"
+                  style={{ backgroundColor: isDark ? '#07110F' : '#EEF6F2' }}
+                >
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowProfileMenu(!showProfileMenu);
-                      setShowNotifications(false);
+                    onClick={() => setLanguage('en')}
+                    className="flex-1 h-[40px] rounded-[20px] text-xs font-bold transition-all"
+                    style={{
+                      backgroundColor: language === 'en' ? (isDark ? '#6CCB9D' : '#1F7A55') : 'transparent',
+                      color: language === 'en' ? (isDark ? '#07110F' : '#FFFFFF') : (isDark ? '#9FB8AF' : '#4B6B60'),
                     }}
-                    className="flex items-center space-x-2.5 rtl:space-x-reverse p-1.5 rounded-2xl hover:bg-theme-soft-mint transition min-h-[44px] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
-                    aria-expanded={showProfileMenu}
-                    aria-haspopup="menu"
-                    aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User account profile menu'}
-                    title="Account Profile & Settings"
                   >
-                    <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-bold text-xs border border-theme-border group-hover:scale-105 transition-transform overflow-hidden shrink-0">
-                      {user.profile_photo_url ? (
-                        <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        (user.full_name?.charAt(0) || 'U').toUpperCase()
-                      )}
-                    </div>
-                    <div className="text-left rtl:text-right hidden sm:block">
-                      <p className="text-xs font-bold text-theme-text leading-tight truncate max-w-[120px]">
-                        {user.full_name || 'Pilot User'}
-                      </p>
-                      <p className="text-[10px] text-theme-primary font-mono font-medium truncate max-w-[120px]">
-                        {user.phone_number || user.email}
-                      </p>
-                    </div>
-                    <ChevronDown className={`w-3.5 h-3.5 text-theme-secondary transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} />
+                    English
                   </button>
-
-                  <ProfileDropdown
-                    isOpen={showProfileMenu}
-                    onClose={() => setShowProfileMenu(false)}
-                    onOpenModalTab={(tab) => {
-                      setProfileModalTab(tab);
-                      setProfileModalOpen(true);
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('ur')}
+                    className="flex-1 h-[40px] rounded-[20px] text-xs font-bold transition-all"
+                    style={{
+                      backgroundColor: language === 'ur' ? (isDark ? '#6CCB9D' : '#1F7A55') : 'transparent',
+                      color: language === 'ur' ? (isDark ? '#07110F' : '#FFFFFF') : (isDark ? '#9FB8AF' : '#4B6B60'),
                     }}
-                  />
+                  >
+                    اردو
+                  </button>
                 </div>
-              )}
-
-              {/* Mobile Menu Drawer Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="sm:hidden min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition flex items-center justify-center"
-                aria-label="Toggle mobile menu"
-              >
-                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Dropdown Drawer */}
-        {showMobileMenu && (
-          <div className="sm:hidden border-t border-theme-border bg-theme-surface p-4 space-y-4 animate-fadeIn">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary mb-2">
-                {isUrdu ? 'ڈسپلے تھیم' : 'Theme Mode'}
-              </p>
-              <ThemeSwitcher variant="compact" className="w-full justify-between" />
+              </div>
             </div>
 
+            {/* Help Button in Drawer */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowMobileMenu(false);
+                setShowHelp(true);
+              }}
+              className="w-full h-[44px] rounded-2xl flex items-center justify-center gap-2 font-bold text-xs transition-colors"
+              style={{
+                backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                color: isDark ? '#E8F3EE' : '#12302A',
+              }}
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>{t('nav.help')}</span>
+            </button>
+
+            {/* Mobile Profile Actions */}
             {user && (
-              <div className="pt-3 border-t border-theme-border space-y-3">
-                <div className="flex items-center space-x-3 rtl:space-x-reverse p-3 bg-theme-bg rounded-2xl border border-theme-border">
-                  <div className="w-10 h-10 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-extrabold text-sm border border-theme-border overflow-hidden">
-                    {user.profile_photo_url ? (
-                      <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      (user.full_name?.charAt(0) || 'U').toUpperCase()
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-theme-text truncate">{user.full_name}</p>
-                    <p className="text-[10px] text-theme-secondary font-mono truncate">{user.phone_number || user.email}</p>
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary border border-theme-border inline-block mt-0.5">
-                      {role || 'CITIZEN'}
-                    </span>
-                  </div>
-                </div>
-
+              <div className="pt-3 border-t space-y-2" style={{ borderColor: 'var(--pill-border)' }}>
                 <div className="grid grid-cols-2 gap-2 text-xs font-bold">
                   <button
                     type="button"
                     onClick={() => openProfileWithTab('view')}
-                    className="p-3 rounded-xl bg-theme-bg hover:bg-theme-soft-mint border border-theme-border text-theme-text flex items-center justify-center gap-1.5 min-h-[44px]"
+                    className="h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    style={{
+                      backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                      color: isDark ? '#E8F3EE' : '#12302A',
+                    }}
                   >
-                    <UserIcon className="w-3.5 h-3.5 text-theme-primary" />
+                    <UserIcon className="w-3.5 h-3.5" style={{ color: isDark ? '#6CCB9D' : '#1F7A55' }} />
                     <span>{isUrdu ? 'پروفائل' : 'View Profile'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => openProfileWithTab('edit')}
-                    className="p-3 rounded-xl bg-theme-bg hover:bg-theme-soft-mint border border-theme-border text-theme-text flex items-center justify-center gap-1.5 min-h-[44px]"
+                    className="h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    style={{
+                      backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                      color: isDark ? '#E8F3EE' : '#12302A',
+                    }}
                   >
-                    <FileText className="w-3.5 h-3.5 text-theme-primary" />
+                    <FileText className="w-3.5 h-3.5" style={{ color: isDark ? '#6CCB9D' : '#1F7A55' }} />
                     <span>{isUrdu ? 'ترمیم' : 'Edit Profile'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => openProfileWithTab('password')}
-                    className="p-3 rounded-xl bg-theme-bg hover:bg-theme-soft-mint border border-theme-border text-theme-text flex items-center justify-center gap-1.5 min-h-[44px]"
+                    className="h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    style={{
+                      backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                      color: isDark ? '#E8F3EE' : '#12302A',
+                    }}
                   >
-                    <KeyRound className="w-3.5 h-3.5 text-theme-primary" />
+                    <KeyRound className="w-3.5 h-3.5" style={{ color: isDark ? '#6CCB9D' : '#1F7A55' }} />
                     <span>{isUrdu ? 'پاس ورڈ' : 'Password'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-theme-error flex items-center justify-center gap-1.5 min-h-[44px]"
+                    className="h-[44px] rounded-xl flex items-center justify-center gap-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>{isUrdu ? 'لاگ آؤٹ' : 'Logout'}</span>
@@ -372,44 +566,72 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
 
       {/* Help Modal */}
       {showHelp && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 shadow-2xl border border-theme-border space-y-4 text-theme-text">
-            <div className="flex items-center justify-between pb-3 border-b border-theme-border/60">
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <div className="w-8 h-8 rounded-xl bg-theme-soft-mint flex items-center justify-center text-theme-primary">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div
+            className="rounded-[28px] max-w-md w-full p-6 shadow-2xl border space-y-4"
+            style={{
+              backgroundColor: 'var(--pill-bg)',
+              borderColor: 'var(--pill-border)',
+              color: 'var(--pill-text)',
+            }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--pill-border)' }}>
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                    color: isDark ? '#6CCB9D' : '#1F7A55',
+                  }}
+                >
                   <HelpCircle className="w-5 h-5" />
                 </div>
-                <h3 className="font-extrabold text-theme-text text-sm">
+                <h3 className="font-extrabold text-sm">
                   {isUrdu ? 'صفائی پے رہنمائی' : 'SafaiPay Platform Help'}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowHelp(false)}
-                className="text-theme-secondary hover:text-theme-text text-sm font-bold min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="w-[44px] h-[44px] rounded-full flex items-center justify-center font-bold text-sm pill-focus"
+                style={{ color: isDark ? '#9FB8AF' : '#4B6B60' }}
+                aria-label="Close Help"
               >
                 ✕
               </button>
             </div>
-            <div className="space-y-3 text-xs text-theme-secondary leading-relaxed">
+            <div className="space-y-3 text-xs leading-relaxed" style={{ color: isDark ? '#A9C2B9' : '#6B817C' }}>
               <p>
-                <strong className="text-theme-text">Customer:</strong> Select your recyclable material, upload an AI photo, verify your address, and receive deterministic payout upon digital scale weighing.
+                <strong style={{ color: isDark ? '#E8F3EE' : '#12302A' }}>Customer:</strong> Select your recyclable material, upload an AI photo, verify your address, and receive deterministic payout upon digital scale weighing.
               </p>
               <p>
-                <strong className="text-theme-text">Collector:</strong> Toggle Online mode, accept verified jobs in your neighborhood, weigh with calibrated sensors, and receive instant wallet credit.
+                <strong style={{ color: isDark ? '#E8F3EE' : '#12302A' }}>Collector:</strong> Toggle Online mode, accept verified jobs in your neighborhood, weigh with calibrated sensors, and receive instant wallet credit.
               </p>
               <p>
-                <strong className="text-theme-text">Recycler:</strong> Access aggregated, verified material lots with chain-of-custody tracking.
+                <strong style={{ color: isDark ? '#E8F3EE' : '#12302A' }}>Recycler:</strong> Access aggregated, verified material lots with chain-of-custody tracking.
               </p>
               <p>
-                <strong className="text-theme-text">Admin:</strong> Real-time oversight, operations ledger, dispatch fleet control, scrap pricing updates, and fraud management.
+                <strong style={{ color: isDark ? '#E8F3EE' : '#12302A' }}>Admin:</strong> Real-time oversight, operations ledger, dispatch fleet control, scrap pricing updates, and fraud management.
               </p>
-              <p className="p-3 bg-theme-soft-mint text-theme-text rounded-xl font-medium border border-theme-border">
+              <div
+                className="p-3.5 rounded-2xl font-medium border text-xs"
+                style={{
+                  backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                  borderColor: isDark ? '#234239' : '#DCE9E2',
+                  color: isDark ? '#E8F3EE' : '#12302A',
+                }}
+              >
                 Helpline: <strong>+92 (021) 3512-7000</strong> or email <strong>support@safaipay.org</strong>
-              </p>
+              </div>
             </div>
             <button
+              type="button"
               onClick={() => setShowHelp(false)}
-              className="w-full bg-theme-primary hover:opacity-90 text-white font-bold py-3 rounded-xl text-xs transition shadow-sm min-h-[44px]"
+              className="w-full h-[44px] rounded-xl font-bold text-xs transition duration-150 shadow-sm pill-focus"
+              style={{
+                backgroundColor: isDark ? '#6CCB9D' : '#1F7A55',
+                color: isDark ? '#07110F' : '#FFFFFF',
+              }}
             >
               {isUrdu ? 'بند کریں' : 'Close Guide'}
             </button>

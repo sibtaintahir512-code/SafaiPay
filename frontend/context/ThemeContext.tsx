@@ -45,9 +45,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let initialPref: ThemePreference = 'light';
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) as ThemePreference;
+      const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'light' || stored === 'dark') {
         initialPref = stored;
+      } else if (stored === 'system') {
+        const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        initialPref = prefersDark ? 'dark' : 'light';
+        localStorage.setItem(STORAGE_KEY, initialPref);
       }
     } catch {}
 

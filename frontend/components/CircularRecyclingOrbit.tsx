@@ -147,7 +147,7 @@ export const CircularRecyclingOrbit: React.FC<CircularRecyclingOrbitProps> = ({
               ? 'bg-[#0D3030] border-[#35B889]/60 shadow-[0_12px_40px_rgba(53,184,137,0.25)]'
               : 'bg-white border-[#D7E8E1] shadow-[0_12px_40px_rgba(7,61,59,0.14)]'
           }`}>
-            <SafaiPayLogoIcon className="w-16 h-16 sm:w-20 sm:h-20" />
+            <SafaiPayLogoIcon className="w-16 h-16 sm:w-20 sm:h-20" isDark={isDark} />
           </div>
         </div>
       </div>

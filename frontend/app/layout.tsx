@@ -22,6 +22,10 @@ const antiFlickerScript = `
 (function() {
   try {
     var pref = localStorage.getItem('safaipay_theme_preference') || 'light';
+    if (pref === 'system') {
+      pref = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      try { localStorage.setItem('safaipay_theme_preference', pref); } catch (e) {}
+    }
     var isDark = pref === 'dark';
     var root = document.documentElement;
     if (isDark) {
