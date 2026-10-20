@@ -7,19 +7,30 @@ from app.core.database import Base
 from app.models.base import GUID, TimestampMixin
 
 class PickupStatus(str, Enum):
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
     REQUESTED = "requested"
+    CLASSIFYING = "classifying"
+    PENDING_ASSIGNMENT = "pending_assignment"
     ASSIGNED = "assigned"
     ACCEPTED = "accepted"
+    COLLECTOR_ARRIVED = "collector_arrived"
     IN_PROGRESS = "in_progress"
+    WEIGHT_VERIFICATION_PENDING = "weight_verification_pending"
     WEIGHT_VERIFIED = "weight_verified"
+    CUSTOMER_CONFIRMATION_PENDING = "customer_confirmation_pending"
     CUSTOMER_CONFIRMED = "customer_confirmed"
+    PRICE_CALCULATED = "price_calculated"
     PAYMENT_PENDING = "payment_pending"
     PAYMENT_COMPLETED = "payment_completed"
+    PAYMENT_FAILED = "payment_failed"
+    MATERIAL_AVAILABLE = "material_available"
     INVENTORY_READY = "inventory_ready"
+    SOLD_TO_RECYCLER = "sold_to_recycler"
+    COMPLETED = "completed"
     REJECTED = "rejected"
     CANCELLED = "cancelled"
     DISPUTED = "disputed"
-    PAYMENT_FAILED = "payment_failed"
 
 class ImageType(str, Enum):
     CUSTOMER_UPLOAD = "customer_upload"

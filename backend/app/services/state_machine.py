@@ -3,9 +3,32 @@ from fastapi import HTTPException, status
 from app.models.pickup import PickupRequest, PickupStatus
 from app.models.user import User
 
-# Explicit workflow state transition mapping
+# Explicit workflow state transition mapping (supporting full 17-state lifecycle + canonical aliases)
 VALID_TRANSITIONS: Dict[str, Set[str]] = {
+    PickupStatus.DRAFT.value: {
+        PickupStatus.SUBMITTED.value,
+        PickupStatus.REQUESTED.value,
+        PickupStatus.CLASSIFYING.value,
+        PickupStatus.CANCELLED.value,
+    },
+    PickupStatus.SUBMITTED.value: {
+        PickupStatus.CLASSIFYING.value,
+        PickupStatus.PENDING_ASSIGNMENT.value,
+        PickupStatus.ASSIGNED.value,
+        PickupStatus.CANCELLED.value,
+    },
     PickupStatus.REQUESTED.value: {
+        PickupStatus.CLASSIFYING.value,
+        PickupStatus.PENDING_ASSIGNMENT.value,
+        PickupStatus.ASSIGNED.value,
+        PickupStatus.CANCELLED.value,
+    },
+    PickupStatus.CLASSIFYING.value: {
+        PickupStatus.PENDING_ASSIGNMENT.value,
+        PickupStatus.ASSIGNED.value,
+        PickupStatus.CANCELLED.value,
+    },
+    PickupStatus.PENDING_ASSIGNMENT.value: {
         PickupStatus.ASSIGNED.value,
         PickupStatus.CANCELLED.value,
     },
@@ -20,18 +43,47 @@ VALID_TRANSITIONS: Dict[str, Set[str]] = {
         PickupStatus.CANCELLED.value,
     },
     PickupStatus.ACCEPTED.value: {
+        PickupStatus.COLLECTOR_ARRIVED.value,
         PickupStatus.IN_PROGRESS.value,
         PickupStatus.CANCELLED.value,
         PickupStatus.ASSIGNED.value,  # Reassignment if collector forfeits
     },
-    PickupStatus.IN_PROGRESS.value: {
+    PickupStatus.COLLECTOR_ARRIVED.value: {
+        PickupStatus.WEIGHT_VERIFICATION_PENDING.value,
         PickupStatus.WEIGHT_VERIFIED.value,
+        PickupStatus.PRICE_CALCULATED.value,
         PickupStatus.DISPUTED.value,
         PickupStatus.CANCELLED.value,
     },
-    PickupStatus.WEIGHT_VERIFIED.value: {
+    PickupStatus.IN_PROGRESS.value: {
+        PickupStatus.COLLECTOR_ARRIVED.value,
+        PickupStatus.WEIGHT_VERIFICATION_PENDING.value,
+        PickupStatus.WEIGHT_VERIFIED.value,
+        PickupStatus.PRICE_CALCULATED.value,
+        PickupStatus.DISPUTED.value,
+        PickupStatus.CANCELLED.value,
+    },
+    PickupStatus.WEIGHT_VERIFICATION_PENDING.value: {
+        PickupStatus.WEIGHT_VERIFIED.value,
+        PickupStatus.PRICE_CALCULATED.value,
+        PickupStatus.DISPUTED.value,
+        PickupStatus.CANCELLED.value,
+    },
+    PickupStatus.PRICE_CALCULATED.value: {
+        PickupStatus.CUSTOMER_CONFIRMATION_PENDING.value,
         PickupStatus.CUSTOMER_CONFIRMED.value,
         PickupStatus.DISPUTED.value,
+    },
+    PickupStatus.WEIGHT_VERIFIED.value: {
+        PickupStatus.CUSTOMER_CONFIRMATION_PENDING.value,
+        PickupStatus.CUSTOMER_CONFIRMED.value,
+        PickupStatus.PRICE_CALCULATED.value,
+        PickupStatus.DISPUTED.value,
+    },
+    PickupStatus.CUSTOMER_CONFIRMATION_PENDING.value: {
+        PickupStatus.CUSTOMER_CONFIRMED.value,
+        PickupStatus.DISPUTED.value,
+        PickupStatus.CANCELLED.value,
     },
     PickupStatus.CUSTOMER_CONFIRMED.value: {
         PickupStatus.PAYMENT_PENDING.value,
@@ -49,17 +101,33 @@ VALID_TRANSITIONS: Dict[str, Set[str]] = {
         PickupStatus.CANCELLED.value,
     },
     PickupStatus.PAYMENT_COMPLETED.value: {
+        PickupStatus.MATERIAL_AVAILABLE.value,
         PickupStatus.INVENTORY_READY.value,
+        PickupStatus.COMPLETED.value,
         PickupStatus.DISPUTED.value,
+    },
+    PickupStatus.MATERIAL_AVAILABLE.value: {
+        PickupStatus.SOLD_TO_RECYCLER.value,
+        PickupStatus.COMPLETED.value,
+    },
+    PickupStatus.INVENTORY_READY.value: {
+        PickupStatus.MATERIAL_AVAILABLE.value,
+        PickupStatus.SOLD_TO_RECYCLER.value,
+        PickupStatus.COMPLETED.value,
+    },
+    PickupStatus.SOLD_TO_RECYCLER.value: {
+        PickupStatus.COMPLETED.value,
     },
     PickupStatus.DISPUTED.value: {
         PickupStatus.WEIGHT_VERIFIED.value,
+        PickupStatus.PRICE_CALCULATED.value,
         PickupStatus.CUSTOMER_CONFIRMED.value,
         PickupStatus.PAYMENT_PENDING.value,
         PickupStatus.CANCELLED.value,
+        PickupStatus.COMPLETED.value,
     },
-    PickupStatus.INVENTORY_READY.value: set(),  # Terminal state for collection cycle
-    PickupStatus.CANCELLED.value: set(),        # Terminal state
+    PickupStatus.COMPLETED.value: set(),       # Terminal state
+    PickupStatus.CANCELLED.value: set(),       # Terminal state
 }
 
 class StateMachineError(HTTPException):

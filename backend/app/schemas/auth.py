@@ -11,7 +11,7 @@ from app.schemas.profiles import (
 class UserRegisterRequest(BaseModel):
     phone_number: str = Field(..., pattern=r"^\+92\d{10}$", description="E.164 phone number, e.g. +923001234567")
     full_name: str = Field(..., min_length=2, max_length=150)
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     password: str = Field(..., min_length=8, description="Minimum 8 characters")
     role: RoleEnum = RoleEnum.CUSTOMER
 

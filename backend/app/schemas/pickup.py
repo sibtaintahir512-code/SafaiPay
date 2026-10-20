@@ -27,9 +27,11 @@ class PickupStartRequest(BaseModel):
     notes: Optional[str] = None
 
 class WeightVerificationRequest(BaseModel):
-    verified_weight_kg: float = Field(..., gt=0, description="Physical weight from calibrated scale")
+    verified_weight_kg: float = Field(..., gt=0, le=2500.0, description="Physical weight from calibrated scale (max 2500kg)")
     quality_factor: float = Field(default=1.00, ge=0.0, le=1.0, description="Quality multiplier (0.0 to 1.0)")
     scale_photo_url: Optional[str] = None
+    before_photo_url: Optional[str] = None
+    after_photo_url: Optional[str] = None
     notes: Optional[str] = None
 
 class CustomerConfirmRequest(BaseModel):

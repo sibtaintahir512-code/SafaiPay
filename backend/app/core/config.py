@@ -22,6 +22,25 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_MOCK_FALLBACK: bool = True
 
+    # External Service Provider Adapters
+    STORAGE_PROVIDER: str = "local"
+    MAPS_PROVIDER: str = "osm"
+    AI_PROVIDER: str = "mock"
+    PAYMENT_PROVIDER: str = "mock"
+    EMAIL_PROVIDER: str = "mock"
+    SMS_PROVIDER: str = "mock"
+    WHATSAPP_PROVIDER: str = "mock"
+
+    # Standard Demo Test Accounts
+    DEMO_CUSTOMER_EMAIL: str = "customer@safaipay.test"
+    DEMO_CUSTOMER_PASSWORD: str = "SafaiPassword123!"
+    DEMO_COLLECTOR_EMAIL: str = "collector@safaipay.test"
+    DEMO_COLLECTOR_PASSWORD: str = "SafaiPassword123!"
+    DEMO_RECYCLER_EMAIL: str = "recycler@safaipay.test"
+    DEMO_RECYCLER_PASSWORD: str = "SafaiPassword123!"
+    DEMO_ADMIN_EMAIL: str = "admin@safaipay.test"
+    DEMO_ADMIN_PASSWORD: str = "AdminPassword123!"
+
     # Phone / SMS / OTP
     OTP_MOCK_MODE: bool = True
     OTP_DEFAULT_CODE: str = "123456"

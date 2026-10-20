@@ -23,6 +23,8 @@ from app.models.payment import (
     PaymentStatus,
 )
 from app.models.ai import AIModelVersion, AIPrediction
+from app.models.batch import MaterialBatch
+from app.models.dispatch import DispatchRecord
 from app.models.marketplace import (
     InventoryItem,
     RecyclerDemand,

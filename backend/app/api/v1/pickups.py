@@ -389,6 +389,11 @@ async def verify_pickup_weight(
     # Validate weight and quality factor
     if payload.verified_weight_kg <= 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verified weight must be greater than zero.")
+    if payload.verified_weight_kg > 2500.0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unrealistic weight: Single collection load cannot exceed 2500kg."
+        )
     if payload.quality_factor < 0.0 or payload.quality_factor > 1.0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quality factor must be between 0.0 and 1.0.")
 
@@ -418,6 +423,26 @@ async def verify_pickup_weight(
             caption="Scale LCD display verification"
         )
         db.add(scale_img)
+
+    if payload.before_photo_url:
+        db.add(WasteImage(
+            id=uuid.uuid4(),
+            pickup_id=pickup.id,
+            uploaded_by_user_id=current_user.id,
+            image_type=ImageType.BEFORE_PICKUP.value,
+            image_url=payload.before_photo_url,
+            caption="Before collection photo"
+        ))
+
+    if payload.after_photo_url:
+        db.add(WasteImage(
+            id=uuid.uuid4(),
+            pickup_id=pickup.id,
+            uploaded_by_user_id=current_user.id,
+            image_type=ImageType.AFTER_PICKUP.value,
+            image_url=payload.after_photo_url,
+            caption="After collection photo"
+        ))
 
     # Calculate verified deterministic price
     await calculate_pickup_pricing(

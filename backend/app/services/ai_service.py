@@ -11,15 +11,26 @@ CONFIDENCE_THRESHOLD = 0.70
 
 SUPPORTED_CLASSES = [
     "PET plastic",
-    "cardboard",
-    "other/unknown",
+    "Mixed plastic",
+    "Cardboard/paper",
+    "Metal",
+    "Glass",
+    "E-waste",
+    "Organic waste",
+    "Non-recyclable waste",
+    "cardboard",      # Canonical alias
+    "other/unknown",  # Fallback class
 ]
 
 MATERIAL_BENCHMARKS = {
     "PET_PLASTIC": {"name": "PET Plastic", "rate": 80.0, "tier_a": 1.0, "tier_b": 0.85, "tier_c": 0.65},
-    "CARDBOARD_OCC": {"name": "Cardboard (OCC)", "rate": 35.0, "tier_a": 1.0, "tier_b": 0.85, "tier_c": 0.65},
-    "MIXED_METAL": {"name": "Mixed Scrap Metal", "rate": 120.0, "tier_a": 1.0, "tier_b": 0.90, "tier_c": 0.70},
+    "MIXED_PLASTIC": {"name": "Mixed Plastic", "rate": 45.0, "tier_a": 1.0, "tier_b": 0.85, "tier_c": 0.65},
+    "CARDBOARD_OCC": {"name": "Cardboard/Paper", "rate": 35.0, "tier_a": 1.0, "tier_b": 0.85, "tier_c": 0.65},
+    "MIXED_METAL": {"name": "Mixed Metal", "rate": 120.0, "tier_a": 1.0, "tier_b": 0.90, "tier_c": 0.70},
     "GLASS_BOTTLES": {"name": "Glass Bottles", "rate": 25.0, "tier_a": 1.0, "tier_b": 0.80, "tier_c": 0.50},
+    "E_WASTE": {"name": "E-Waste", "rate": 200.0, "tier_a": 1.0, "tier_b": 0.85, "tier_c": 0.70},
+    "ORGANIC_WASTE": {"name": "Organic Waste", "rate": 10.0, "tier_a": 1.0, "tier_b": 0.80, "tier_c": 0.60},
+    "NON_RECYCLABLE": {"name": "Non-Recyclable", "rate": 0.0, "tier_a": 1.0, "tier_b": 1.0, "tier_c": 1.0},
     "HDPE_PLASTIC": {"name": "HDPE Polymer", "rate": 95.0, "tier_a": 1.0, "tier_b": 0.85, "tier_c": 0.65},
 }
 
@@ -87,10 +98,18 @@ class DemoWasteClassifier(WasteClassifierInterface):
 
         requires_verification = confidence < CONFIDENCE_THRESHOLD or predicted_material == "other/unknown"
 
+        # Ranked top predicted categories
+        top_predictions = [
+            {"category": predicted_material, "confidence": round(confidence, 2)},
+            {"category": "Mixed plastic" if predicted_material != "Mixed plastic" else "PET plastic", "confidence": round(max(0.04, 1.0 - confidence - 0.04), 2)},
+            {"category": "other/unknown" if predicted_material != "other/unknown" else "Cardboard/paper", "confidence": 0.04}
+        ]
+
         return {
             "material": predicted_material,
             "confidence": round(confidence, 2),
             "requires_manual_verification": requires_verification,
+            "top_predictions": top_predictions,
             "model_version": self.MODEL_VERSION,
             "disclaimer": (
                 "DEMO CLASSIFIER (demo-v1): Preliminary estimate for workflow demonstration. "

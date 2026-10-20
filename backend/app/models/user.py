@@ -35,6 +35,7 @@ class User(Base, TimestampMixin):
     status = Column(String(30), default="ACTIVE", nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_phone_verified = Column(Boolean, default=False, nullable=False)
+    profile_photo_url = Column(String(500), nullable=True)
 
     # Relationships
     roles = relationship("UserRole", backref="user", cascade="all, delete-orphan", lazy="selectin")

@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sqlalchemy import select
+import app.models  # Ensures all ORM models are registered in Base.metadata
 from app.core.database import AsyncSessionLocal, init_db
 from app.core.config import settings
 from app.core.security import get_password_hash
@@ -215,17 +216,41 @@ async def seed_database():
                 await session.commit()
                 print(f"   ✓ Recycler: {comp} ({phone})")
 
-        # 5. Materials & Benchmark Rates
-        print("🌱 Seeding Recyclable Materials & Benchmark Rates...")
+        # 5. Materials & Benchmark Rates (8 Core Waste Categories)
+        print("🌱 Seeding 8 Core Recyclable Materials & Benchmark Rates...")
         materials_data = [
             (
-                "PET_PLASTIC", "PET Plastic Bottles", "Cleaned clear and blue-tinted PET beverage containers",
+                "PET_PLASTIC", "PET plastic", "Cleaned clear and blue-tinted PET beverage containers",
                 80.00, 1.00, 0.90, 0.75
             ),
             (
-                "CARDBOARD_OCC", "Corrugated Cardboard", "Dry corrugated shipping boxes and packaging cardboard",
+                "MIXED_PLASTIC", "Mixed plastic", "Rigid HDPE, LDPE containers, PP and mixed domestic polymers",
+                45.00, 1.00, 0.90, 0.75
+            ),
+            (
+                "CARDBOARD_OCC", "Cardboard/paper", "Dry corrugated shipping boxes and sorted packaging paper",
                 35.00, 1.00, 0.90, 0.75
-            )
+            ),
+            (
+                "MIXED_METAL", "Metal", "Scrap aluminum UBC beverage cans, tinplate, iron, and mixed metals",
+                120.00, 1.00, 0.90, 0.75
+            ),
+            (
+                "GLASS_BOTTLES", "Glass", "Clear and amber beverage glass bottles and broken culinary cullet",
+                25.00, 1.00, 0.85, 0.70
+            ),
+            (
+                "E_WASTE", "E-waste", "Consumer electronic scrap, motherboards, electrical cables, and batteries",
+                200.00, 1.00, 0.85, 0.70
+            ),
+            (
+                "ORGANIC_WASTE", "Organic waste", "Segregated vegetable/food scraps and bio-compostable feedstock",
+                10.00, 1.00, 0.80, 0.60
+            ),
+            (
+                "NON_RECYCLABLE", "Non-recyclable waste", "Inert residual municipal waste for safe engineered disposal",
+                0.00, 1.00, 1.00, 1.00
+            ),
         ]
 
         for code, name, desc, rate, ta, tb, tc in materials_data:
@@ -278,12 +303,78 @@ async def seed_database():
                 ))
         await session.commit()
 
-        # 7. Initial Audit Log
+        # 7. Standard Demo Test Accounts (for evaluation and developer tests)
+        print("🌱 Seeding 4 Standard Demo Test Accounts (*@safaipay.test)...")
+        demo_accounts = [
+            ("admin@safaipay.test", "+923000009999", "Admin Test Account", "ADMIN", admin_pwd_hash),
+            ("customer@safaipay.test", "+923001119999", "Customer Test Household", "CUSTOMER", demo_pwd_hash),
+            ("collector@safaipay.test", "+923002229999", "Collector Test Partner", "COLLECTOR", demo_pwd_hash),
+            ("recycler@safaipay.test", "+923003339999", "Recycler Test Factory", "RECYCLER", demo_pwd_hash),
+        ]
+        for email, phone, name, role_name, pwd_hash in demo_accounts:
+            q_user = select(User).where((User.email == email) | (User.phone_number == phone))
+            res_user = await session.execute(q_user)
+            existing = res_user.scalar_one_or_none()
+            if not existing:
+                u = User(
+                    id=uuid.uuid4(),
+                    email=email,
+                    phone_number=phone,
+                    full_name=name,
+                    hashed_password=pwd_hash,
+                    status="ACTIVE",
+                    is_active=True,
+                    is_phone_verified=True
+                )
+                session.add(u)
+                await session.flush()
+                session.add(UserRole(user_id=u.id, role_name=role_name))
+                if role_name == "ADMIN":
+                    session.add(AdminProfile(user_id=u.id, department="Platform QA", permissions_level="SUPERADMIN"))
+                elif role_name == "CUSTOMER":
+                    session.add(CustomerProfile(
+                        user_id=u.id,
+                        entity_type="HOUSEHOLD",
+                        organization_name="Residential Household",
+                        street_address="House 42, Street 7, Clifton Block 2, Karachi",
+                        city="Karachi",
+                        latitude=24.8150,
+                        longitude=67.0300,
+                        contact_person="Ali Raza"
+                    ))
+                elif role_name == "COLLECTOR":
+                    session.add(CollectorProfile(
+                        user_id=u.id,
+                        cnic_number="42101-9999999-1",
+                        vehicle_type="MOTOR_TRICYCLE",
+                        kyc_status="VERIFIED",
+                        digital_scale_id="SCALE-TEST-01",
+                        is_online=True,
+                        current_latitude=24.8600,
+                        current_longitude=67.0100,
+                        rating_average=5.00,
+                        total_pickups_completed=20
+                    ))
+                elif role_name == "RECYCLER":
+                    session.add(RecyclerProfile(
+                        user_id=u.id,
+                        company_name="SafaiPay Test Recyclers Ltd",
+                        ntn_number="NTN-9999999-9",
+                        factory_address="Plot 99, Korangi Industrial Zone, Karachi",
+                        city="Karachi",
+                        latitude=24.8320,
+                        longitude=67.1350,
+                        verification_status="VERIFIED"
+                    ))
+                await session.commit()
+                print(f"   ✓ Demo User: {email} ({role_name})")
+
+        # 8. Initial Audit Log
         session.add(AuditLog(
             actor_id=admin_user.id if admin_user else None,
             action_name="DATABASE_SEEDED",
             entity_name="database",
-            details="Phase 2 seed dataset loaded: 1 Admin, 5 Customers, 10 Collectors, 2 Recyclers, 2 Materials, 2 Batches",
+            details="Pilot seed dataset loaded: Admin, Customers, Collectors, Recyclers, 8 Materials, Demo test accounts",
             ip_address="127.0.0.1"
         ))
         await session.commit()

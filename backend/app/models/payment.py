@@ -36,6 +36,7 @@ class Payment(Base, TimestampMixin):
     transaction_reference = Column(String(64), unique=True, nullable=False, index=True)
     payer_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     payee_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    payment_method = Column(String(50), default="MOCK_RAAST", nullable=False)
     amount_pkr = Column(Numeric(12, 2), nullable=False)
     status = Column(String(30), default=PaymentStatus.PENDING.value, nullable=False, index=True)
     failure_reason = Column(Text, nullable=True)

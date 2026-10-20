@@ -12,10 +12,16 @@ from app.schemas.profiles import (
 class UserBase(BaseModel):
     phone_number: str
     full_name: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     status: str = "ACTIVE"
     is_active: bool = True
     is_phone_verified: bool = False
+    profile_photo_url: Optional[str] = None
+
+class UserProfileUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    profile_photo_url: Optional[str] = None
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)

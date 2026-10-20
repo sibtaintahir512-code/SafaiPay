@@ -10,6 +10,7 @@ class PredictionResponse(BaseModel):
     material: str
     confidence: float
     requires_manual_verification: bool
+    top_predictions: Optional[List[Dict[str, Any]]] = None
     model_version: str
     status: Optional[str] = "PREDICTED"
     verified_material: Optional[str] = None
