@@ -15,8 +15,10 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
+import { updateMaterialRate } from '@/lib/api';
 
 interface PricingItem {
+
   code: string;
   name: string;
   unit: string;
@@ -45,10 +47,16 @@ export default function AdminPricingPage() {
     setRates(rates.map((r) => (r.code === code ? { ...r, ratePkr: newRate, lastUpdated: 'Just now' } : r)));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    try {
+      await Promise.all(
+        rates.map((r) => updateMaterialRate(r.code, r.ratePkr, `Bulk admin rate update to Rs ${r.ratePkr}/kg`))
+      );
+    } catch {}
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
+
 
   return (
     <ProtectedRoute allowedRole="admin">

@@ -82,41 +82,34 @@ async def client():
         yield ac
 
 @pytest_asyncio.fixture
-async def admin_token():
-    # Token for seeded admin (+923000000000)
-    token = create_access_token(
-        subject="admin-test-uuid",
-        roles=["ADMIN"],
-        extra_claims={"phone": "+923000000000"}
-    )
-    return {"Authorization": f"Bearer {token}"}
+async def admin_token(client):
+    res = await client.post("/api/v1/auth/login", json={
+        "identifier": "admin@safaipay.org",
+        "password": "AdminPassword123!"
+    })
+    return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
 @pytest_asyncio.fixture
-async def collector_token():
-    # Token for seeded collector (+923002220001)
-    token = create_access_token(
-        subject="collector-test-uuid",
-        roles=["COLLECTOR"],
-        extra_claims={"phone": "+923002220001"}
-    )
-    return {"Authorization": f"Bearer {token}"}
+async def collector_token(client):
+    res = await client.post("/api/v1/auth/login", json={
+        "identifier": "+923002220001",
+        "password": "SafaiPassword123!"
+    })
+    return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
 @pytest_asyncio.fixture
-async def customer_token():
-    # Token for seeded customer (+923001110001)
-    token = create_access_token(
-        subject="customer-test-uuid",
-        roles=["CUSTOMER"],
-        extra_claims={"phone": "+923001110001"}
-    )
-    return {"Authorization": f"Bearer {token}"}
+async def customer_token(client):
+    res = await client.post("/api/v1/auth/login", json={
+        "identifier": "+923001110001",
+        "password": "SafaiPassword123!"
+    })
+    return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
 @pytest_asyncio.fixture
-async def recycler_token():
-    # Token for seeded recycler (+923003330001)
-    token = create_access_token(
-        subject="recycler-test-uuid",
-        roles=["RECYCLER"],
-        extra_claims={"phone": "+923003330001"}
-    )
-    return {"Authorization": f"Bearer {token}"}
+async def recycler_token(client):
+    res = await client.post("/api/v1/auth/login", json={
+        "identifier": "+923003330001",
+        "password": "SafaiPassword123!"
+    })
+    return {"Authorization": f"Bearer {res.json()['access_token']}"}
+

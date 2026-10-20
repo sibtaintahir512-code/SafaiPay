@@ -9,6 +9,7 @@ class DispatchRecord(Base, TimestampMixin):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     tracking_number = Column(String(50), unique=True, nullable=False, index=True)
+    batch_id = Column(GUID, ForeignKey("material_batches.id", ondelete="SET NULL"), nullable=True)
     carrier_name = Column(String(100), default="Indus Eco-Logistics")
     vehicle_plate = Column(String(30), nullable=False)
     gross_weight_kg = Column(Numeric(12, 2), nullable=True)
@@ -17,3 +18,4 @@ class DispatchRecord(Base, TimestampMixin):
     status = Column(String(30), default="IN_TRANSIT", nullable=False)
 
 __all__ = ["DispatchRecord"]
+

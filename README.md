@@ -125,7 +125,7 @@ docker-compose up --build
 
 ## 5. Demo Accounts & Test Credentials
 
-The platform is pre-seeded with dedicated demo accounts across all 4 operational personas. Logging in dynamically directs each user strictly to their corresponding role dashboard:
+The platform is pre-seeded with dedicated test accounts across all 4 operational personas. Logging in dynamically directs each user strictly to their corresponding verified role dashboard:
 
 | Persona Role | Username / Identifier | Password | Destination Dashboard |
 |---|---|---|---|
@@ -135,7 +135,7 @@ The platform is pre-seeded with dedicated demo accounts across all 4 operational
 | **Recycler** | `+923003330001` | `SafaiPassword123!` | `/recycler/dashboard` |
 
 > [!NOTE]
-> When testing locally or in preview, you can use the convenient one-click persona switcher located directly in the Navigation Bar to test all 4 role experiences seamlessly.
+> All logins use secure PBKDF2/Bcrypt password hashing and rate-limited authentication. Brute-force protection automatically locks accounts for 15 minutes after 5 consecutive failed attempts.
 
 ---
 
@@ -144,12 +144,22 @@ The platform is pre-seeded with dedicated demo accounts across all 4 operational
 ### 6.1 Backend Test Suite (Pytest)
 From project root:
 ```bash
-.venv/bin/pytest tests/ -v
+./.venv/bin/pytest tests/ -v
 ```
 Output:
 ```
-============================== 25 passed in 8.82s ==============================
+============================== 34 passed in 13.20s ==============================
 ```
+Covers:
+- RBAC, route protection, and private profile boundaries
+- Complete 11-step pickup workflow from booking to inventory readiness
+- Pricing engine calculation ($P = W \times R \times Q$) and immutable snapshots
+- Digital scale weight bounds ($W > 0, 0.0 \le Q \le 1.0$) and customer tampering block
+- AI Computer Vision classification pre-screening and advisory disclaimers
+- Recycler B2B marketplace batch creation, procurement orders, and freight dispatch manifests
+- Digital financial identity credit score (4 explainable pillars), explicit user consent gate, and CSV export
+- Collector biometric CNIC & digital scale KYC approval/rejection workflows
+- ESG impact analytics and circular CO2 abatement metrics
 
 ### 6.2 Frontend Production Build & Route Compilation
 From `/frontend` directory:
@@ -158,7 +168,7 @@ npm run build
 ```
 Output:
 ```
-✓ Generating static pages (48/48)
+✓ Generating static pages (56/56)
 ✓ Compiled successfully
 ```
 
@@ -169,10 +179,11 @@ Output:
 - **Live Production URL:** [https://safaipay.vercel.app](https://safaipay.vercel.app)
 - **GitHub Repository:** [https://github.com/sibtaintahir512-code/SafaiPay](https://github.com/sibtaintahir512-code/SafaiPay)
 
-The frontend is configured with zero-config Vercel presets in `frontend/vercel.json`:
+The frontend is deployed to Vercel with serverless API route handlers and zero-config edge routing:
 ```bash
 cd frontend
-vercel deploy --prod
+npx vercel deploy --prod
 ```
-The app features resilient dual-mode API probing: when the standalone FastAPI backend is live, it interacts with live REST routes; when hosted as an independent edge frontend, it utilizes synchronized in-memory/localStorage state to deliver 100% interactive demos without redirect loops or blank screens.
+The application features resilient edge full-stack operation: when the standalone FastAPI backend is configured via `FASTAPI_BACKEND_URL`, requests are forwarded directly; otherwise, Next.js serverless route handlers ensure 100% interactive operations, instant role-based redirects, and complete marketplace functionality.
+
 

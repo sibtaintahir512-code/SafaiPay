@@ -8,6 +8,9 @@ from app.api.v1.pickups import router as pickups_router
 from app.api.v1.payments import router as payments_router
 from app.api.v1.earnings import router as earnings_router
 from app.api.v1.notifications import router as notifications_router
+from app.api.v1.batches import router as batches_router
+from app.api.v1.dispatch import router as dispatch_router
+from app.api.v1.analytics import router as analytics_router
 
 api_v1_router = APIRouter()
 
@@ -20,3 +23,7 @@ api_v1_router.include_router(pickups_router)
 api_v1_router.include_router(payments_router)
 api_v1_router.include_router(earnings_router)
 api_v1_router.include_router(notifications_router)
+api_v1_router.include_router(batches_router)
+api_v1_router.include_router(dispatch_router)
+api_v1_router.include_router(analytics_router)
+

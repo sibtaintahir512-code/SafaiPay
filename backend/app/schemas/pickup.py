@@ -93,6 +93,19 @@ class PickupDetailResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    # Related items
     images: List[WasteImageResponse] = []
     pricing_calculations: List[PricingCalculationResponse] = []
+
+class AIClassificationRequest(BaseModel):
+    image_url: Optional[str] = None
+    stream_hint: Optional[str] = None
+
+class AIClassificationResponse(BaseModel):
+    predicted_material: str
+    confidence_score: float
+    quality_tier: str
+    quality_factor: float
+    estimated_rate_pkr: float
+    disclaimer: str
+    manual_override_allowed: bool = True
+

@@ -208,3 +208,63 @@ async def list_audit_logs(
 
     result = await db.execute(query)
     return result.scalars().all()
+
+@router.post("/collectors/{collector_id}/approve")
+async def approve_collector_kyc(
+    collector_id: str,
+    request: Request,
+    current_admin: User = Depends(require_roles(["ADMIN"])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Admin-only: Verify and approve a collector's CNIC and digital scale KYC."""
+    from app.models.profiles import CollectorProfile
+    query = select(CollectorProfile).where(CollectorProfile.user_id == collector_id)
+    profile = (await db.execute(query)).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collector profile not found.")
+
+    profile.kyc_status = "VERIFIED"
+    await db.commit()
+
+    client_ip = request.client.host if request.client else None
+    await log_audit_event(
+        db=db,
+        action_name="COLLECTOR_KYC_APPROVED",
+        entity_name="collector_profiles",
+        actor_id=str(current_admin.id),
+        entity_id=collector_id,
+        details=f"Admin '{current_admin.full_name}' approved KYC for collector {collector_id}",
+        ip_address=client_ip
+    )
+    return {"status": "success", "collector_id": collector_id, "kyc_status": "VERIFIED"}
+
+@router.post("/collectors/{collector_id}/reject")
+async def reject_collector_kyc(
+    collector_id: str,
+    request: Request,
+    reason: str = Query("Incomplete biometric documentation"),
+    current_admin: User = Depends(require_roles(["ADMIN"])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Admin-only: Reject a collector's KYC application."""
+    from app.models.profiles import CollectorProfile
+    query = select(CollectorProfile).where(CollectorProfile.user_id == collector_id)
+    profile = (await db.execute(query)).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collector profile not found.")
+
+    profile.kyc_status = "REJECTED"
+    await db.commit()
+
+    client_ip = request.client.host if request.client else None
+    await log_audit_event(
+        db=db,
+        action_name="COLLECTOR_KYC_REJECTED",
+        entity_name="collector_profiles",
+        actor_id=str(current_admin.id),
+        entity_id=collector_id,
+        details=f"Admin '{current_admin.full_name}' rejected KYC for collector {collector_id}: {reason}",
+        ip_address=client_ip
+    )
+    return {"status": "success", "collector_id": collector_id, "kyc_status": "REJECTED", "reason": reason}
+

@@ -257,17 +257,39 @@ async def seed_database():
                 await session.commit()
                 print(f"   ✓ Material: {name} ({code}) - Benchmark: PKR {rate}/kg")
 
-        # 6. Initial Audit Log
+        # 6. Material Batches for Recycler Marketplace
+        print("🌱 Seeding Wholesale Material Batches...")
+        from app.models.batch import MaterialBatch
+        batches_data = [
+            ("BATCH-PET-2026-041", "PET_PLASTIC", 12500.0, 99.10, "Korangi Industrial Area Hub, Karachi"),
+            ("BATCH-OCC-2026-088", "CARDBOARD_OCC", 24000.0, 98.40, "SITE Area Central Hub, Karachi"),
+        ]
+        for bcode, mcode, net_kg, purity, hub in batches_data:
+            q = select(MaterialBatch).where(MaterialBatch.batch_code == bcode)
+            if not (await session.execute(q)).scalar_one_or_none():
+                session.add(MaterialBatch(
+                    id=uuid.uuid4(),
+                    batch_code=bcode,
+                    material_code=mcode,
+                    net_weight_kg=net_kg,
+                    purity_percentage=purity,
+                    status="AVAILABLE",
+                    hub_location=hub
+                ))
+        await session.commit()
+
+        # 7. Initial Audit Log
         session.add(AuditLog(
             actor_id=admin_user.id if admin_user else None,
             action_name="DATABASE_SEEDED",
             entity_name="database",
-            details="Phase 2 seed dataset loaded: 1 Admin, 5 Customers, 10 Collectors, 2 Recyclers, 2 Materials",
+            details="Phase 2 seed dataset loaded: 1 Admin, 5 Customers, 10 Collectors, 2 Recyclers, 2 Materials, 2 Batches",
             ip_address="127.0.0.1"
         ))
         await session.commit()
 
     print("✅ Database seeding successfully completed!")
+
 
 if __name__ == "__main__":
     asyncio.run(seed_database())

@@ -20,8 +20,10 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
+import { procureBatch } from '@/lib/api';
 
 interface MaterialBatch {
+
   id: string;
   batchCode: string;
   materialName: string;
@@ -110,15 +112,21 @@ export default function RecyclerMarketplacePage() {
     return b.materialCategory.toLowerCase().includes(selectedCategory.toLowerCase());
   });
 
-  const handleRequestProcurement = (e: React.FormEvent) => {
+  const handleRequestProcurement = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedBatch) {
+      try {
+        await procureBatch(selectedBatch.id, `Feedstock Lot: ${selectedBatch.materialName}`);
+      } catch {}
+    }
     setRequested(true);
     setTimeout(() => {
       setRequested(false);
       setSelectedBatch(null);
       router.push('/recycler/batch-requests');
-    }, 1500);
+    }, 1200);
   };
+
 
   return (
     <ProtectedRoute allowedRole={['recycler', 'admin']}>

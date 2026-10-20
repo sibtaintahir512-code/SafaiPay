@@ -12,3 +12,14 @@ class DistrictTonnageResponse(BaseModel):
     district: str
     tonnage: float
     active_collectors: int
+
+class ESGImpactSummaryResponse(BaseModel):
+    total_diverted_kg: float
+    diverted_tonnage: float
+    total_co2_offset_kg: float
+    active_collectors_count: int
+    partner_enterprises_count: int
+    total_disbursed_pkr: float
+    material_breakdown: Dict[str, float]
+    disclaimer: str
+

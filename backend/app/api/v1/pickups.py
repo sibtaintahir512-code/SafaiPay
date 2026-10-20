@@ -31,6 +31,8 @@ from app.schemas.pickup import (
     WasteImageUploadRequest,
     RatingCreateRequest,
     DisputeCreateRequest,
+    AIClassificationRequest,
+    AIClassificationResponse,
 )
 from app.schemas.payment import PaymentResponse, DisputeResponse
 from app.api.deps import get_current_user, require_roles
@@ -39,8 +41,22 @@ from app.services.pricing_service import calculate_pickup_pricing
 from app.services.payment_service import MockPaymentService
 from app.services.notification_service import create_notification
 from app.services.audit_service import log_audit_event
+from app.services.ai_service import AIService
 
 router = APIRouter(prefix="/pickups", tags=["Pickup Operations & Workflow"])
+
+@router.post("/ai-classify", response_model=AIClassificationResponse)
+async def classify_material_stream(
+    payload: AIClassificationRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Customer / Collector: AI Computer Vision classification with confidence score and advisory pricing."""
+    result = AIService.classify_waste_image(
+        image_url=payload.image_url,
+        hint=payload.stream_hint
+    )
+    return AIClassificationResponse(**result)
+
 
 @router.post("", response_model=PickupDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_pickup(
