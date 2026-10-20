@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const currentPassword = String(body.current_password || '');
     const newPassword = String(body.new_password || '');
-    const confirmNewPassword = String(body.confirm_new_password || '');
+    const confirmNewPassword = String(body.confirm_new_password || body.confirm_password || '');
 
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       return NextResponse.json(
