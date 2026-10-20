@@ -2,13 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-export type ThemePreference = 'light' | 'dark' | 'system';
+export type ThemePreference = 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
 interface ThemeContextType {
   themePreference: ThemePreference;
   resolvedTheme: ResolvedTheme;
-  isSystem: boolean;
   setThemePreference: (pref: ThemePreference) => void;
   toggleTheme: () => void;
 }
@@ -18,15 +17,8 @@ const STORAGE_KEY = 'safaipay_theme_preference';
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('light');
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
-  const [mounted, setMounted] = useState<boolean>(false);
-
-  // Helper to determine system theme
-  const getSystemTheme = useCallback((): ResolvedTheme => {
-    if (typeof window === 'undefined' || !window.matchMedia) return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }, []);
 
   // Apply theme classes and attributes to DOM
   const applyTheme = useCallback((target: ResolvedTheme) => {
@@ -48,66 +40,37 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  // Initialize theme from localStorage or system on mount
+  // Initialize theme from localStorage on mount (strictly light or dark)
   useEffect(() => {
-    setMounted(true);
-    let initialPref: ThemePreference = 'system';
+    let initialPref: ThemePreference = 'light';
 
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as ThemePreference;
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      if (stored === 'light' || stored === 'dark') {
         initialPref = stored;
       }
     } catch {}
 
     setThemePreferenceState(initialPref);
-
-    const initialResolved = initialPref === 'system' ? getSystemTheme() : initialPref;
-    setResolvedTheme(initialResolved);
-    applyTheme(initialResolved);
-  }, [getSystemTheme, applyTheme]);
-
-  // Listen for OS system theme changes
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const handleSystemChange = (e: MediaQueryListEvent) => {
-      if (themePreference === 'system') {
-        const nextResolved: ResolvedTheme = e.matches ? 'dark' : 'light';
-        setResolvedTheme(nextResolved);
-        applyTheme(nextResolved);
-      }
-    };
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleSystemChange);
-      return () => mediaQuery.removeEventListener('change', handleSystemChange);
-    } else if ((mediaQuery as any).addListener) {
-      (mediaQuery as any).addListener(handleSystemChange);
-      return () => (mediaQuery as any).removeListener(handleSystemChange);
-    }
-  }, [themePreference, applyTheme]);
+    setResolvedTheme(initialPref);
+    applyTheme(initialPref);
+  }, [applyTheme]);
 
   // Update theme preference
   const setThemePreference = useCallback((pref: ThemePreference) => {
-    setThemePreferenceState(pref);
+    const validPref: ThemePreference = pref === 'dark' ? 'dark' : 'light';
+    setThemePreferenceState(validPref);
     try {
-      localStorage.setItem(STORAGE_KEY, pref);
+      localStorage.setItem(STORAGE_KEY, validPref);
     } catch {}
 
-    const nextResolved = pref === 'system' ? getSystemTheme() : pref;
-    setResolvedTheme(nextResolved);
-    applyTheme(nextResolved);
-  }, [getSystemTheme, applyTheme]);
+    setResolvedTheme(validPref);
+    applyTheme(validPref);
+  }, [applyTheme]);
 
   // Toggle theme utility
   const toggleTheme = useCallback(() => {
-    if (resolvedTheme === 'light') {
-      setThemePreference('dark');
-    } else {
-      setThemePreference('light');
-    }
+    setThemePreference(resolvedTheme === 'light' ? 'dark' : 'light');
   }, [resolvedTheme, setThemePreference]);
 
   return (
@@ -115,7 +78,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value={{
         themePreference,
         resolvedTheme,
-        isSystem: themePreference === 'system',
         setThemePreference,
         toggleTheme,
       }}

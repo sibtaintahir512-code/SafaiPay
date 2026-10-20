@@ -21,15 +21,8 @@ export const viewport: Viewport = {
 const antiFlickerScript = `
 (function() {
   try {
-    var pref = localStorage.getItem('safaipay_theme_preference') || 'system';
-    var isDark = false;
-    if (pref === 'dark') {
-      isDark = true;
-    } else if (pref === 'light') {
-      isDark = false;
-    } else {
-      isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
+    var pref = localStorage.getItem('safaipay_theme_preference') || 'light';
+    var isDark = pref === 'dark';
     var root = document.documentElement;
     if (isDark) {
       root.classList.add('dark');

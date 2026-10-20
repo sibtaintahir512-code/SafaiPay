@@ -24,11 +24,11 @@ describe('SafaiPay Profile, Authentication & Theme System Tests', () => {
       assert.equal(storageKey, 'safaipay_theme_preference');
     });
 
-    it('supports exactly light, dark, and system theme preferences', () => {
-      const validPreferences = ['light', 'dark', 'system'];
+    it('supports strictly light and dark theme preferences without system mode', () => {
+      const validPreferences = ['light', 'dark'];
       assert.ok(validPreferences.includes('light'));
       assert.ok(validPreferences.includes('dark'));
-      assert.ok(validPreferences.includes('system'));
+      assert.equal(validPreferences.includes('system' as any), false);
     });
   });
 
@@ -216,18 +216,20 @@ describe('SafaiPay Profile, Authentication & Theme System Tests', () => {
     });
   });
 
-  // 7. Profile Dropdown Layout & Theme Descriptions
-  describe('Profile Dropdown Layout & Theme Specifications', () => {
-    it('verifies exact required theme descriptions', () => {
-      const expectedDescriptions = {
-        light: 'Clean high-contrast daytime theme',
-        dark: 'Reduced eye strain dark environment',
-        system: 'Automatically sync with your device OS settings',
-      };
+  // 7. Profile Dropdown Layout & 2-Option Theme Specifications
+  describe('Profile Dropdown Layout & 2-Option Theme Specifications', () => {
+    it('strictly confines theme options to Light and Dark with centered icons and no description text', () => {
+      const themeOptions = [
+        { value: 'light', labelEn: 'Light', hasDescription: false },
+        { value: 'dark', labelEn: 'Dark', hasDescription: false },
+      ];
 
-      assert.equal(expectedDescriptions.light, 'Clean high-contrast daytime theme');
-      assert.equal(expectedDescriptions.dark, 'Reduced eye strain dark environment');
-      assert.equal(expectedDescriptions.system, 'Automatically sync with your device OS settings');
+      assert.equal(themeOptions.length, 2);
+      assert.equal(themeOptions[0].value, 'light');
+      assert.equal(themeOptions[1].value, 'dark');
+      assert.equal(themeOptions[0].hasDescription, false);
+      assert.equal(themeOptions[1].hasDescription, false);
+      assert.ok(!themeOptions.some((t: any) => t.value === 'system'));
     });
 
     it('ensures dropdown width and touch target constraints', () => {

@@ -289,12 +289,9 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
                 <Palette className="w-3.5 h-3.5 text-theme-primary" />
                 <span>{isUrdu ? 'ڈسپلے تھیم' : 'Theme Preference'}</span>
               </p>
-              <span className="text-[10px] text-theme-secondary font-mono">
-                {isUrdu ? 'خودکار مطابقت' : 'Real-time sync'}
-              </span>
             </div>
 
-            {/* Stacked responsive cards: never overlap, never clip */}
+            {/* Equal width and height Light and Dark cards with centered icons */}
             <ThemeSwitcher variant="menu" />
           </div>
 
