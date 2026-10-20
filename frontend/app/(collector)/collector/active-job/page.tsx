@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -18,10 +18,11 @@ import {
   ArrowRight,
   ShieldCheck,
   AlertCircle,
-  Truck
+  Truck,
+  RefreshCw
 } from 'lucide-react';
 
-export default function CollectorActiveJobPage() {
+function CollectorActiveJobContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pickupId = searchParams.get('id') || 'SP-JOB-401';
@@ -33,6 +34,7 @@ export default function CollectorActiveJobPage() {
   const [customerOtp, setCustomerOtp] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const benchmarkRate = 80; // Rs/kg for PET
   const qualityFactor = qualityGrade === 'A' ? 1.0 : qualityGrade === 'B' ? 0.85 : 0.65;
@@ -42,9 +44,10 @@ export default function CollectorActiveJobPage() {
   const handleCompleteJob = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerOtp || customerOtp.length < 4) {
-      alert('Please enter customer 4-digit verification code');
+      setFormError('Please enter customer 4-digit verification code.');
       return;
     }
+    setFormError(null);
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
@@ -134,6 +137,12 @@ export default function CollectorActiveJobPage() {
 
               {/* On-Site Verification Form */}
               <form onSubmit={handleCompleteJob} className="bg-white rounded-3xl border border-purple-100 p-6 sm:p-8 shadow-xs space-y-6">
+                {formError && (
+                  <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>{formError}</span>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     1. Certified Digital Scale Weight (kg)
@@ -255,3 +264,18 @@ export default function CollectorActiveJobPage() {
     </ProtectedRoute>
   );
 }
+
+export default function CollectorActiveJobPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+        </div>
+      }
+    >
+      <CollectorActiveJobContent />
+    </Suspense>
+  );
+}
+

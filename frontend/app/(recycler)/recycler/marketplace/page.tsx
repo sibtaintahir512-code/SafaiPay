@@ -24,7 +24,8 @@ import {
   Clock,
   Truck,
   XCircle,
-  HelpCircle
+  HelpCircle,
+  AlertCircle
 } from 'lucide-react';
 import {
   procureBatch,
@@ -149,6 +150,13 @@ export default function RecyclerMarketplacePage() {
   const [disputeTxnId, setDisputeTxnId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
 
+  // Transaction cancel modal
+  const [cancelTxnId, setCancelTxnId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+
+  // Top banner message
+  const [bannerMessage, setBannerMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
   // Load marketplace data
   const loadMarketplaceData = async () => {
     setIsLoading(true);
@@ -185,9 +193,10 @@ export default function RecyclerMarketplacePage() {
         deadline: new Date(deadline).toISOString()
       });
       setShowDemandModal(false);
+      setBannerMessage({ type: 'success', text: 'Demand post successfully published to marketplace.' });
       await loadMarketplaceData();
     } catch (err: any) {
-      alert(err.message || 'Failed to create demand post.');
+      setBannerMessage({ type: 'error', text: err.message || 'Failed to create demand post.' });
     } finally {
       setSubmittingDemand(false);
     }
@@ -196,18 +205,20 @@ export default function RecyclerMarketplacePage() {
   const handleDeliverTransaction = async (txnId: string) => {
     try {
       await deliverMarketplaceTransaction(txnId, 'https://safaipay.org/proof/gatepass_verified.jpg');
+      setBannerMessage({ type: 'success', text: 'Transaction marked as Delivered.' });
       await loadMarketplaceData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update transaction.');
+      setBannerMessage({ type: 'error', text: err.message || 'Failed to update transaction.' });
     }
   };
 
   const handleCompleteTransaction = async (txnId: string) => {
     try {
       await completeMarketplaceTransaction(txnId);
+      setBannerMessage({ type: 'success', text: 'Transaction completed and funds settled.' });
       await loadMarketplaceData();
     } catch (err: any) {
-      alert(err.message || 'Failed to complete transaction.');
+      setBannerMessage({ type: 'error', text: err.message || 'Failed to complete transaction.' });
     }
   };
 
@@ -218,20 +229,24 @@ export default function RecyclerMarketplacePage() {
       await disputeMarketplaceTransaction(disputeTxnId, disputeReason);
       setDisputeTxnId(null);
       setDisputeReason('');
+      setBannerMessage({ type: 'info', text: 'Dispute submitted for operations arbitration.' });
       await loadMarketplaceData();
     } catch (err: any) {
-      alert(err.message || 'Failed to raise dispute.');
+      setBannerMessage({ type: 'error', text: err.message || 'Failed to raise dispute.' });
     }
   };
 
-  const handleCancelTransaction = async (txnId: string) => {
-    const reason = prompt('Please enter the reason for cancelling this supply transaction:');
-    if (!reason) return;
+  const handleConfirmCancelTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancelTxnId || !cancelReason.trim()) return;
     try {
-      await cancelMarketplaceTransaction(txnId, reason);
+      await cancelMarketplaceTransaction(cancelTxnId, cancelReason.trim());
+      setCancelTxnId(null);
+      setCancelReason('');
+      setBannerMessage({ type: 'info', text: 'Transaction has been cancelled.' });
       await loadMarketplaceData();
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel transaction.');
+      setBannerMessage({ type: 'error', text: err.message || 'Failed to cancel transaction.' });
     }
   };
 
@@ -299,6 +314,27 @@ export default function RecyclerMarketplacePage() {
               </Link>
             </div>
           </div>
+
+          {bannerMessage && (
+            <div className={`mb-6 p-4 rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs ${
+              bannerMessage.type === 'success'
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+                : bannerMessage.type === 'error'
+                ? 'bg-red-50 border border-red-200 text-red-900'
+                : 'bg-purple-50 border border-purple-200 text-purple-900'
+            }`}>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{bannerMessage.text}</span>
+              </div>
+              <button
+                onClick={() => setBannerMessage(null)}
+                className="font-bold opacity-70 hover:opacity-100 ml-4"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Tab Navigation */}
           <div className="flex space-x-2 border-b border-slate-200 mb-6 pb-2 overflow-x-auto">
@@ -410,7 +446,10 @@ export default function RecyclerMarketplacePage() {
                       </span>
                       <button
                         onClick={() => {
-                          alert(`Offers submitted for demand #${demand.id}. Recycler can review and accept via API or Collector dashboard.`);
+                          setBannerMessage({
+                            type: 'info',
+                            text: `Offers submitted for demand #${demand.id}. Recyclers can review and accept via API or Collector dashboard.`
+                          });
                         }}
                         className="text-xs font-bold text-purple-600 hover:text-purple-700"
                       >
@@ -516,7 +555,10 @@ export default function RecyclerMarketplacePage() {
                               Raise Dispute
                             </button>
                             <button
-                              onClick={() => handleCancelTransaction(txn.id)}
+                              onClick={() => {
+                                setCancelTxnId(txn.id);
+                                setCancelReason('');
+                              }}
                               className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs"
                             >
                               Cancel
@@ -861,6 +903,46 @@ export default function RecyclerMarketplacePage() {
                       className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-xs"
                     >
                       Submit Dispute
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Cancel Transaction Modal */}
+          {cancelTxnId && (
+            <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+                <h3 className="text-base font-bold text-slate-900 mb-2">Cancel Supply Transaction</h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  Please provide a documented reason for cancelling this supply transaction for operations audit records.
+                </p>
+                <form onSubmit={handleConfirmCancelTransaction} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Cancellation Reason</label>
+                    <textarea
+                      rows={3}
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder="e.g., Procurement order superseded or duplicate dispatch created."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-medium focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCancelTxnId(null)}
+                      className="px-4 py-2 rounded-xl bg-slate-100 font-bold text-slate-700"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-xs"
+                    >
+                      Confirm Cancellation
                     </button>
                   </div>
                 </form>

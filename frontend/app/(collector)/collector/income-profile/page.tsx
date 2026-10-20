@@ -29,7 +29,6 @@ export default function CollectorIncomeProfilePage() {
 
   const handleExportCSV = () => {
     if (!consentGranted) {
-      alert('Explicit user consent is required to export your financial ledger.');
       return;
     }
 
@@ -88,7 +87,12 @@ export default function CollectorIncomeProfilePage() {
 
             <button
               onClick={handleExportCSV}
-              className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md shadow-purple-600/20 transition cursor-pointer"
+              disabled={!consentGranted}
+              className={`inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl font-bold text-sm shadow-md transition ${
+                consentGranted
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20 cursor-pointer'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+              }`}
             >
               <Download className="w-4 h-4" />
               <span>{isUrdu ? 'لیجر ڈاؤن لوڈ کریں (CSV)' : 'Export Verified Ledger (CSV)'}</span>

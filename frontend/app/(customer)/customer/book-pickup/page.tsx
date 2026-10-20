@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Navbar } from '@/components/Navbar';
-import { createPickup, classifyWasteAI } from '@/lib/api';
+import { createPickup, classifyWasteAI, getMaterialRates } from '@/lib/api';
+import { MaterialRate } from '@/lib/types';
 
-import { Sparkles, Camera, ArrowRight, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Sparkles, Camera, ArrowRight, CheckCircle2, ArrowLeft, AlertCircle } from 'lucide-react';
 
 export default function BookPickupPage() {
   const router = useRouter();
@@ -17,10 +18,27 @@ export default function BookPickupPage() {
   const [photo, setPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [materialsList, setMaterialsList] = useState<MaterialRate[]>([]);
+
+  useEffect(() => {
+    async function loadMaterials() {
+      try {
+        const rates = await getMaterialRates();
+        if (rates && rates.length > 0) {
+          setMaterialsList(rates);
+        }
+      } catch (err) {
+        console.error('Failed to load material rates', err);
+      }
+    }
+    loadMaterials();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setErrorMessage(null);
     try {
       await createPickup({
         material_code: material,
@@ -32,11 +50,29 @@ export default function BookPickupPage() {
       setSuccess(true);
       setTimeout(() => router.push('/customer/dashboard'), 1500);
     } catch (err: any) {
-      alert(`Booking Error: ${err.message}`);
+      setErrorMessage(err.message || 'Failed to submit pickup request. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const defaultMaterials = [
+    { code: 'PET_PLASTIC', name: 'PET Plastic', rate: 'Rs 80/kg' },
+    { code: 'MIXED_PLASTIC', name: 'Mixed Plastic', rate: 'Rs 45/kg' },
+    { code: 'CARDBOARD_OCC', name: 'Cardboard', rate: 'Rs 35/kg' },
+    { code: 'MIXED_METAL', name: 'Mixed Metal', rate: 'Rs 120/kg' },
+    { code: 'GLASS_BOTTLES', name: 'Glass Bottles', rate: 'Rs 25/kg' },
+    { code: 'E_WASTE', name: 'E-Waste', rate: 'Rs 200/kg' },
+    { code: 'ORGANIC_WASTE', name: 'Organic Waste', rate: 'Rs 10/kg' },
+  ];
+
+  const displayMaterials = materialsList.length > 0
+    ? materialsList.filter(m => m.benchmark_rate_pkr > 0).map(m => ({
+        code: m.code,
+        name: m.name,
+        rate: `Rs ${m.benchmark_rate_pkr}/kg`
+      }))
+    : defaultMaterials;
 
   return (
     <ProtectedRoute allowedRole="customer">
@@ -55,6 +91,13 @@ export default function BookPickupPage() {
             <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Book a Recyclable Pickup</h1>
             <p className="text-xs text-slate-500 mb-6">Verified doorstep collection with certified digital weighing scale.</p>
 
+            {errorMessage && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {success ? (
               <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
@@ -66,12 +109,7 @@ export default function BookPickupPage() {
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">1. Material Stream</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { code: 'PET_PLASTIC', name: 'PET Plastic', rate: 'Rs 80/kg' },
-                      { code: 'CARDBOARD_OCC', name: 'Cardboard', rate: 'Rs 35/kg' },
-                      { code: 'MIXED_METAL', name: 'Mixed Metal', rate: 'Rs 120/kg' },
-                      { code: 'GLASS_BOTTLES', name: 'Glass Bottles', rate: 'Rs 25/kg' },
-                    ].map((m) => (
+                    {displayMaterials.map((m) => (
                       <div
                         key={m.code}
                         onClick={() => setMaterial(m.code)}

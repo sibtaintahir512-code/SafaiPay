@@ -20,7 +20,8 @@ import {
   Navigation,
   Shield,
   Zap,
-  Radio
+  Radio,
+  AlertCircle
 } from 'lucide-react';
 
 export default function CollectorJobsPage() {
@@ -33,6 +34,7 @@ export default function CollectorJobsPage() {
   const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadJobs() {
@@ -51,11 +53,12 @@ export default function CollectorJobsPage() {
 
   const handleAcceptJob = async (pickupId: string) => {
     try {
+      setActionError(null);
       setAcceptingId(pickupId);
       await assignPickupToCollector(pickupId, user?.id || 'col-demo-1');
       router.push(`/collector/active-job?id=${pickupId}`);
     } catch (err: any) {
-      alert(`Accept Error: ${err.message}`);
+      setActionError(err.message || 'Failed to accept job. It may have already been assigned to another collector.');
       setAcceptingId(null);
     }
   };
@@ -107,6 +110,21 @@ export default function CollectorJobsPage() {
               </button>
             </div>
           </div>
+
+          {actionError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-semibold flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{actionError}</span>
+              </div>
+              <button
+                onClick={() => setActionError(null)}
+                className="text-red-500 hover:text-red-700 font-bold ml-4"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Filter Bar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-3 shadow-xs">

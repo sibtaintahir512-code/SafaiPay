@@ -323,3 +323,43 @@ export function verifyAndConsumeResetOtp(identifier: string, otp: string): boole
   }
   return false;
 }
+
+// User Registration helper
+export function registerUser(payload: {
+  phone_number: string;
+  full_name: string;
+  email?: string | null;
+  password: string;
+  role: UserRole;
+}): RegisteredUser {
+  const existing = findUserByIdentifier(payload.phone_number) || (payload.email ? findUserByIdentifier(payload.email) : undefined);
+  if (existing) {
+    throw new Error('A user with this phone number or email already exists.');
+  }
+
+  const roleName = payload.role.toLowerCase() as UserRole;
+  const uppercaseRole = roleName.toUpperCase();
+  const id = `usr_${roleName.slice(0, 4)}_${Date.now()}`;
+  const passwordHash = hashPassword(payload.password);
+
+  const newUser: RegisteredUser = {
+    id,
+    phone_number: payload.phone_number,
+    email: payload.email || `${roleName}_${Date.now()}@safaipay.test`,
+    full_name: payload.full_name,
+    passwordHash,
+    role: roleName,
+    roles: [uppercaseRole],
+    is_phone_verified: false,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    profile: {
+      registration_channel: 'WEB_PORTAL',
+      tier: 'STANDARD',
+    },
+  };
+
+  VERIFIED_USERS.push(newUser);
+  return newUser;
+}
+

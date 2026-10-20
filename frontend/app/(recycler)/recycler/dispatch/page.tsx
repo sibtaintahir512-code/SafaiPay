@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -16,10 +16,11 @@ import {
   ShieldCheck,
   FileText,
   User,
-  Phone
+  Phone,
+  RefreshCw
 } from 'lucide-react';
 
-export default function RecyclerDispatchPage() {
+function RecyclerDispatchContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order') || 'PO-REC-2026-081';
   const { isUrdu } = useLanguage();
@@ -150,3 +151,18 @@ export default function RecyclerDispatchPage() {
     </ProtectedRoute>
   );
 }
+
+export default function RecyclerDispatchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+        </div>
+      }
+    >
+      <RecyclerDispatchContent />
+    </Suspense>
+  );
+}
+

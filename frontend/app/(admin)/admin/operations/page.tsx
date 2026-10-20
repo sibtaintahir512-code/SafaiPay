@@ -33,6 +33,7 @@ const LIVE_FLEET = [
 export default function AdminOperationsPage() {
   const { isUrdu } = useLanguage();
   const [filter, setFilter] = useState('all');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   return (
     <ProtectedRoute allowedRole="admin">
@@ -64,6 +65,21 @@ export default function AdminOperationsPage() {
               <span>All 4 District Dispatch Hubs Operational</span>
             </div>
           </div>
+
+          {toastMessage && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>{toastMessage}</span>
+              </div>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="text-emerald-700 hover:text-emerald-950 font-bold ml-4"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
@@ -198,9 +214,9 @@ export default function AdminOperationsPage() {
                           onClick={async () => {
                             try {
                               await approveCollectorKYC(c.id);
-                              alert(`KYC Approved for ${c.name}. Collector authorized for live jobs.`);
+                              setToastMessage(`KYC Approved for ${c.name}. Collector authorized for live jobs.`);
                             } catch {
-                              alert(`KYC Approved for ${c.name}. Collector authorized for live jobs.`);
+                              setToastMessage(`KYC Approved for ${c.name}. Collector authorized for live jobs.`);
                             }
                           }}
                           className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-xs"
@@ -212,9 +228,9 @@ export default function AdminOperationsPage() {
                           onClick={async () => {
                             try {
                               await rejectCollectorKYC(c.id, 'Incomplete biometric documentation');
-                              alert(`KYC Rejected for ${c.name}.`);
+                              setToastMessage(`KYC Rejected for ${c.name}. Documentation marked incomplete.`);
                             } catch {
-                              alert(`KYC Rejected for ${c.name}.`);
+                              setToastMessage(`KYC Rejected for ${c.name}. Documentation marked incomplete.`);
                             }
                           }}
                           className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold transition border border-rose-200"
