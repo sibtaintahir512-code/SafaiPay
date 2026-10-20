@@ -6,10 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useTheme } from '@/context/ThemeContext';
 import { UserRole } from '@/lib/types';
-import { getDashboardPath, checkBackendHealth } from '@/lib/api';
+import { getDashboardPath, checkBackendHealth, fetchUnreadCount } from '@/lib/api';
 import { SafaiPayLogo } from '@/components/SafaiPayLogo';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { ProfileModal, ProfileModalTab } from '@/components/ProfileModal';
+import { NotificationPanel } from '@/components/NotificationPanel';
+import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { 
   Shield, 
   Truck, 
@@ -42,6 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
   const router = useRouter();
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const [showHelp, setShowHelp] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -59,6 +62,13 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
     }).catch(() => {
       setIsBackendLive(false);
     });
+
+    // Fetch initial unread notifications count
+    if (user) {
+      fetchUnreadCount().then((cnt) => setUnreadCount(cnt)).catch(() => {});
+    } else {
+      setUnreadCount(0);
+    }
 
     // Close menus on click outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -170,51 +180,42 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
               {/* Notifications */}
               <div className="relative">
                 <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition relative flex items-center justify-center"
+                  type="button"
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setShowProfileMenu(false);
+                  }}
+                  className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition relative flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
+                  aria-label={
+                    unreadCount > 0
+                      ? (isUrdu ? `اطلاعات، ${unreadCount} نئی` : `Notifications, ${unreadCount} unread`)
+                      : (isUrdu ? 'اطلاعات' : 'Notifications')
+                  }
                   title={t('nav.notifications')}
                 >
                   <Bell className="w-4 h-4" />
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-theme-primary ring-2 ring-theme-surface" />
+                  {unreadCount > 0 && (
+                    <span 
+                      className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-theme-primary text-white text-[10px] font-black flex items-center justify-center ring-2 ring-theme-surface shadow-xs pointer-events-none"
+                      aria-hidden="true"
+                    >
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </button>
 
-                {showNotifications && (
-                  <div className="absolute right-0 rtl:left-0 rtl:right-auto mt-2 w-72 sm:w-80 bg-theme-surface rounded-2xl shadow-xl border border-theme-border p-4 z-50 text-theme-text">
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-theme-border/60">
-                      <h4 className="text-xs font-bold text-theme-text">{t('nav.notifications')}</h4>
-                      <span className="text-[10px] bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded-full font-bold">3 New</span>
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      <div className="p-2.5 bg-theme-bg rounded-xl border border-theme-border flex items-start space-x-2 rtl:space-x-reverse">
-                        <CheckCircle2 className="w-4 h-4 text-theme-primary shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-theme-text">PET Plastic Weighed</p>
-                          <p className="text-[11px] text-theme-secondary">10.5 kg verified on scale. Rs 840 paid.</p>
-                        </div>
-                      </div>
-                      <div className="p-2.5 bg-theme-bg rounded-xl border border-theme-border flex items-start space-x-2 rtl:space-x-reverse">
-                        <Sparkles className="w-4 h-4 text-theme-yellow shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-theme-text">Rate Index Updated</p>
-                          <p className="text-[11px] text-theme-secondary">PET benchmark adjusted to Rs 85.00/kg.</p>
-                        </div>
-                      </div>
-                      <div className="p-2.5 bg-theme-bg rounded-xl border border-theme-border flex items-start space-x-2 rtl:space-x-reverse">
-                        <AlertCircle className="w-4 h-4 text-theme-warning shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-theme-text">Quality Check</p>
-                          <p className="text-[11px] text-theme-secondary">Dry sorted cardboard batch ready for pickup.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <NotificationPanel
+                  isOpen={showNotifications}
+                  onClose={() => setShowNotifications(false)}
+                  onUnreadChange={(count) => setUnreadCount(count)}
+                />
               </div>
 
               {/* Help & Support */}
               <button
+                type="button"
                 onClick={() => setShowHelp(true)}
-                className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition hidden sm:inline-flex items-center justify-center"
+                className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition hidden sm:inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
                 title={t('nav.help')}
               >
                 <HelpCircle className="w-4 h-4" />
@@ -241,16 +242,20 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
 
               {/* User Profile Menu & Dropdown Trigger */}
               {user && (
-                <div ref={profileMenuRef} className="relative flex items-center pl-2 rtl:pr-2 border-l rtl:border-r rtl:border-l-0 border-theme-border">
+                <div className="relative flex items-center pl-2 rtl:pr-2 border-l rtl:border-r rtl:border-l-0 border-theme-border">
                   <button
                     type="button"
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="flex items-center space-x-2.5 rtl:space-x-reverse p-1.5 rounded-2xl hover:bg-theme-soft-mint transition min-h-[44px] group"
+                    onClick={() => {
+                      setShowProfileMenu(!showProfileMenu);
+                      setShowNotifications(false);
+                    }}
+                    className="flex items-center space-x-2.5 rtl:space-x-reverse p-1.5 rounded-2xl hover:bg-theme-soft-mint transition min-h-[44px] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
                     aria-expanded={showProfileMenu}
                     aria-haspopup="menu"
+                    aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User account profile menu'}
                     title="Account Profile & Settings"
                   >
-                    <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-bold text-xs border border-theme-border group-hover:scale-105 transition-transform overflow-hidden">
+                    <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-bold text-xs border border-theme-border group-hover:scale-105 transition-transform overflow-hidden shrink-0">
                       {user.profile_photo_url ? (
                         <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -258,120 +263,24 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
                       )}
                     </div>
                     <div className="text-left rtl:text-right hidden sm:block">
-                      <p className="text-xs font-bold text-theme-text leading-tight truncate max-w-[110px]">
+                      <p className="text-xs font-bold text-theme-text leading-tight truncate max-w-[120px]">
                         {user.full_name || 'Pilot User'}
                       </p>
-                      <p className="text-[10px] text-theme-primary font-mono font-medium truncate max-w-[110px]">
+                      <p className="text-[10px] text-theme-primary font-mono font-medium truncate max-w-[120px]">
                         {user.phone_number || user.email}
                       </p>
                     </div>
                     <ChevronDown className={`w-3.5 h-3.5 text-theme-secondary transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* Profile Menu Dropdown Popover */}
-                  {showProfileMenu && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 rtl:left-0 rtl:right-auto top-full mt-2 w-72 sm:w-80 bg-theme-surface rounded-2xl shadow-2xl border border-theme-border p-3 z-50 animate-fadeIn text-theme-text"
-                    >
-                      {/* Header Summary */}
-                      <div className="p-3 bg-theme-bg rounded-xl border border-theme-border flex items-center space-x-3 rtl:space-x-reverse mb-2">
-                        <div className="w-10 h-10 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-extrabold text-base border border-theme-border shrink-0 overflow-hidden">
-                          {user.profile_photo_url ? (
-                            <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            (user.full_name?.charAt(0) || 'U').toUpperCase()
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-extrabold text-theme-text truncate">{user.full_name}</p>
-                          <p className="text-[10px] text-theme-secondary font-mono truncate">{user.phone_number || user.email}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary border border-theme-border">
-                              {role || 'CITIZEN'}
-                            </span>
-                            <span className="text-[9px] font-bold text-theme-primary flex items-center gap-0.5">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>Verified</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Menu Options */}
-                      <div className="space-y-1 text-xs font-semibold">
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => openProfileWithTab('view')}
-                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center justify-between min-h-[44px]"
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <UserIcon className="w-4 h-4 text-theme-secondary" />
-                            <span>{isUrdu ? 'پروفائل تفصیلات دیکھیں' : 'View Profile'}</span>
-                          </span>
-                          <span className="text-[10px] text-theme-secondary font-mono">⌘P</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => openProfileWithTab('edit')}
-                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center gap-2.5 min-h-[44px]"
-                        >
-                          <FileText className="w-4 h-4 text-theme-secondary" />
-                          <span>{isUrdu ? 'پروفائل ترمیم کریں' : 'Edit Profile'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => openProfileWithTab('password')}
-                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center gap-2.5 min-h-[44px]"
-                        >
-                          <KeyRound className="w-4 h-4 text-theme-secondary" />
-                          <span>{isUrdu ? 'پاس ورڈ تبدیل کریں' : 'Change Password'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setShowProfileMenu(false);
-                            router.push(getProfilePath());
-                          }}
-                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center gap-2.5 min-h-[44px]"
-                        >
-                          <Settings className="w-4 h-4 text-theme-secondary" />
-                          <span>{isUrdu ? 'ترتیبات' : 'Settings'}</span>
-                        </button>
-                      </div>
-
-                      {/* Quick Theme Switcher in Profile Menu */}
-                      <div className="pt-2 mt-2 border-t border-theme-border/60">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-theme-secondary px-3 mb-1.5 flex items-center gap-1.5">
-                          <Palette className="w-3.5 h-3.5" />
-                          <span>{isUrdu ? 'ڈسپلے تھیم' : 'Theme Preference'}</span>
-                        </p>
-                        <div className="px-1">
-                          <ThemeSwitcher variant="full" />
-                        </div>
-                      </div>
-
-                      {/* Logout Action */}
-                      <div className="pt-2 mt-2 border-t border-theme-border/60">
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={handleLogout}
-                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl text-theme-error hover:bg-red-50 dark:hover:bg-red-950/40 transition flex items-center gap-2.5 font-bold min-h-[44px]"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          <span>{isUrdu ? 'لاگ آؤٹ' : 'Sign Out'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  <ProfileDropdown
+                    isOpen={showProfileMenu}
+                    onClose={() => setShowProfileMenu(false)}
+                    onOpenModalTab={(tab) => {
+                      setProfileModalTab(tab);
+                      setProfileModalOpen(true);
+                    }}
+                  />
                 </div>
               )}
 

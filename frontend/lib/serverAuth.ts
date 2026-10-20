@@ -431,4 +431,194 @@ export function changeUserPassword(
   return true;
 }
 
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+  readAt?: string;
+  metadata?: Record<string, any>;
+}
+
+// In-Memory Notifications store per user
+export const USER_NOTIFICATIONS: AppNotification[] = [
+  // Customer notifications
+  {
+    id: 'notif_cust_001',
+    userId: 'usr_cust_001',
+    type: 'PICKUP',
+    title: 'Pickup Assigned to Collector',
+    message: 'Collector Muhammad Rafiq (SCALE-KHI-402) has accepted your PET plastic pickup.',
+    link: '/customer/pickups',
+    isRead: false,
+    createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_cust_002',
+    userId: 'usr_cust_001',
+    type: 'SCALE',
+    title: 'Weight & Payout Verified',
+    message: '10.5 kg PET plastic verified on scale. Rs 840.00 credited to your wallet.',
+    link: '/customer/receipts',
+    isRead: false,
+    createdAt: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_cust_003',
+    userId: 'usr_cust_001',
+    type: 'PRICING',
+    title: 'Scrap Rate Benchmark Update',
+    message: 'PET benchmark rate adjusted to Rs 80.00/kg. Cardboard rate is Rs 35.00/kg.',
+    link: '/customer/book-pickup',
+    isRead: true,
+    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    readAt: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+  },
+
+  // Collector notifications
+  {
+    id: 'notif_coll_001',
+    userId: 'usr_coll_001',
+    type: 'JOB',
+    title: 'New Pickup Job Available',
+    message: 'Falcon Complex PECHS has 25 kg PET bottles ready for collection.',
+    link: '/collector/jobs',
+    isRead: false,
+    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_coll_002',
+    userId: 'usr_coll_001',
+    type: 'SCALE',
+    title: 'Digital Scale Calibrated',
+    message: 'Sensor SCALE-KHI-402 passed daily precision check. Calibrated zero set.',
+    link: '/collector/active-job',
+    isRead: false,
+    createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_coll_003',
+    userId: 'usr_coll_001',
+    type: 'PAYOUT',
+    title: 'Daily Earnings Settled',
+    message: 'Rs 4,250 transferred to your designated JazzCash wallet.',
+    link: '/collector/earnings',
+    isRead: true,
+    createdAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
+    readAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+  },
+
+  // Recycler notifications
+  {
+    id: 'notif_recy_001',
+    userId: 'usr_recy_001',
+    type: 'MARKET',
+    title: 'Bulk Aggregated Lot Available',
+    message: 'Lot #LOT-KHI-894 (1,200 kg PET flakes) ready for inspection at Korangi hub.',
+    link: '/recycler/marketplace',
+    isRead: false,
+    createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_recy_002',
+    userId: 'usr_recy_001',
+    type: 'DISPATCH',
+    title: 'Weighbridge Dispatch Confirmed',
+    message: 'Truck TR-789 departed aggregation hub. Verified net weight 2,450 kg.',
+    link: '/recycler/dispatch',
+    isRead: false,
+    createdAt: new Date(Date.now() - 110 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_recy_003',
+    userId: 'usr_recy_001',
+    type: 'TRACE',
+    title: 'Chain-of-Custody Manifest Generated',
+    message: 'Batch ESG compliance certificate #ESG-2026-901 available.',
+    link: '/recycler/traceability',
+    isRead: true,
+    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    readAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString(),
+  },
+
+  // Admin notifications
+  {
+    id: 'notif_admin_001',
+    userId: 'usr_admin_001',
+    type: 'KYC',
+    title: 'Collector KYC Pending Review',
+    message: '2 waste collectors submitted CNIC documents for onboarding approval.',
+    link: '/admin/users',
+    isRead: false,
+    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_admin_002',
+    userId: 'usr_admin_001',
+    type: 'FRAUD',
+    title: 'Weight Variance Anomaly Flagged',
+    message: 'Job #PK-4091 reported 55% weight deviation from initial AI estimate.',
+    link: '/admin/fraud-alerts',
+    isRead: false,
+    createdAt: new Date(Date.now() - 150 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'notif_admin_003',
+    userId: 'usr_admin_001',
+    type: 'SYSTEM',
+    title: 'Benchmark Rates Published',
+    message: 'Karachi scrap benchmark rates updated across 8 material streams.',
+    link: '/admin/pricing',
+    isRead: true,
+    createdAt: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+    readAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+  },
+];
+
+export function getUserNotifications(identifierOrId: string): AppNotification[] {
+  const user = findUserByIdentifier(identifierOrId);
+  if (!user) return [];
+  return USER_NOTIFICATIONS.filter((n) => n.userId === user.id).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+export function getUnreadNotificationCount(identifierOrId: string): number {
+  const user = findUserByIdentifier(identifierOrId);
+  if (!user) return 0;
+  return USER_NOTIFICATIONS.filter((n) => n.userId === user.id && !n.isRead).length;
+}
+
+export function markNotificationAsRead(
+  identifierOrId: string,
+  notificationId: string
+): AppNotification | null {
+  const user = findUserByIdentifier(identifierOrId);
+  if (!user) return null;
+  const notif = USER_NOTIFICATIONS.find((n) => n.id === notificationId && n.userId === user.id);
+  if (!notif) return null;
+  notif.isRead = true;
+  notif.readAt = new Date().toISOString();
+  return notif;
+}
+
+export function markAllNotificationsAsRead(identifierOrId: string): number {
+  const user = findUserByIdentifier(identifierOrId);
+  if (!user) return 0;
+  let count = 0;
+  for (const notif of USER_NOTIFICATIONS) {
+    if (notif.userId === user.id && !notif.isRead) {
+      notif.isRead = true;
+      notif.readAt = new Date().toISOString();
+      count++;
+    }
+  }
+  return count;
+}
+
+
 

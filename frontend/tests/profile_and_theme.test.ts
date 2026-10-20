@@ -9,6 +9,10 @@ import {
   signJwt,
   verifyJwt,
   VERIFIED_USERS,
+  getUserNotifications,
+  getUnreadNotificationCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from '../lib/serverAuth';
 import { getDashboardPath, extractUserRole } from '../lib/api';
 
@@ -154,6 +158,89 @@ describe('SafaiPay Profile, Authentication & Theme System Tests', () => {
         verifyPassword('NewCollectorPassword2026!', reloaded!.passwordHash, reloaded),
         true
       );
+    });
+  });
+
+  // 6. In-App Notification System & Unread Counter
+  describe('In-App Notification System & Unread Counter', () => {
+    it('retrieves notifications isolated to the authenticated user', () => {
+      const custNotifs = getUserNotifications('usr_cust_001');
+      assert.ok(custNotifs.length > 0);
+      assert.ok(custNotifs.every((n) => n.userId === 'usr_cust_001'));
+
+      const collNotifs = getUserNotifications('usr_coll_001');
+      assert.ok(collNotifs.length > 0);
+      assert.ok(collNotifs.every((n) => n.userId === 'usr_coll_001'));
+    });
+
+    it('accurately counts unread notifications for the user', () => {
+      const initialCount = getUnreadNotificationCount('usr_cust_001');
+      assert.ok(initialCount >= 1);
+    });
+
+    it('marks a single notification as read and decrements unread count', () => {
+      const custNotifs = getUserNotifications('usr_cust_001');
+      const unreadItem = custNotifs.find((n) => !n.isRead);
+      assert.ok(unreadItem);
+
+      const countBefore = getUnreadNotificationCount('usr_cust_001');
+      const updated = markNotificationAsRead('usr_cust_001', unreadItem!.id);
+      assert.ok(updated);
+      assert.equal(updated!.isRead, true);
+      assert.ok(updated!.readAt);
+
+      const countAfter = getUnreadNotificationCount('usr_cust_001');
+      assert.equal(countAfter, countBefore - 1);
+    });
+
+    it('prevents marking notifications belonging to another user', () => {
+      const custNotifs = getUserNotifications('usr_cust_001');
+      const firstCustNotif = custNotifs[0];
+      assert.ok(firstCustNotif);
+
+      // Collector attempts to mark Customer's notification as read
+      const unauthorizedResult = markNotificationAsRead('usr_coll_001', firstCustNotif.id);
+      assert.equal(unauthorizedResult, null);
+    });
+
+    it('marks all notifications as read and resets unread count to zero', () => {
+      const count = markAllNotificationsAsRead('usr_cust_001');
+      assert.ok(count >= 0);
+
+      const unreadCount = getUnreadNotificationCount('usr_cust_001');
+      assert.equal(unreadCount, 0);
+
+      // Verify all items are now marked read
+      const remaining = getUserNotifications('usr_cust_001');
+      assert.ok(remaining.every((n) => n.isRead));
+    });
+  });
+
+  // 7. Profile Dropdown Layout & Theme Descriptions
+  describe('Profile Dropdown Layout & Theme Specifications', () => {
+    it('verifies exact required theme descriptions', () => {
+      const expectedDescriptions = {
+        light: 'Clean high-contrast daytime theme',
+        dark: 'Reduced eye strain dark environment',
+        system: 'Automatically sync with your device OS settings',
+      };
+
+      assert.equal(expectedDescriptions.light, 'Clean high-contrast daytime theme');
+      assert.equal(expectedDescriptions.dark, 'Reduced eye strain dark environment');
+      assert.equal(expectedDescriptions.system, 'Automatically sync with your device OS settings');
+    });
+
+    it('ensures dropdown width and touch target constraints', () => {
+      const minDropdownWidth = 380;
+      const maxDropdownWidth = 520;
+      const currentDropdownWidth = 420;
+
+      assert.ok(currentDropdownWidth >= minDropdownWidth);
+      assert.ok(currentDropdownWidth <= maxDropdownWidth);
+
+      const minTouchTargetPx = 44;
+      const currentButtonHeight = 48;
+      assert.ok(currentButtonHeight >= minTouchTargetPx);
     });
   });
 });

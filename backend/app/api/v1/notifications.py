@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update, func
 
 from app.core.database import get_db
 from app.models.pickup import Notification
@@ -23,7 +23,38 @@ async def list_my_notifications(
     result = await db.execute(query)
     return result.scalars().all()
 
+@router.get("/unread-count", response_model=Dict[str, int])
+async def get_unread_count(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve unread notification count for the current authenticated user."""
+    query = select(func.count(Notification.id)).where(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    )
+    result = await db.execute(query)
+    count = result.scalar() or 0
+    return {"unread_count": count}
+
+@router.post("/mark-all-read", response_model=Dict[str, Any])
+@router.patch("/mark-all-read", response_model=Dict[str, Any])
+async def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Mark all notifications as read for current user."""
+    stmt = (
+        update(Notification)
+        .where(Notification.user_id == current_user.id, Notification.is_read == False)
+        .values(is_read=True)
+    )
+    res = await db.execute(stmt)
+    await db.commit()
+    return {"success": True, "marked_count": res.rowcount}
+
 @router.patch("/{id}/read", response_model=NotificationResponse)
+@router.post("/{id}/read", response_model=NotificationResponse)
 async def mark_notification_read(
     id: str,
     current_user: User = Depends(get_current_user),

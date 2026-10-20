@@ -1116,3 +1116,70 @@ export async function createInventoryFromPickup(pickupId: string): Promise<Inven
   });
 }
 
+// ==========================================
+// IN-APP NOTIFICATIONS API
+// ==========================================
+export interface AppNotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  notification_type?: string;
+  type?: string;
+  is_read: boolean;
+  link?: string;
+  related_entity_id?: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export async function fetchUserNotifications(): Promise<AppNotificationItem[]> {
+  try {
+    const data = await request<any[]>('/notifications');
+    return (data || []).map(n => ({
+      id: n.id,
+      title: n.title,
+      message: n.message,
+      notification_type: n.notification_type || n.type || 'INFO',
+      type: n.type || n.notification_type || 'INFO',
+      is_read: n.is_read !== undefined ? n.is_read : (n.isRead !== undefined ? n.isRead : false),
+      link: n.link || n.related_entity_id || '',
+      created_at: n.created_at || n.createdAt || new Date().toISOString(),
+      read_at: n.read_at || n.readAt,
+    }));
+  } catch (error) {
+    console.warn('Failed to fetch notifications:', error);
+    return [];
+  }
+}
+
+export async function fetchUnreadCount(): Promise<number> {
+  try {
+    const data = await request<{ unread_count: number }>('/notifications/unread-count');
+    return data.unread_count ?? 0;
+  } catch (error) {
+    console.warn('Failed to fetch unread count:', error);
+    return 0;
+  }
+}
+
+export async function markNotificationAsRead(id: string): Promise<boolean> {
+  try {
+    await request(`/notifications/${id}/read`, { method: 'POST' });
+    return true;
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+    throw error;
+  }
+}
+
+export async function markAllNotificationsAsRead(): Promise<boolean> {
+  try {
+    await request('/notifications/mark-all-read', { method: 'POST' });
+    return true;
+  } catch (error) {
+    console.error('Failed to mark all notifications as read:', error);
+    throw error;
+  }
+}
+
+
