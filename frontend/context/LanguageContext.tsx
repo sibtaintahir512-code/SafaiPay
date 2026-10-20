@@ -85,6 +85,18 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.monthly_volume': 'Monthly Recycled Volume',
     'admin.status_breakdown': 'Pickup Status Breakdown',
     'admin.audit_title': 'Operations Audit Log',
+
+    // Landing / Mobile Orbit
+    'landing.headline_1': 'Waste goes in.',
+    'landing.headline_2': 'Value comes out.',
+    'landing.subtitle': 'A smarter way to recycle, earn and grow.',
+    'landing.journey_title': 'Your clean journey',
+    'landing.step_1': 'Book a pickup',
+    'landing.step_2': 'Verify the weight',
+    'landing.step_3': 'Receive fair value',
+    'landing.start_cta': 'Start →',
+    'landing.have_account': 'Already have an account? Sign in',
+    'landing.back_to_intro': 'Back to Overview',
   },
   ur: {
     // Navigation
@@ -159,6 +171,18 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.monthly_volume': 'ماہانہ ری سائیکلنگ حجم',
     'admin.status_breakdown': 'پک اپ اسٹیٹس کا تناسب',
     'admin.audit_title': 'سسٹم آپریشنز اور آڈٹ لاگ',
+
+    // Landing / Mobile Orbit
+    'landing.headline_1': 'کچرا اندر جاتا ہے۔',
+    'landing.headline_2': 'قیمت باہر آتی ہے۔',
+    'landing.subtitle': 'ری سائیکل، کمانے اور آگے بڑھنے کا ایک بہتر طریقہ۔',
+    'landing.journey_title': 'آپ کا صفائی کا سفر',
+    'landing.step_1': 'پک اپ بک کریں',
+    'landing.step_2': 'وزن کی تصدیق کریں',
+    'landing.step_3': 'منصفانہ قیمت حاصل کریں',
+    'landing.start_cta': 'شروع کریں ←',
+    'landing.have_account': 'پہلے سے اکاؤنٹ ہے؟ سائن ان کریں',
+    'landing.back_to_intro': 'تعارف پر واپس جائیں',
   },
 };
 
