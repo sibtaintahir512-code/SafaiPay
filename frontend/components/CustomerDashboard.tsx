@@ -549,36 +549,36 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         <div className="lg:col-span-4 flex flex-col justify-between gap-4">
           
           {/* Metric 1: 52 kg diverted */}
-          <div className="bg-white rounded-2xl border border-[#D5E6DD] p-6 shadow-eco-sm flex-1 flex flex-col justify-between">
+          <div className="bg-theme-surface rounded-2xl border border-theme-border p-6 shadow-xs flex-1 flex flex-col justify-between transition-colors">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[#5B6B66]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-theme-secondary">
                 Landfill Diversion
               </span>
-              <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#1B7F5C] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center">
                 <Scale className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="text-3xl font-extrabold font-mono text-[#1B7F5C] tracking-tight">
+              <div className="text-3xl font-extrabold font-mono text-theme-primary tracking-tight">
                 52 kg diverted
               </div>
-              <p className="text-xs text-[#5B6B66] mt-1">
+              <p className="text-xs text-theme-secondary mt-1">
                 Total post-consumer plastics & paper kept out of local municipal landfills.
               </p>
             </div>
-            <div className="pt-3 border-t border-[#D5E6DD]/60 text-[11px] text-[#146B4D] font-semibold flex items-center space-x-1 mt-2">
+            <div className="pt-3 border-t border-theme-border/60 text-[11px] text-theme-primary font-semibold flex items-center space-x-1 mt-2">
               <span>+18 kg increase since April</span>
             </div>
           </div>
 
           {/* Metric 2: Rs 4,160 earned */}
           {/* Rule: never put gold text on white. Use gold on dark teal container! */}
-          <div className="bg-[#0F3D3E] text-white rounded-2xl border border-[#1F4A4B] p-6 shadow-eco-md flex-1 flex flex-col justify-between">
+          <div className="bg-[#0F3D3E] dark:bg-[#072021] text-white rounded-2xl border border-[#1F4A4B] dark:border-[#173F3C] p-6 shadow-md flex-1 flex flex-col justify-between transition-colors">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-extrabold uppercase tracking-wider text-[#9FE6C6]">
                 Cumulative Household Income
               </span>
-              <div className="w-8 h-8 rounded-xl bg-[#072021] text-[#F2A900] flex items-center justify-center border border-[#1F4A4B]">
+              <div className="w-8 h-8 rounded-xl bg-[#072021] dark:bg-[#041516] text-[#F2A900] flex items-center justify-center border border-[#1F4A4B] dark:border-[#173F3C]">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
@@ -600,32 +600,32 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
       </div>
 
       {/* ================= 5. RECENT PICKUPS & DIGITAL RECEIPTS ================= */}
-      <div className="bg-white rounded-3xl border border-[#D5E6DD] shadow-eco-sm overflow-hidden">
-        <div className="p-6 border-b border-[#D5E6DD]/60 flex items-center justify-between">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border shadow-xs overflow-hidden transition-colors">
+        <div className="p-6 border-b border-theme-border/60 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-extrabold text-[#0F3D3E] tracking-tight flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1B7F5C]" />
+            <h2 className="text-sm font-extrabold text-theme-text tracking-tight flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-theme-primary" />
               <span>{t('customer.history_title', 'Recent Pickups & Certified Receipts')}</span>
             </h2>
-            <p className="text-xs text-[#5B6B66] mt-0.5">
+            <p className="text-xs text-theme-secondary mt-0.5">
               Click any record to inspect certified scale readings and chain-of-custody
             </p>
           </div>
-          <span className="text-xs font-mono font-bold text-[#5B6B66]">
+          <span className="text-xs font-mono font-bold text-theme-secondary">
             {pickups.length} Records Logged
           </span>
         </div>
 
         {pickups.length === 0 ? (
-          <div className="p-10 text-center text-[#5B6B66] space-y-2">
-            <Package className="w-10 h-10 mx-auto text-[#D5E6DD]" />
-            <p className="text-sm font-bold text-[#0F3D3E]">No pickups registered yet</p>
-            <p className="text-xs text-[#5B6B66]">Book your first doorstep recycling pickup above!</p>
+          <div className="p-10 text-center text-theme-secondary space-y-2">
+            <Package className="w-10 h-10 mx-auto text-theme-border" />
+            <p className="text-sm font-bold text-theme-text">No pickups registered yet</p>
+            <p className="text-xs text-theme-secondary">Book your first doorstep recycling pickup above!</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F4FAF7] text-[#5B6B66] border-b border-[#D5E6DD] uppercase tracking-wider font-bold text-[10px]">
+              <thead className="bg-theme-soft-mint/40 text-theme-secondary border-b border-theme-border uppercase tracking-wider font-bold text-[10px]">
                 <tr>
                   <th className="px-6 py-3.5">Pickup ID</th>
                   <th className="px-6 py-3.5">Material</th>
@@ -635,19 +635,19 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   <th className="px-6 py-3.5 text-right">Digital Receipt</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D5E6DD]/60">
+              <tbody className="divide-y divide-theme-border/60">
                 {pickups.map((p) => {
                   const calc = p.pricing_calculations?.[0];
                   const verifiedWeight = calc ? calc.verified_weight_kg : p.estimated_quantity_kg;
                   const finalPrice = calc ? calc.total_price : p.estimated_quantity_kg * 80;
 
                   return (
-                    <tr key={p.id} className="hover:bg-[#F4FAF7] transition">
-                      <td className="px-6 py-4 font-mono font-bold text-[#0F3D3E]">
+                    <tr key={p.id} className="hover:bg-theme-soft-mint/30 transition">
+                      <td className="px-6 py-4 font-mono font-bold text-theme-text">
                         #{p.id.slice(0, 8)}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-bold text-[#0F3D3E] block">{p.material_code}</span>
+                        <span className="font-bold text-theme-text block">{p.material_code}</span>
                         <span className="text-[11px] text-[#5B6B66]">{p.street_address}</span>
                       </td>
                       <td className="px-6 py-4 font-mono font-bold text-[#1B7F5C]">

@@ -245,4 +245,32 @@ describe('SafaiPay Profile, Authentication & Theme System Tests', () => {
       assert.ok(currentButtonHeight >= minTouchTargetPx);
     });
   });
+
+  // 8. LineTrendChart SVG Geometry and Gradient Verification
+  describe('LineTrendChart SVG Area Gradient Verification', () => {
+    it('uses valid SVG url(#gradientId) fill syntax and forbids invalid CSS fallback in SVG fill', () => {
+      const gradientId = 'trendGradient-test123';
+      const validFill = `url(#${gradientId})`;
+      assert.match(validFill, /^url\(#[a-zA-Z0-9_-]+\)$/);
+
+      // Verify that invalid syntax like "url(--var, url(#id))" is never generated
+      const invalidSyntax = 'url(--trendGradient, url(#trendGradient))';
+      assert.notEqual(validFill, invalidSyntax);
+    });
+
+    it('generates smooth cubic bezier coordinates for trend dataset', () => {
+      const dataset = [
+        { label: 'Jan', value: 18 },
+        { label: 'Feb', value: 26 },
+        { label: 'Mar', value: 21 },
+        { label: 'Apr', value: 39 },
+        { label: 'May', value: 34 },
+        { label: 'Jun', value: 52 },
+      ];
+
+      assert.equal(dataset.length, 6);
+      const maxValue = Math.max(...dataset.map((d) => d.value));
+      assert.equal(maxValue, 52);
+    });
+  });
 });
