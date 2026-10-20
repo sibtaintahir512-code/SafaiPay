@@ -49,6 +49,7 @@ async def register(
     )
 
 @router.post("/login", response_model=TokenResponse)
+@router.post("/token", response_model=TokenResponse)
 async def login(
     payload: UserLoginRequest,
     request: Request,

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from app.models.user import RoleEnum
 from app.schemas.profiles import (
     CustomerProfileCreate,
@@ -22,8 +22,21 @@ class UserRegisterRequest(BaseModel):
     admin_profile: Optional[AdminProfileCreate] = None
 
 class UserLoginRequest(BaseModel):
-    identifier: str = Field(..., description="Phone number (+92...) or registered email address")
+    identifier: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
     password: str = Field(..., min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_identifier(cls, data):
+        if isinstance(data, dict):
+            ident = data.get("identifier") or data.get("username") or data.get("email")
+            if ident:
+                data["identifier"] = str(ident).strip()
+            elif "identifier" not in data:
+                data["identifier"] = ""
+        return data
 
 class TokenResponse(BaseModel):
     access_token: str
