@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     // Look up registered user
     const user = findUserByIdentifier(identifier);
-    if (!user || !verifyPassword(password, user.passwordHash)) {
+    if (!user || !verifyPassword(password, user.passwordHash, user)) {
       recordFailedLogin(identifier);
       return NextResponse.json(
         { detail: 'Invalid credentials: Phone/email or password is incorrect.' },

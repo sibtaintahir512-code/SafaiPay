@@ -39,7 +39,11 @@ export async function GET(req: NextRequest) {
   }
 
   const user = VERIFIED_USERS.find(
-    (u) => u.id === payload.sub || u.phone_number === payload.phone_number
+    (u) =>
+      u.id === payload.sub ||
+      u.phone_number === payload.phone_number ||
+      u.email === payload.email ||
+      (u.aliases && payload.phone_number && u.aliases.includes(payload.phone_number))
   );
 
   if (!user || !user.is_active) {
