@@ -22,6 +22,13 @@ from app.models.payment import (
     CollectorEarning,
     PaymentStatus,
 )
+from app.models.ai import AIModelVersion, AIPrediction
+from app.models.marketplace import (
+    InventoryItem,
+    RecyclerDemand,
+    SupplyOffer,
+    SupplyTransaction,
+)
 
 __all__ = [
     "Base",
@@ -52,4 +59,11 @@ __all__ = [
     "Payment",
     "CollectorEarning",
     "PaymentStatus",
+    "AIModelVersion",
+    "AIPrediction",
+    "InventoryItem",
+    "RecyclerDemand",
+    "SupplyOffer",
+    "SupplyTransaction",
 ]
+

@@ -11,6 +11,9 @@ from app.api.v1.notifications import router as notifications_router
 from app.api.v1.batches import router as batches_router
 from app.api.v1.dispatch import router as dispatch_router
 from app.api.v1.analytics import router as analytics_router
+from app.api.v1.ai import router as ai_router
+from app.api.v1.marketplace import router as marketplace_router
+from app.api.v1.inventory import router as inventory_router
 
 api_v1_router = APIRouter()
 
@@ -26,4 +29,8 @@ api_v1_router.include_router(notifications_router)
 api_v1_router.include_router(batches_router)
 api_v1_router.include_router(dispatch_router)
 api_v1_router.include_router(analytics_router)
+api_v1_router.include_router(ai_router)
+api_v1_router.include_router(marketplace_router)
+api_v1_router.include_router(inventory_router)
+
 
