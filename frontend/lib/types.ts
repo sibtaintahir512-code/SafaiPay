@@ -10,6 +10,13 @@ export interface User {
   is_active: boolean;
   is_phone_verified: boolean;
   created_at: string;
+  updated_at?: string;
+  profile_photo_url?: string | null;
+  profile?: any;
+  customer_profile?: any;
+  collector_profile?: any;
+  recycler_profile?: any;
+  admin_profile?: any;
 }
 
 export interface MaterialRate {

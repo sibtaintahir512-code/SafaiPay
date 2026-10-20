@@ -197,9 +197,9 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                       disabled={isLoading}
                       className={`w-full bg-[#F4FAF7] border ${
                         fieldErrors.identifier ? 'border-red-400 focus:border-red-500' : 'border-[#D5E6DD] focus:border-[#16865F]'
-                      } rounded-[14px] px-3.5 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60`}
+                      } rounded-[14px] pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60 min-h-[48px] sm:min-h-[52px]`}
                     />
-                    <div className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center pointer-events-none text-[#5B6B66]">
+                    <div className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3.5 rtl:pr-0 rtl:pl-3.5 flex items-center pointer-events-none text-[#5B6B66]">
                       <UserIcon className="w-4 h-4" />
                     </div>
                   </div>
@@ -238,13 +238,13 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                       disabled={isLoading}
                       className={`w-full bg-[#F4FAF7] border ${
                         fieldErrors.password ? 'border-red-400 focus:border-red-500' : 'border-[#D5E6DD] focus:border-[#16865F]'
-                      } rounded-[14px] px-3.5 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60`}
+                      } rounded-[14px] pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60 min-h-[48px] sm:min-h-[52px]`}
                     />
                     <button
                       type="button"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center text-[#5B6B66] hover:text-[#16865F] transition"
+                      className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3.5 rtl:pr-0 rtl:pl-3.5 flex items-center text-[#5B6B66] hover:text-[#16865F] transition min-h-[44px] min-w-[44px] justify-center"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -522,9 +522,9 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                     disabled={isLoading}
                     className={`w-full bg-[#F4FAF7] border ${
                       fieldErrors.identifier ? 'border-red-400 focus:border-red-500' : 'border-[#D5E6DD] focus:border-[#1B7F5C]'
-                    } rounded-[14px] px-4 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60`}
+                    } rounded-[14px] pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60 min-h-[48px] sm:min-h-[52px]`}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#5B6B66]">
+                  <div className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3.5 rtl:pr-0 rtl:pl-3.5 flex items-center pointer-events-none text-[#5B6B66]">
                     <UserIcon className="w-4 h-4" />
                   </div>
                 </div>
@@ -564,13 +564,13 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                     disabled={isLoading}
                     className={`w-full bg-[#F4FAF7] border ${
                       fieldErrors.password ? 'border-red-400 focus:border-red-500' : 'border-[#D5E6DD] focus:border-[#1B7F5C]'
-                    } rounded-[14px] px-4 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60`}
+                    } rounded-[14px] pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:bg-white transition disabled:opacity-60 min-h-[48px] sm:min-h-[52px]`}
                   />
                   <button
                     type="button"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#5B6B66] hover:text-[#1B7F5C] transition"
+                    className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3.5 rtl:pr-0 rtl:pl-3.5 flex items-center text-[#5B6B66] hover:text-[#1B7F5C] transition min-h-[44px] min-w-[44px] justify-center"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

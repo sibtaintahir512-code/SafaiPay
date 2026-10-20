@@ -218,3 +218,66 @@ async def test_forgot_and_reset_password(client):
     assert new_login.status_code == 200
     assert "access_token" in new_login.json()
 
+
+@pytest.mark.asyncio
+async def test_authenticated_change_password(client):
+    """Test authenticated user change password endpoint with valid and invalid attempts."""
+    user_phone = "+923009988776"
+    # Register
+    reg = await client.post("/api/v1/auth/register", json={
+        "phone_number": user_phone,
+        "full_name": "Password Change Tester",
+        "email": "pwchange@karachi.pk",
+        "password": "InitialPassword123!",
+        "role": "CUSTOMER"
+    })
+    assert reg.status_code == 201
+    token = reg.json()["access_token"]
+    auth_headers = {"Authorization": f"Bearer {token}"}
+
+    # Wrong current password fails
+    wrong_res = await client.post(
+        "/api/v1/auth/change-password",
+        headers=auth_headers,
+        json={
+            "current_password": "WrongPassword123!",
+            "new_password": "NewSecretPassword123!",
+            "confirm_new_password": "NewSecretPassword123!"
+        }
+    )
+    assert wrong_res.status_code == 400
+    assert "Current password is incorrect" in wrong_res.json()["detail"]
+
+    # Mismatched confirmation fails
+    mismatch_res = await client.post(
+        "/api/v1/auth/change-password",
+        headers=auth_headers,
+        json={
+            "current_password": "InitialPassword123!",
+            "new_password": "NewSecretPassword123!",
+            "confirm_new_password": "DifferentPassword123!"
+        }
+    )
+    assert mismatch_res.status_code == 400
+
+    # Successful password change
+    success_res = await client.post(
+        "/api/v1/auth/change-password",
+        headers=auth_headers,
+        json={
+            "current_password": "InitialPassword123!",
+            "new_password": "NewSecretPassword123!",
+            "confirm_new_password": "NewSecretPassword123!"
+        }
+    )
+    assert success_res.status_code == 200
+    assert success_res.json()["success"] is True
+
+    # New password works for subsequent login
+    login_res = await client.post("/api/v1/auth/login", json={
+        "identifier": user_phone,
+        "password": "NewSecretPassword123!"
+    })
+    assert login_res.status_code == 200
+
+

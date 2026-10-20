@@ -320,3 +320,38 @@ def generate_auth_tokens(user: User) -> Tuple[str, str]:
     )
     refresh_token = create_refresh_token(subject=str(user.id))
     return access_token, refresh_token
+
+
+async def change_user_password(
+    db: AsyncSession,
+    user: User,
+    current_password: str,
+    new_password: str,
+    ip_address: Optional[str] = None
+) -> None:
+    """Verify existing password and set new hashed password with audit trail."""
+    if not verify_password(current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect."
+        )
+
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long."
+        )
+
+    user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    await db.refresh(user)
+
+    await log_audit_event(
+        db=db,
+        action_name="PASSWORD_CHANGE",
+        entity_name="users",
+        actor_id=str(user.id),
+        entity_id=str(user.id),
+        details="User password successfully changed by account holder",
+        ip_address=ip_address
+    )

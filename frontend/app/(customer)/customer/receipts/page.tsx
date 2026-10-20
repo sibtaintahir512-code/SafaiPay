@@ -91,22 +91,22 @@ export default function CustomerReceiptsPage() {
 
   return (
     <ProtectedRoute allowedRole={['customer', 'admin']}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
         <Navbar />
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-              <Link href="/customer/dashboard" className="hover:text-purple-600 transition">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse text-xs text-theme-secondary mb-1">
+              <Link href="/customer/dashboard" className="hover:text-theme-primary transition">
                 {isUrdu ? 'ڈیش بورڈ' : 'Dashboard'}
               </Link>
               <span>/</span>
-              <span className="text-purple-700 font-bold">{isUrdu ? 'ادائیگی کی رسیدیں' : 'Payment Receipts'}</span>
+              <span className="text-theme-primary font-bold">{isUrdu ? 'ادائیگی کی رسیدیں' : 'Payment Receipts'}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-text">
               {isUrdu ? 'تصدیق شدہ فضلہ ادائیگی کی رسیدیں' : 'Verified Waste Payout Receipts'}
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-theme-secondary mt-1">
               {isUrdu
                 ? 'اپنے ہر تصدیق شدہ پک اپ کے ڈیجیٹل پیمنٹ واؤچرز اور ٹیکس انوائسز دیکھیں یا ڈاؤن لوڈ کریں۔'
                 : 'Download certified payout invoices with digital scale weight audit trails.'}
@@ -115,42 +115,42 @@ export default function CustomerReceiptsPage() {
 
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="bg-theme-surface p-5 rounded-2xl border border-theme-border shadow-xs">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500 uppercase">{isUrdu ? 'کل موصول رقم' : 'Lifetime Earnings'}</span>
-                <div className="p-2 bg-emerald-100 rounded-xl text-emerald-700">
+                <span className="text-xs font-bold text-theme-secondary uppercase">{isUrdu ? 'کل موصول رقم' : 'Lifetime Earnings'}</span>
+                <div className="p-2 bg-theme-soft-mint rounded-xl text-theme-primary">
                   <TrendingUp className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-emerald-700 font-mono">Rs {totalEarned.toLocaleString()}</p>
-              <p className="text-xs text-slate-400 mt-1">Instant digital disbursement</p>
+              <p className="text-2xl font-black text-theme-primary font-mono">Rs {totalEarned.toLocaleString()}</p>
+              <p className="text-xs text-theme-secondary mt-1">Instant digital disbursement</p>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="bg-theme-surface p-5 rounded-2xl border border-theme-border shadow-xs">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500 uppercase">{isUrdu ? 'کل تصدیق شدہ وزن' : 'Total Diverted'}</span>
-                <div className="p-2 bg-purple-100 rounded-xl text-purple-700">
+                <span className="text-xs font-bold text-theme-secondary uppercase">{isUrdu ? 'کل تصدیق شدہ وزن' : 'Total Diverted'}</span>
+                <div className="p-2 bg-theme-soft-mint rounded-xl text-theme-primary">
                   <Scale className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-purple-900 font-mono">{totalWeight} kg</p>
-              <p className="text-xs text-slate-400 mt-1">Certified zero-landfill diversion</p>
+              <p className="text-2xl font-black text-theme-text font-mono">{totalWeight} kg</p>
+              <p className="text-xs text-theme-secondary mt-1">Certified zero-landfill diversion</p>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="bg-theme-surface p-5 rounded-2xl border border-theme-border shadow-xs">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500 uppercase">{isUrdu ? 'جاری شدہ رسیدیں' : 'Issued Receipts'}</span>
-                <div className="p-2 bg-blue-100 rounded-xl text-blue-700">
+                <span className="text-xs font-bold text-theme-secondary uppercase">{isUrdu ? 'جاری شدہ رسیدیں' : 'Issued Receipts'}</span>
+                <div className="p-2 bg-theme-soft-mint rounded-xl text-theme-primary">
                   <FileText className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 font-mono">{SAMPLE_RECEIPTS.length}</p>
-              <p className="text-xs text-slate-400 mt-1">100% verified settlement rate</p>
+              <p className="text-2xl font-black text-theme-text font-mono">{SAMPLE_RECEIPTS.length}</p>
+              <p className="text-xs text-theme-secondary mt-1">100% verified settlement rate</p>
             </div>
           </div>
 
           {/* Receipts Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-theme-surface rounded-2xl border border-theme-border overflow-hidden shadow-xs">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-purple-600" />
@@ -161,7 +161,7 @@ export default function CustomerReceiptsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold uppercase tracking-wider">
+                  <tr className="bg-theme-bg text-theme-secondary border-b border-theme-border font-bold uppercase tracking-wider">
                     <th className="py-3.5 px-5">{isUrdu ? 'رسید نمبر' : 'Receipt ID'}</th>
                     <th className="py-3.5 px-4">{isUrdu ? 'تاریخ' : 'Date'}</th>
                     <th className="py-3.5 px-4">{isUrdu ? 'مواد' : 'Material'}</th>
@@ -171,28 +171,28 @@ export default function CustomerReceiptsPage() {
                     <th className="py-3.5 px-5 text-right">{isUrdu ? 'ایکشن' : 'Actions'}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-theme-border/60 text-theme-text">
                   {SAMPLE_RECEIPTS.map((rc) => (
-                    <tr key={rc.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3.5 px-5 font-mono font-bold text-purple-700">
+                    <tr key={rc.id} className="hover:bg-theme-bg/80 transition">
+                      <td className="py-3.5 px-5 font-mono font-bold text-theme-primary">
                         {rc.receiptNumber}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-500 font-medium">
+                      <td className="py-3.5 px-4 text-theme-secondary font-medium">
                         {rc.date}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900">
+                      <td className="py-3.5 px-4 font-semibold text-theme-text">
                         {rc.material}
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                      <td className="py-3.5 px-4 font-mono font-bold text-theme-text">
                         {rc.verifiedWeightKg} kg
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-md text-[11px] font-medium text-slate-700">
-                          <CreditCard className="w-3 h-3 text-slate-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-theme-soft-mint rounded-md text-[11px] font-medium text-theme-primary border border-theme-border">
+                          <CreditCard className="w-3 h-3 text-theme-primary" />
                           {rc.paymentMethod}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-black text-emerald-700">
+                      <td className="py-3.5 px-4 font-mono font-black text-theme-primary">
                         Rs {rc.totalPayoutPkr.toLocaleString()}
                       </td>
                       <td className="py-3.5 px-5 text-right">

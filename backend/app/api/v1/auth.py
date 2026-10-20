@@ -13,9 +13,10 @@ from app.schemas.auth import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
     AuthSuccessResponse,
+    ChangePasswordRequest,
 )
 from app.schemas.user import UserResponse, UserWithProfileResponse
-from app.services.auth_service import register_new_user, authenticate_user, generate_auth_tokens
+from app.services.auth_service import register_new_user, authenticate_user, generate_auth_tokens, change_user_password
 from app.services.otp_service import OTPService
 from app.api.deps import get_current_user
 from app.models.user import User
@@ -127,6 +128,32 @@ async def logout(
     return AuthSuccessResponse(
         success=True,
         message="Session successfully terminated."
+    )
+
+@router.post("/change-password", response_model=AuthSuccessResponse)
+async def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Change authenticated user password after verifying current password."""
+    if payload.new_password != payload.confirm_new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password and password confirmation do not match."
+        )
+    client_ip = request.client.host if request.client else None
+    await change_user_password(
+        db=db,
+        user=current_user,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+        ip_address=client_ip
+    )
+    return AuthSuccessResponse(
+        success=True,
+        message="Password has been successfully changed."
     )
 
 @router.post("/forgot-password", response_model=AuthSuccessResponse)

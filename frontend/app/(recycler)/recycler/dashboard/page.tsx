@@ -30,7 +30,7 @@ export default function RecyclerDashboardPage() {
 
   return (
     <ProtectedRoute allowedRole="recycler">
-      <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
         <Navbar />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <RecyclerDashboard

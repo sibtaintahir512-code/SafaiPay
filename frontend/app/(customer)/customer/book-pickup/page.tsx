@@ -4,110 +4,111 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Navbar } from '@/components/Navbar';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
 import { createPickup, classifyWasteAI, getMaterialRates } from '@/lib/api';
-import { MaterialRate } from '@/lib/types';
 
-import { Sparkles, Camera, ArrowRight, CheckCircle2, ArrowLeft, AlertCircle } from 'lucide-react';
+const defaultMaterials = [
+  { code: 'PET_PLASTIC', name: 'PET Plastic', rate: 'Rs 85.00/kg' },
+  { code: 'MIXED_PLASTIC', name: 'Mixed Plastic', rate: 'Rs 55.00/kg' },
+  { code: 'CARDBOARD_OCC', name: 'Cardboard (OCC)', rate: 'Rs 42.00/kg' },
+  { code: 'MIXED_METAL', name: 'Mixed Metal', rate: 'Rs 180.00/kg' },
+  { code: 'GLASS_BOTTLES', name: 'Glass Bottles', rate: 'Rs 15.00/kg' },
+  { code: 'E_WASTE', name: 'E-Waste', rate: 'Rs 220.00/kg' },
+  { code: 'ORGANIC_WASTE', name: 'Organic Waste', rate: 'Rs 8.00/kg' },
+  { code: 'NON_RECYCLABLE', name: 'Non-Recyclable', rate: 'Rs 0.00/kg' },
+];
 
 export default function BookPickupPage() {
   const router = useRouter();
   const [material, setMaterial] = useState('PET_PLASTIC');
   const [weight, setWeight] = useState(15);
   const [address, setAddress] = useState('Falcon Complex, PECHS Block 6, Karachi');
-  const [preferredTime, setPreferredTime] = useState('Today 2:00 PM - 5:00 PM');
+  const [preferredTime, setPreferredTime] = useState('Morning (09:00 - 12:00)');
   const [photo, setPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [materialsList, setMaterialsList] = useState<MaterialRate[]>([]);
+  const [dynamicMaterials, setDynamicMaterials] = useState<Array<{ code: string; name: string; rate: string }>>([]);
 
   useEffect(() => {
-    async function loadMaterials() {
-      try {
-        const rates = await getMaterialRates();
+    getMaterialRates()
+      .then((rates) => {
         if (rates && rates.length > 0) {
-          setMaterialsList(rates);
+          const mapped = rates.map((r) => ({
+            code: r.code,
+            name: r.name,
+            rate: `Rs ${Number(r.benchmark_rate_pkr).toFixed(2)}/kg`,
+          }));
+          setDynamicMaterials(mapped);
         }
-      } catch (err) {
-        console.error('Failed to load material rates', err);
-      }
-    }
-    loadMaterials();
+      })
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setErrorMessage(null);
+
     try {
       await createPickup({
         material_code: material,
-        estimated_quantity_kg: Number(weight),
+        estimated_quantity_kg: weight,
         street_address: address,
+        city: 'Karachi',
         preferred_time: preferredTime,
-        photo_url: photo ? 'https://images.unsplash.com/photo-1530587191325-3db32d826c18' : undefined,
+        photo_url: photo ? '/uploads/mock_pet_bottle_batch.jpg' : undefined,
       });
+
       setSuccess(true);
-      setTimeout(() => router.push('/customer/dashboard'), 1500);
+      setTimeout(() => {
+        router.push('/customer/dashboard');
+      }, 1500);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to submit pickup request. Please check your connection and try again.');
+      setErrorMessage(err.message || 'Failed to submit pickup request. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const defaultMaterials = [
-    { code: 'PET_PLASTIC', name: 'PET Plastic', rate: 'Rs 80/kg' },
-    { code: 'MIXED_PLASTIC', name: 'Mixed Plastic', rate: 'Rs 45/kg' },
-    { code: 'CARDBOARD_OCC', name: 'Cardboard', rate: 'Rs 35/kg' },
-    { code: 'MIXED_METAL', name: 'Mixed Metal', rate: 'Rs 120/kg' },
-    { code: 'GLASS_BOTTLES', name: 'Glass Bottles', rate: 'Rs 25/kg' },
-    { code: 'E_WASTE', name: 'E-Waste', rate: 'Rs 200/kg' },
-    { code: 'ORGANIC_WASTE', name: 'Organic Waste', rate: 'Rs 10/kg' },
-  ];
-
-  const displayMaterials = materialsList.length > 0
-    ? materialsList.filter(m => m.benchmark_rate_pkr > 0).map(m => ({
-        code: m.code,
-        name: m.name,
-        rate: `Rs ${m.benchmark_rate_pkr}/kg`
-      }))
+  const displayMaterials = dynamicMaterials.length > 0 
+    ? dynamicMaterials 
     : defaultMaterials;
 
   return (
     <ProtectedRoute allowedRole="customer">
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
         <Navbar />
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8">
           <button
             onClick={() => router.push('/customer/dashboard')}
-            className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-purple-600 mb-6 transition"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-theme-secondary hover:text-theme-primary mb-6 transition min-h-[44px]"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </button>
 
-          <div className="bg-white rounded-3xl border border-purple-100 p-6 sm:p-8 shadow-xs">
-            <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Book a Recyclable Pickup</h1>
-            <p className="text-xs text-slate-500 mb-6">Verified doorstep collection with certified digital weighing scale.</p>
+          <div className="bg-theme-surface rounded-3xl border border-theme-border p-6 sm:p-8 shadow-xs transition-colors">
+            <h1 className="text-2xl font-extrabold text-theme-text mb-1">Book a Recyclable Pickup</h1>
+            <p className="text-xs text-theme-secondary mb-6">Verified doorstep collection with certified digital weighing scale.</p>
 
             {errorMessage && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-theme-error rounded-2xl text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
 
             {success ? (
-              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                <h3 className="text-base font-extrabold text-emerald-950">Pickup Booked Successfully!</h3>
-                <p className="text-xs text-emerald-800">Assigned collector dispatch in progress. Returning to dashboard...</p>
+              <div className="p-6 bg-theme-soft-mint border border-theme-border rounded-2xl text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-theme-primary mx-auto" />
+                <h3 className="text-base font-extrabold text-theme-text">Pickup Booked Successfully!</h3>
+                <p className="text-xs text-theme-secondary">Assigned collector dispatch in progress. Returning to dashboard...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">1. Material Stream</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-theme-secondary mb-2">1. Material Stream</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {displayMaterials.map((m) => (
                       <div
@@ -115,12 +116,12 @@ export default function BookPickupPage() {
                         onClick={() => setMaterial(m.code)}
                         className={`p-3.5 rounded-2xl border text-center cursor-pointer transition ${
                           material === m.code
-                            ? 'bg-purple-50 border-purple-600 ring-2 ring-purple-600/20'
-                            : 'bg-white border-slate-200 hover:border-purple-300'
+                            ? 'bg-theme-soft-mint border-theme-primary ring-2 ring-theme-primary/20'
+                            : 'bg-theme-surface border-theme-border hover:border-theme-primary/40'
                         }`}
                       >
-                        <p className="text-xs font-bold text-slate-900">{m.name}</p>
-                        <p className="text-xs font-mono font-extrabold text-purple-700 mt-1">{m.rate}</p>
+                        <p className="text-xs font-bold text-theme-text">{m.name}</p>
+                        <p className="text-xs font-mono font-extrabold text-theme-primary mt-1">{m.rate}</p>
                       </div>
                     ))}
                   </div>
@@ -128,8 +129,8 @@ export default function BookPickupPage() {
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700">2. Estimated Quantity (kg)</label>
-                    <span className="text-sm font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">{weight} kg</span>
+                    <label className="text-xs font-bold uppercase tracking-wider text-theme-secondary">2. Estimated Quantity (kg)</label>
+                    <span className="text-sm font-mono font-bold text-theme-primary bg-theme-soft-mint px-2.5 py-0.5 rounded-md border border-theme-border">{weight} kg</span>
                   </div>
                   <input
                     type="range"
@@ -137,14 +138,14 @@ export default function BookPickupPage() {
                     max="100"
                     value={weight}
                     onChange={(e) => setWeight(Number(e.target.value))}
-                    className="w-full accent-purple-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                    className="w-full accent-theme-primary h-2 bg-theme-bg rounded-lg cursor-pointer"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700">3. AI Computer Vision Scan</label>
-                    <span className="text-[11px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                    <label className="text-xs font-bold uppercase tracking-wider text-theme-secondary">3. AI Computer Vision Scan</label>
+                    <span className="text-[11px] text-theme-primary font-bold bg-theme-soft-mint px-2 py-0.5 rounded border border-theme-border">
                       Advisory Pre-Screening
                     </span>
                   </div>
@@ -152,7 +153,6 @@ export default function BookPickupPage() {
                     onClick={async () => {
                       if (!photo) {
                         setPhoto(true);
-                        // Trigger AI classification
                         try {
                           const aiRes = await classifyWasteAI(material);
                           if (aiRes?.predicted_material) {
@@ -164,49 +164,48 @@ export default function BookPickupPage() {
                       }
                     }}
                     className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition ${
-                      photo ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300 bg-slate-50 hover:border-purple-300'
+                      photo ? 'border-theme-primary bg-theme-soft-mint/40' : 'border-theme-border bg-theme-bg hover:border-theme-primary/40'
                     }`}
                   >
                     {photo ? (
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-center space-x-2 text-xs font-bold text-emerald-800">
-                          <Sparkles className="w-4 h-4 text-emerald-600" />
+                        <div className="flex items-center justify-center space-x-2 text-xs font-bold text-theme-primary">
+                          <Sparkles className="w-4 h-4 text-theme-primary" />
                           <span>AI Matched: {material.replace('_', ' ')} (98.4% Confidence - Tier A)</span>
                         </div>
-                        <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200">
+                        <p className="text-[11px] text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 p-2 rounded-xl border border-amber-200 dark:border-amber-900/50">
                           <strong>Advisory Estimate:</strong> Final payment is calculated strictly by calibrated digital scale weight and collector inspection. You may manually select any stream above.
                         </p>
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        <Camera className="w-6 h-6 text-purple-600 mx-auto" />
-                        <p className="text-xs font-bold text-slate-800">Click to attach photo & scan stream</p>
-                        <p className="text-[11px] text-slate-400">Automated classification, confidence score, & quality grade</p>
+                        <Camera className="w-6 h-6 text-theme-primary mx-auto" />
+                        <p className="text-xs font-bold text-theme-text">Click to attach photo & scan stream</p>
+                        <p className="text-[11px] text-theme-secondary">Automated classification, confidence score, & quality grade</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Pickup Address</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-theme-secondary mb-1">Pickup Address</label>
                     <input
                       type="text"
                       required
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                      className="w-full bg-theme-input border border-theme-border rounded-xl px-4 py-3 text-xs text-theme-text focus:outline-none focus:border-theme-primary min-h-[48px] sm:min-h-[52px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Preferred Time Window</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-theme-secondary mb-1">Preferred Time Window</label>
                     <input
                       type="text"
                       required
                       value={preferredTime}
                       onChange={(e) => setPreferredTime(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                      className="w-full bg-theme-input border border-theme-border rounded-xl px-4 py-3 text-xs text-theme-text focus:outline-none focus:border-theme-primary min-h-[48px] sm:min-h-[52px]"
                     />
                   </div>
                 </div>
@@ -214,7 +213,7 @@ export default function BookPickupPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-3.5 rounded-xl text-xs transition shadow-md shadow-purple-600/25 flex items-center justify-center space-x-2"
+                  className="w-full bg-theme-primary hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-xs transition shadow-md shadow-theme-primary/25 flex items-center justify-center space-x-2 min-h-[48px] sm:min-h-[52px]"
                 >
                   <span>{submitting ? 'Confirming Dispatch...' : 'Confirm Doorstep Pickup Request'}</span>
                   <ArrowRight className="w-4 h-4" />

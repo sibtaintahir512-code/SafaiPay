@@ -60,7 +60,7 @@ function CollectorActiveJobContent() {
 
   return (
     <ProtectedRoute allowedRole={['collector', 'admin']}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
         <Navbar />
 
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8">
@@ -269,8 +269,8 @@ export default function CollectorActiveJobPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+        <div className="min-h-screen bg-theme-bg flex items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-theme-primary animate-spin" />
         </div>
       }
     >

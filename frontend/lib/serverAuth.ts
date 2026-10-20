@@ -284,6 +284,7 @@ export function findUserByIdentifier(identifier: string): RegisteredUser | undef
   const normalized = normalizePhone(identifier);
 
   return VERIFIED_USERS.find((u) => {
+    if (u.id.toLowerCase() === clean) return true;
     if (u.email.toLowerCase() === clean) return true;
     if (u.phone_number.toLowerCase() === clean) return true;
     if (normalizePhone(u.phone_number) === normalized) return true;
@@ -362,4 +363,72 @@ export function registerUser(payload: {
   VERIFIED_USERS.push(newUser);
   return newUser;
 }
+
+export function updateUserProfile(
+  identifierOrId: string,
+  updates: {
+    full_name?: string;
+    email?: string;
+    profile_photo_url?: string;
+    address?: string;
+    service_area?: string;
+    company_name?: string;
+    emergency_contact?: string;
+    payout_method?: string;
+    payout_account?: string;
+  }
+): RegisteredUser {
+  const user = findUserByIdentifier(identifierOrId);
+  if (!user) {
+    throw new Error('User account not found.');
+  }
+
+  if (updates.full_name !== undefined && updates.full_name.trim().length >= 2) {
+    user.full_name = updates.full_name.trim();
+  }
+  if (updates.email !== undefined && updates.email.trim()) {
+    user.email = updates.email.trim();
+  }
+  if (updates.profile_photo_url !== undefined) {
+    (user as any).profile_photo_url = updates.profile_photo_url;
+  }
+
+  if (!user.profile) user.profile = {};
+  if (updates.address !== undefined) user.profile.street_address = updates.address;
+  if (updates.service_area !== undefined) user.profile.service_area = updates.service_area;
+  if (updates.company_name !== undefined) user.profile.organization_name = updates.company_name;
+  if (updates.emergency_contact !== undefined) user.profile.emergency_contact = updates.emergency_contact;
+  if (updates.payout_method !== undefined) user.profile.payout_method = updates.payout_method;
+  if (updates.payout_account !== undefined) user.profile.payout_account = updates.payout_account;
+  user.profile.updated_at = new Date().toISOString();
+
+  return user;
+}
+
+export function changeUserPassword(
+  identifierOrId: string,
+  currentPassword: string,
+  newPassword: string
+): boolean {
+  const user = findUserByIdentifier(identifierOrId);
+  if (!user) {
+    throw new Error('User account not found.');
+  }
+
+  if (!verifyPassword(currentPassword, user.passwordHash, user)) {
+    throw new Error('Current password is incorrect.');
+  }
+
+  if (!newPassword || newPassword.length < 8) {
+    throw new Error('New password must be at least 8 characters long.');
+  }
+
+  user.passwordHash = hashPassword(newPassword);
+  user.allowedPasswords = [newPassword];
+  clearFailedLogins(user.phone_number);
+  if (user.email) clearFailedLogins(user.email);
+
+  return true;
+}
+
 

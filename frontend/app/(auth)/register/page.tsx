@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SafaiPayLogo } from '@/components/SafaiPayLogo';
+import { useLanguage } from '@/context/LanguageContext';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { 
-  UserCheck, 
   ArrowRight, 
   ShieldCheck, 
   Phone, 
@@ -13,16 +14,21 @@ import {
   User as UserIcon, 
   Mail, 
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { isUrdu, language, setLanguage } = useLanguage();
+
   const [role, setRole] = useState<'customer' | 'collector' | 'recycler'>('customer');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -32,12 +38,12 @@ export default function RegisterPage() {
     if (isSubmitting) return;
 
     if (!fullName.trim() || !phone.trim() || !password) {
-      setErrorMessage('Please fill in all required fields.');
+      setErrorMessage(isUrdu ? 'تمام ضروری خانے پر کریں۔' : 'Please fill in all required fields.');
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters.');
+      setErrorMessage(isUrdu ? 'پاس ورڈ کم از کم 8 حروف کا ہونا چاہیے۔' : 'Password must be at least 8 characters.');
       return;
     }
 
@@ -86,34 +92,67 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4FAF7] flex items-center justify-center p-4 sm:p-6 font-sans">
-      <div className="max-w-md w-full bg-white rounded-3xl border border-[#D5E6DD] p-7 sm:p-9 shadow-xl space-y-6">
+    <div className="min-h-screen bg-theme-bg text-theme-text flex items-center justify-center p-4 sm:p-6 font-sans transition-colors duration-200">
+      <div className="max-w-md w-full bg-theme-surface rounded-3xl border border-theme-border p-6 sm:p-8 shadow-2xl space-y-6">
+        {/* Top bar with Theme & Language */}
+        <div className="flex items-center justify-between">
+          <ThemeSwitcher variant="compact" />
+          <div className="flex items-center bg-theme-bg border border-theme-border rounded-xl p-0.5">
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className={`px-2 py-0.5 text-xs font-bold rounded-lg transition min-h-[36px] ${
+                language === 'en'
+                  ? 'bg-theme-primary text-white shadow-xs'
+                  : 'text-theme-secondary hover:text-theme-text'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('ur')}
+              className={`px-2 py-0.5 text-xs font-bold rounded-lg transition min-h-[36px] ${
+                language === 'ur'
+                  ? 'bg-theme-primary text-white shadow-xs'
+                  : 'text-theme-secondary hover:text-theme-text'
+              }`}
+            >
+              اردو
+            </button>
+          </div>
+        </div>
+
         <div className="text-center space-y-2">
           <SafaiPayLogo size="lg" className="justify-center" />
-          <h2 className="text-2xl font-extrabold text-[#0F3D3E] tracking-tight">Create Account</h2>
-          <p className="text-xs text-[#5B6B66]">Join Pakistan’s verified circular waste network</p>
+          <h2 className="text-2xl font-extrabold text-theme-text tracking-tight">
+            {isUrdu ? 'نیا اکاؤنٹ بنائیں' : 'Create SafaiPay Account'}
+          </h2>
+          <p className="text-xs text-theme-secondary">
+            {isUrdu ? 'پاکستان کے تصدیق شدہ سرکلر ویسٹ نیٹ ورک میں شامل ہوں' : 'Join Pakistan’s verified circular waste network'}
+          </p>
         </div>
 
         {errorMessage && (
-          <div className="p-3.5 bg-red-50 border border-red-200 text-[#C0392B] rounded-2xl text-xs font-medium flex items-start space-x-2">
-            <AlertCircle className="w-4 h-4 text-[#C0392B] shrink-0 mt-0.5" />
+          <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-theme-error rounded-2xl text-xs font-semibold flex items-start space-x-2 rtl:space-x-reverse">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {isSuccess ? (
-          <div className="p-6 bg-[#E6F4EC] border border-[#D5E6DD] rounded-2xl text-center space-y-2.5">
-            <ShieldCheck className="w-10 h-10 text-[#1B7F5C] mx-auto" />
-            <p className="text-sm font-bold text-[#0F3D3E]">Registration Successful!</p>
-            <p className="text-xs text-[#3F5A52]">
+          <div className="p-6 bg-theme-soft-mint border border-theme-border rounded-2xl text-center space-y-2.5">
+            <ShieldCheck className="w-10 h-10 text-theme-primary mx-auto" />
+            <p className="text-sm font-bold text-theme-text">Registration Successful!</p>
+            <p className="text-xs text-theme-secondary">
               Your account has been created. Redirecting you to the sign-in portal...
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#0F3D3E] uppercase tracking-wider mb-1.5">
-                Select Your Role
+              <label className="block text-xs font-bold text-theme-secondary uppercase tracking-wider mb-1.5">
+                {isUrdu ? 'اپنا کردار منتخب کریں' : 'Select Your Platform Role'}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {(['customer', 'collector', 'recycler'] as const).map((r) => (
@@ -121,10 +160,10 @@ export default function RegisterPage() {
                     key={r}
                     type="button"
                     onClick={() => setRole(r)}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold capitalize transition border ${
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold capitalize transition border min-h-[44px] ${
                       role === r
-                        ? 'bg-[#1B7F5C] text-white border-[#1B7F5C] shadow-xs'
-                        : 'bg-[#F4FAF7] text-[#0F3D3E] border-[#D5E6DD] hover:bg-white'
+                        ? 'bg-theme-primary text-white border-theme-primary shadow-xs'
+                        : 'bg-theme-bg text-theme-text border-theme-border hover:bg-theme-soft-mint'
                     }`}
                   >
                     {r}
@@ -134,8 +173,8 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#0F3D3E] uppercase tracking-wider mb-1">
-                Full Name / Organization
+              <label className="block text-xs font-bold text-theme-secondary uppercase tracking-wider mb-1">
+                {isUrdu ? 'پورا نام / تنظیم' : 'Full Name / Organization'}
               </label>
               <div className="relative">
                 <input
@@ -145,15 +184,15 @@ export default function RegisterPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3.5 py-2.5 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:border-[#1B7F5C] focus:bg-white transition"
+                  className="w-full bg-theme-input border border-theme-border rounded-xl pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-theme-text placeholder-theme-secondary/60 focus:outline-none focus:border-theme-primary transition min-h-[48px] sm:min-h-[52px]"
                 />
-                <UserIcon className="w-4 h-4 text-[#5B6B66] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <UserIcon className="w-4 h-4 text-theme-secondary absolute right-3.5 rtl:right-auto rtl:left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#0F3D3E] uppercase tracking-wider mb-1">
-                Mobile Number
+              <label className="block text-xs font-bold text-theme-secondary uppercase tracking-wider mb-1">
+                {isUrdu ? 'موبائل نمبر' : 'Mobile Number'}
               </label>
               <div className="relative">
                 <input
@@ -163,15 +202,15 @@ export default function RegisterPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3.5 py-2.5 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:border-[#1B7F5C] focus:bg-white transition"
+                  className="w-full bg-theme-input border border-theme-border rounded-xl pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-theme-text font-mono placeholder-theme-secondary/60 focus:outline-none focus:border-theme-primary transition min-h-[48px] sm:min-h-[52px]"
                 />
-                <Phone className="w-4 h-4 text-[#5B6B66] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Phone className="w-4 h-4 text-theme-secondary absolute right-3.5 rtl:right-auto rtl:left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#0F3D3E] uppercase tracking-wider mb-1">
-                Email Address (Optional)
+              <label className="block text-xs font-bold text-theme-secondary uppercase tracking-wider mb-1">
+                {isUrdu ? 'ای میل ایڈریس (اختیاری)' : 'Email Address (Optional)'}
               </label>
               <div className="relative">
                 <input
@@ -180,43 +219,50 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3.5 py-2.5 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:border-[#1B7F5C] focus:bg-white transition"
+                  className="w-full bg-theme-input border border-theme-border rounded-xl pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-theme-text placeholder-theme-secondary/60 focus:outline-none focus:border-theme-primary transition min-h-[48px] sm:min-h-[52px]"
                 />
-                <Mail className="w-4 h-4 text-[#5B6B66] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Mail className="w-4 h-4 text-theme-secondary absolute right-3.5 rtl:right-auto rtl:left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#0F3D3E] uppercase tracking-wider mb-1">
-                Password (Min 8 Characters)
+              <label className="block text-xs font-bold text-theme-secondary uppercase tracking-wider mb-1">
+                {isUrdu ? 'پاس ورڈ (کم از کم 8 حروف)' : 'Password (Min 8 Characters)'}
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3.5 py-2.5 text-xs text-[#0F3D3E] placeholder-[#8A9A95] focus:outline-none focus:border-[#1B7F5C] focus:bg-white transition"
+                  className="w-full bg-theme-input border border-theme-border rounded-xl pl-4 pr-11 rtl:pr-4 rtl:pl-11 py-3 text-xs text-theme-text placeholder-theme-secondary/60 focus:outline-none focus:border-theme-primary transition min-h-[48px] sm:min-h-[52px]"
                 />
-                <Lock className="w-4 h-4 text-[#5B6B66] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 rtl:right-auto rtl:left-0 top-0 bottom-0 pr-3.5 rtl:pr-0 rtl:pl-3.5 flex items-center text-theme-secondary hover:text-theme-text min-h-[44px] min-w-[44px] justify-center"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold py-3.5 rounded-xl text-xs transition shadow-md shadow-[#1B7F5C]/25 flex items-center justify-center space-x-2 disabled:opacity-60"
+              className="w-full bg-theme-primary hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-xs transition shadow-md shadow-theme-primary/25 flex items-center justify-center space-x-2 rtl:space-x-reverse disabled:opacity-60 min-h-[48px] sm:min-h-[52px]"
             >
               {isSubmitting ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                  <span>Creating Account...</span>
+                  <span>{isUrdu ? 'اکاؤنٹ بنایا جا رہا ہے...' : 'Creating Account...'}</span>
                 </>
               ) : (
                 <>
-                  <span>Create Account</span>
+                  <span>{isUrdu ? 'اکاؤنٹ مکمل کریں' : 'Create Account'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -224,9 +270,9 @@ export default function RegisterPage() {
           </form>
         )}
 
-        <div className="text-center pt-2 border-t border-[#D5E6DD]">
-          <Link href="/login" className="text-xs text-[#1B7F5C] hover:text-[#146B4D] font-bold">
-            Already have an account? Sign in
+        <div className="text-center pt-2 border-t border-theme-border/60">
+          <Link href="/login" className="text-xs text-theme-primary hover:underline font-bold inline-block py-2 min-h-[44px]">
+            {isUrdu ? 'پہلے سے اکاؤنٹ موجود ہے؟ سائن ان کریں' : 'Already have an account? Sign in'}
           </Link>
         </div>
       </div>

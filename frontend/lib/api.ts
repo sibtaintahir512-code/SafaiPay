@@ -249,6 +249,75 @@ export async function logoutUser(): Promise<void> {
   removeAuthToken();
 }
 
+export async function updateUserProfile(payload: {
+  full_name?: string;
+  email?: string;
+  profile_photo_url?: string;
+  address?: string;
+  service_area?: string;
+  company_name?: string;
+  emergency_contact?: string;
+  payout_method?: string;
+  payout_account?: string;
+}): Promise<User> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Not authenticated.');
+
+  const res = await fetch(`${API_BASE}/users/me`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let msg = 'Failed to update profile.';
+    try {
+      const err = await res.json();
+      msg = err.detail || err.message || msg;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const updatedRaw = await res.json();
+  const userRole = extractUserRole(updatedRaw);
+  return {
+    ...updatedRaw,
+    role: userRole,
+  };
+}
+
+export async function changePassword(payload: {
+  current_password: string;
+  new_password: string;
+  confirm_new_password: string;
+}): Promise<{ success: boolean; message: string }> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Not authenticated.');
+
+  const res = await fetch(`${API_BASE}/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let msg = 'Failed to change password.';
+    try {
+      const err = await res.json();
+      msg = err.detail || err.message || msg;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  return await res.json();
+}
+
 // Pickups
 export async function createPickup(payload: {
   material_code: string;

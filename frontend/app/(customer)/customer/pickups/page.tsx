@@ -72,23 +72,23 @@ export default function CustomerPickupsPage() {
 
   return (
     <ProtectedRoute allowedRole={['customer', 'admin']}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
         <Navbar />
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-                <Link href="/customer/dashboard" className="hover:text-purple-600 transition">
+              <div className="flex items-center space-x-2 rtl:space-x-reverse text-xs text-theme-secondary mb-1">
+                <Link href="/customer/dashboard" className="hover:text-theme-primary transition">
                   {isUrdu ? 'ڈیش بورڈ' : 'Dashboard'}
                 </Link>
                 <span>/</span>
-                <span className="text-purple-700 font-bold">{isUrdu ? 'میرے پک اپس' : 'My Pickups'}</span>
+                <span className="text-theme-primary font-bold">{isUrdu ? 'میرے پک اپس' : 'My Pickups'}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-text">
                 {isUrdu ? 'ری سائیکلنگ پک اپ درخواستیں' : 'Recycling Pickup Requests'}
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-theme-secondary mt-1">
                 {isUrdu
                   ? 'اپنی تمام گزشتہ اور موجودہ کچرے کی پک اپ درخواستوں کی تصدیق اور ٹریکنگ کریں۔'
                   : 'Track real-time collection status, digital scale weights, and payouts.'}
@@ -97,7 +97,7 @@ export default function CustomerPickupsPage() {
 
             <Link
               href="/customer/book-pickup"
-              className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md shadow-purple-600/20 transition"
+              className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-theme-primary hover:opacity-95 text-white font-bold text-sm shadow-md transition min-h-[44px]"
             >
               <PlusCircle className="w-4 h-4" />
               <span>{isUrdu ? 'نیا پک اپ بک کریں' : 'Book New Pickup'}</span>
@@ -105,7 +105,7 @@ export default function CustomerPickupsPage() {
           </div>
 
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="bg-theme-surface p-4 rounded-2xl border border-theme-border mb-6 flex flex-wrap items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
               <Filter className="w-4 h-4 text-slate-400 mr-1" />
               {[
@@ -134,27 +134,27 @@ export default function CustomerPickupsPage() {
 
           {/* Loading state */}
           {loading && (
-            <div className="p-12 text-center text-slate-500">
-              <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <div className="p-12 text-center text-theme-secondary">
+              <div className="w-8 h-8 border-3 border-theme-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               <p className="text-sm font-semibold">{isUrdu ? 'لوڈ ہو رہا ہے...' : 'Loading pickups...'}</p>
             </div>
           )}
 
           {/* Empty State */}
           {!loading && filteredPickups.length === 0 && (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-lg mx-auto shadow-xs">
-              <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-slate-900 mb-1">
+            <div className="bg-theme-surface rounded-3xl border border-theme-border p-12 text-center max-w-lg mx-auto shadow-xs">
+              <Package className="w-12 h-12 text-theme-secondary opacity-50 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-theme-text mb-1">
                 {isUrdu ? 'کوئی درخواست نہیں ملی' : 'No Pickups Found'}
               </h3>
-              <p className="text-xs text-slate-500 mb-6">
+              <p className="text-xs text-theme-secondary mb-6">
                 {isUrdu
                   ? 'آپ نے ابھی تک اس زمرے میں کوئی پک اپ شیڈول نہیں کیا۔'
                   : 'You have not scheduled any doorstep recyclables collection matching this filter.'}
               </p>
               <Link
                 href="/customer/book-pickup"
-                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition"
+                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-theme-primary hover:opacity-95 text-white text-xs font-bold transition min-h-[44px]"
               >
                 <span>{isUrdu ? 'پہلا پک اپ بک کریں' : 'Schedule First Pickup'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -168,44 +168,44 @@ export default function CustomerPickupsPage() {
               {filteredPickups.map((p) => (
                 <div
                   key={p.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-purple-300 transition shadow-xs hover:shadow-md p-5 flex flex-col justify-between"
+                  className="bg-theme-surface rounded-2xl border border-theme-border hover:border-theme-primary transition shadow-xs hover:shadow-md p-5 flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                      <span className="font-mono text-xs font-bold text-theme-primary bg-theme-soft-mint px-2 py-0.5 rounded border border-theme-border">
                         {p.tracking_number}
                       </span>
                       {getStatusBadge(p.status)}
                     </div>
 
-                    <h4 className="text-base font-bold text-slate-900 mb-1">
+                    <h4 className="text-base font-bold text-theme-text mb-1">
                       {p.material_code.replace('_', ' ')}
                     </h4>
 
-                    <div className="space-y-2 my-4 text-xs text-slate-600">
+                    <div className="space-y-2 my-4 text-xs text-theme-secondary">
                       <div className="flex items-center space-x-2">
-                        <Scale className="w-4 h-4 text-slate-400 shrink-0" />
+                        <Scale className="w-4 h-4 text-theme-secondary shrink-0" />
                         <span>
                           {isUrdu ? 'اندازہ وزن' : 'Est. Weight'}:{' '}
-                          <strong className="text-slate-900">{p.estimated_quantity_kg} kg</strong>
+                          <strong className="text-theme-text">{p.estimated_quantity_kg} kg</strong>
                         </span>
                       </div>
                       <div className="flex items-start space-x-2">
-                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <MapPin className="w-4 h-4 text-theme-secondary shrink-0 mt-0.5" />
                         <span className="line-clamp-1">{p.street_address}, {p.city}</span>
                       </div>
                       {p.preferred_time && (
                         <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                          <Calendar className="w-4 h-4 text-theme-secondary shrink-0" />
                           <span>{p.preferred_time}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div className="pt-4 border-t border-theme-border/60 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      <span className="text-[10px] uppercase font-bold text-theme-secondary block">
                         {isUrdu ? 'تخمینی معاوضہ' : 'Estimated Payout'}
                       </span>
                       <span className="text-sm font-extrabold text-emerald-700">

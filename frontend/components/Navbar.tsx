@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -9,6 +9,7 @@ import { UserRole } from '@/lib/types';
 import { getDashboardPath, checkBackendHealth } from '@/lib/api';
 import { SafaiPayLogo } from '@/components/SafaiPayLogo';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { ProfileModal, ProfileModalTab } from '@/components/ProfileModal';
 import { 
   Shield, 
   Truck, 
@@ -22,7 +23,12 @@ import {
   Sparkles,
   User as UserIcon,
   Menu,
-  X
+  X,
+  Settings,
+  KeyRound,
+  FileText,
+  ChevronDown,
+  Palette
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -38,7 +44,13 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileModalTab, setProfileModalTab] = useState<ProfileModalTab>('view');
   const [isBackendLive, setIsBackendLive] = useState<boolean>(propBackendOnline ?? false);
+
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check health asynchronously
@@ -47,7 +59,40 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
     }).catch(() => {
       setIsBackendLive(false);
     });
+
+    // Close menus on click outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    // Close on Escape key
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowProfileMenu(false);
+        setShowNotifications(false);
+        setShowMobileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
+
+  const openProfileWithTab = (tab: ProfileModalTab) => {
+    setShowProfileMenu(false);
+    setShowMobileMenu(false);
+    setProfileModalTab(tab);
+    setProfileModalOpen(true);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -194,28 +239,139 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
                 </span>
               </div>
 
-              {/* User Profile Link & Logout */}
+              {/* User Profile Menu & Dropdown Trigger */}
               {user && (
-                <div className="flex items-center space-x-2 rtl:space-x-reverse pl-2 rtl:pr-2 border-l rtl:border-r rtl:border-l-0 border-theme-border">
+                <div ref={profileMenuRef} className="relative flex items-center pl-2 rtl:pr-2 border-l rtl:border-r rtl:border-l-0 border-theme-border">
                   <button
-                    onClick={() => router.push(getProfilePath())}
-                    className="text-right hidden sm:block hover:opacity-80 transition"
-                    title="View Profile & Settings"
+                    type="button"
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="flex items-center space-x-2.5 rtl:space-x-reverse p-1.5 rounded-2xl hover:bg-theme-soft-mint transition min-h-[44px] group"
+                    aria-expanded={showProfileMenu}
+                    aria-haspopup="menu"
+                    title="Account Profile & Settings"
                   >
-                    <p className="text-xs font-bold text-theme-text leading-tight truncate max-w-[120px]">
-                      {user.full_name || 'Pilot User'}
-                    </p>
-                    <p className="text-[10px] text-theme-primary font-mono font-medium truncate max-w-[120px]">
-                      {user.phone_number || user.email}
-                    </p>
+                    <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-bold text-xs border border-theme-border group-hover:scale-105 transition-transform overflow-hidden">
+                      {user.profile_photo_url ? (
+                        <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (user.full_name?.charAt(0) || 'U').toUpperCase()
+                      )}
+                    </div>
+                    <div className="text-left rtl:text-right hidden sm:block">
+                      <p className="text-xs font-bold text-theme-text leading-tight truncate max-w-[110px]">
+                        {user.full_name || 'Pilot User'}
+                      </p>
+                      <p className="text-[10px] text-theme-primary font-mono font-medium truncate max-w-[110px]">
+                        {user.phone_number || user.email}
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-3.5 h-3.5 text-theme-secondary transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} />
                   </button>
-                  <button
-                    onClick={handleLogout}
-                    title={t('nav.logout')}
-                    className="min-h-[44px] min-w-[44px] p-2 text-theme-secondary hover:text-theme-error hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition flex items-center justify-center"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
+
+                  {/* Profile Menu Dropdown Popover */}
+                  {showProfileMenu && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 rtl:left-0 rtl:right-auto top-full mt-2 w-72 sm:w-80 bg-theme-surface rounded-2xl shadow-2xl border border-theme-border p-3 z-50 animate-fadeIn text-theme-text"
+                    >
+                      {/* Header Summary */}
+                      <div className="p-3 bg-theme-bg rounded-xl border border-theme-border flex items-center space-x-3 rtl:space-x-reverse mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-extrabold text-base border border-theme-border shrink-0 overflow-hidden">
+                          {user.profile_photo_url ? (
+                            <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            (user.full_name?.charAt(0) || 'U').toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-extrabold text-theme-text truncate">{user.full_name}</p>
+                          <p className="text-[10px] text-theme-secondary font-mono truncate">{user.phone_number || user.email}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary border border-theme-border">
+                              {role || 'CITIZEN'}
+                            </span>
+                            <span className="text-[9px] font-bold text-theme-primary flex items-center gap-0.5">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Verified</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Menu Options */}
+                      <div className="space-y-1 text-xs font-semibold">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => openProfileWithTab('view')}
+                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center justify-between min-h-[44px]"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <UserIcon className="w-4 h-4 text-theme-secondary" />
+                            <span>{isUrdu ? 'پروفائل تفصیلات دیکھیں' : 'View Profile'}</span>
+                          </span>
+                          <span className="text-[10px] text-theme-secondary font-mono">⌘P</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => openProfileWithTab('edit')}
+                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center gap-2.5 min-h-[44px]"
+                        >
+                          <FileText className="w-4 h-4 text-theme-secondary" />
+                          <span>{isUrdu ? 'پروفائل ترمیم کریں' : 'Edit Profile'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => openProfileWithTab('password')}
+                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center gap-2.5 min-h-[44px]"
+                        >
+                          <KeyRound className="w-4 h-4 text-theme-secondary" />
+                          <span>{isUrdu ? 'پاس ورڈ تبدیل کریں' : 'Change Password'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            router.push(getProfilePath());
+                          }}
+                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl hover:bg-theme-soft-mint hover:text-theme-primary transition flex items-center gap-2.5 min-h-[44px]"
+                        >
+                          <Settings className="w-4 h-4 text-theme-secondary" />
+                          <span>{isUrdu ? 'ترتیبات' : 'Settings'}</span>
+                        </button>
+                      </div>
+
+                      {/* Quick Theme Switcher in Profile Menu */}
+                      <div className="pt-2 mt-2 border-t border-theme-border/60">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-theme-secondary px-3 mb-1.5 flex items-center gap-1.5">
+                          <Palette className="w-3.5 h-3.5" />
+                          <span>{isUrdu ? 'ڈسپلے تھیم' : 'Theme Preference'}</span>
+                        </p>
+                        <div className="px-1">
+                          <ThemeSwitcher variant="full" />
+                        </div>
+                      </div>
+
+                      {/* Logout Action */}
+                      <div className="pt-2 mt-2 border-t border-theme-border/60">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={handleLogout}
+                          className="w-full text-left rtl:text-right px-3 py-2.5 rounded-xl text-theme-error hover:bg-red-50 dark:hover:bg-red-950/40 transition flex items-center gap-2.5 font-bold min-h-[44px]"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>{isUrdu ? 'لاگ آؤٹ' : 'Sign Out'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -244,20 +400,61 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
             </div>
 
             {user && (
-              <div className="pt-2 border-t border-theme-border flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-theme-text">{user.full_name}</p>
-                  <p className="text-[10px] text-theme-secondary font-mono">{user.phone_number || user.email}</p>
+              <div className="pt-3 border-t border-theme-border space-y-3">
+                <div className="flex items-center space-x-3 rtl:space-x-reverse p-3 bg-theme-bg rounded-2xl border border-theme-border">
+                  <div className="w-10 h-10 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center font-extrabold text-sm border border-theme-border overflow-hidden">
+                    {user.profile_photo_url ? (
+                      <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      (user.full_name?.charAt(0) || 'U').toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-theme-text truncate">{user.full_name}</p>
+                    <p className="text-[10px] text-theme-secondary font-mono truncate">{user.phone_number || user.email}</p>
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary border border-theme-border inline-block mt-0.5">
+                      {role || 'CITIZEN'}
+                    </span>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    router.push(getProfilePath());
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-theme-soft-mint text-theme-primary text-xs font-bold"
-                >
-                  {isUrdu ? 'پروفائل' : 'Profile'}
-                </button>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => openProfileWithTab('view')}
+                    className="p-3 rounded-xl bg-theme-bg hover:bg-theme-soft-mint border border-theme-border text-theme-text flex items-center justify-center gap-1.5 min-h-[44px]"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-theme-primary" />
+                    <span>{isUrdu ? 'پروفائل' : 'View Profile'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openProfileWithTab('edit')}
+                    className="p-3 rounded-xl bg-theme-bg hover:bg-theme-soft-mint border border-theme-border text-theme-text flex items-center justify-center gap-1.5 min-h-[44px]"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-theme-primary" />
+                    <span>{isUrdu ? 'ترمیم' : 'Edit Profile'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openProfileWithTab('password')}
+                    className="p-3 rounded-xl bg-theme-bg hover:bg-theme-soft-mint border border-theme-border text-theme-text flex items-center justify-center gap-1.5 min-h-[44px]"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-theme-primary" />
+                    <span>{isUrdu ? 'پاس ورڈ' : 'Password'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-theme-error flex items-center justify-center gap-1.5 min-h-[44px]"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>{isUrdu ? 'لاگ آؤٹ' : 'Logout'}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -310,6 +507,13 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
           </div>
         </div>
       )}
+
+      {/* Unified Profile Modal (View, Edit, Change Password) */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        initialTab={profileModalTab}
+      />
     </>
   );
 };
