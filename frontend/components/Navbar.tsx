@@ -46,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
   const [isBackendLive, setIsBackendLive] = useState<boolean>(propBackendOnline ?? false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,12 +74,13 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
       }
     };
 
-    // Close on Escape key
+    // Close on Escape key and restore focus
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowProfileMenu(false);
         setShowNotifications(false);
         setShowMobileMenu(false);
+        profileButtonRef.current?.focus();
       }
     };
 
@@ -323,6 +325,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
           {user && (
             <div className="relative shrink-0" ref={profileMenuRef}>
               <button
+                ref={profileButtonRef}
                 type="button"
                 onClick={() => {
                   setShowProfileMenu((prev) => !prev);
@@ -335,6 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
                 }}
                 aria-expanded={showProfileMenu}
                 aria-haspopup="menu"
+                aria-controls="profile-dropdown-menu"
                 aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User profile and settings'}
               >
                 {/* 40px Circular Avatar */}

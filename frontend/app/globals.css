@@ -227,6 +227,28 @@ body {
   }
 }
 
+/* Natural downward entrance animation for dropdowns - starts 4px below button clearance */
+@keyframes dropdownFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-dropdown-in {
+  animation: dropdownFadeDown 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+}
+
+[dir='rtl'] .animate-dropdown-in,
+.rtl .animate-dropdown-in {
+  transform-origin: top left;
+}
+
 .animate-spin-slow {
   animation: spinSlow 36s linear infinite;
 }

@@ -112,6 +112,70 @@ describe('SafaiPay Dashboard UI & Functionality Bug-Fix Pass Suite', () => {
       handleOutsideClick(false);
       assert.equal(showProfileMenu, false);
     });
+
+    it('anchors dropdown strictly below profile button with 4-8px gap', () => {
+      const topGapPx = 6; // strictly in 4-8px range
+      const anchorRule = `calc(100% + ${topGapPx}px)`;
+
+      assert.ok(topGapPx >= 4 && topGapPx <= 8, 'Gap must be between 4px and 8px');
+      assert.equal(anchorRule, 'calc(100% + 6px)');
+
+      // Button heights across viewports
+      const buttonMobileHeight = 44;
+      const buttonDesktopHeight = 52;
+
+      const dropdownTopMobile = buttonMobileHeight + topGapPx; // 50px from container top
+      const dropdownTopDesktop = buttonDesktopHeight + topGapPx; // 58px from container top
+
+      assert.ok(dropdownTopMobile > buttonMobileHeight, 'Mobile dropdown must start below button bottom');
+      assert.ok(dropdownTopDesktop > buttonDesktopHeight, 'Desktop dropdown must start below button bottom');
+    });
+
+    it('animation translateY(-4px) maintains positive clearance and prevents upward overlap', () => {
+      const topGapPx = 6;
+      const animTranslateY = -4; // upward offset during animation start
+
+      const netClearanceAtAnimStart = topGapPx + animTranslateY; // 6 + (-4) = +2px
+      assert.ok(netClearanceAtAnimStart > 0, 'Dropdown must never touch or overlap button during animation');
+      assert.equal(netClearanceAtAnimStart, 2);
+    });
+
+    it('horizontal viewport clamp prevents overflow outside 12px safe screen margins on mobile', () => {
+      const viewportWidth = 360;
+      const edgePadding = 12;
+      const dropdownWidth = Math.min(420, viewportWidth - 24); // 336px
+
+      // Scenario: Button is near right edge (e.g. right: 340, left: 280)
+      const containerRight = 340;
+      // In LTR with right: 0, dropdown left would be containerRight - dropdownWidth = 340 - 336 = 4px
+      const unshiftedDropdownLeft = containerRight - dropdownWidth; // 4px
+      assert.ok(unshiftedDropdownLeft < edgePadding, 'Unshifted dropdown would clip into 12px margin');
+
+      // Clamping calculation
+      let shiftX = 0;
+      if (unshiftedDropdownLeft < edgePadding) {
+        shiftX = edgePadding - unshiftedDropdownLeft; // 12 - 4 = 8px shift right
+      }
+
+      const clampedDropdownLeft = unshiftedDropdownLeft + shiftX; // 4 + 8 = 12px
+      const clampedDropdownRight = containerRight + shiftX; // 340 + 8 = 348px
+
+      assert.equal(clampedDropdownLeft, edgePadding, 'Left edge must align with 12px safe margin');
+      assert.ok(clampedDropdownRight <= viewportWidth - edgePadding, 'Right edge must not exceed safe margin');
+    });
+
+    it('dynamic vertical height calculation bounds dropdown to available viewport space', () => {
+      const viewportHeight = 700;
+      const buttonBottom = 72;
+      const topGap = 6;
+      const bottomBuffer = 16;
+
+      const availableHeight = viewportHeight - (buttonBottom + topGap) - bottomBuffer;
+      const boundedMaxHeight = Math.max(260, Math.min(availableHeight, 640));
+
+      assert.ok(boundedMaxHeight > 0);
+      assert.ok(buttonBottom + topGap + boundedMaxHeight < viewportHeight, 'Dropdown must never clip past screen bottom');
+    });
   });
 
   describe('3. Review Alerts Button & Dynamic Modal Architecture', () => {

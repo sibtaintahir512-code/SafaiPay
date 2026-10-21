@@ -39,7 +39,53 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
+  // Viewport safety & positioning states
+  const [shiftX, setShiftX] = useState<number>(0);
+  const [maxAvailableHeight, setMaxAvailableHeight] = useState<number | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Viewport boundary clamp & vertical space calculation
+  useEffect(() => {
+    if (!isOpen) {
+      setShiftX(0);
+      return;
+    }
+
+    const checkBounds = () => {
+      if (!dropdownRef.current) return;
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const parentRect = dropdownRef.current.parentElement?.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const edgePadding = 12; // 12px safe margin from viewport edges
+
+      // 1. Horizontal viewport clamp (prevent overflow outside left/right screen edges)
+      if (rect.left < edgePadding) {
+        setShiftX(edgePadding - rect.left);
+      } else if (rect.right > viewportWidth - edgePadding) {
+        setShiftX((viewportWidth - edgePadding) - rect.right);
+      } else {
+        setShiftX(0);
+      }
+
+      // 2. Vertical available height calculation strictly below button bottom + 6px gap
+      if (parentRect) {
+        const availableHeight = viewportHeight - (parentRect.bottom + 6) - 16;
+        setMaxAvailableHeight(Math.max(260, Math.min(availableHeight, 640)));
+      }
+    };
+
+    const rafId = requestAnimationFrame(checkBounds);
+    window.addEventListener('resize', checkBounds);
+    window.addEventListener('scroll', checkBounds, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', checkBounds);
+      window.removeEventListener('scroll', checkBounds);
+    };
+  }, [isOpen]);
 
   // Close on Escape key and focus management
   useEffect(() => {
@@ -105,27 +151,23 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   };
 
   return (
-    <>
-      {/* Mobile Backdrop Overlay (only on screens < sm) */}
-      <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-2xs z-50 sm:hidden animate-fadeIn" 
-        onClick={onClose} 
-      />
-
-      {/* Main Container: Bottom Sheet on Mobile (<sm), Popover on Desktop (>=sm) */}
-      <div
-        ref={dropdownRef}
-        role="menu"
-        aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User account menu'}
-        className="fixed bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-auto sm:top-16 sm:right-6 sm:rtl:right-auto sm:rtl:left-6 z-50 w-full sm:w-[420px] max-w-full sm:max-w-[calc(100vw-24px)] bg-theme-surface rounded-t-3xl sm:rounded-2xl shadow-2xl border border-theme-border flex flex-col max-h-[85vh] sm:max-h-[calc(100vh-80px)] animate-slideUp sm:animate-fadeIn overflow-hidden text-theme-text"
-      >
-        {/* Mobile Drag Handle */}
-        <div className="pt-3 pb-1 sm:hidden flex justify-center">
-          <div className="w-12 h-1.5 rounded-full bg-theme-border" />
-        </div>
-
-        {/* SECTION A: User Summary Section */}
-        <div className="p-4 border-b border-theme-border bg-theme-bg/60 shrink-0">
+    <div
+      ref={dropdownRef}
+      id="profile-dropdown-menu"
+      role="menu"
+      tabIndex={-1}
+      aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User account menu'}
+      style={{
+        top: 'calc(100% + 6px)',
+        ...(maxAvailableHeight ? { maxHeight: `${maxAvailableHeight}px` } : {}),
+        ...(isUrdu
+          ? { left: shiftX !== 0 ? `${shiftX}px` : '0px', right: 'auto' }
+          : { right: shiftX !== 0 ? `${-shiftX}px` : '0px', left: 'auto' }),
+      }}
+      className="absolute z-50 w-[min(420px,calc(100vw-24px))] bg-theme-surface rounded-2xl shadow-2xl border border-theme-border flex flex-col max-h-[calc(100dvh-80px)] animate-dropdown-in overflow-hidden text-theme-text"
+    >
+      {/* SECTION A: User Summary Section */}
+      <div className="p-4 border-b border-theme-border bg-theme-bg/60 shrink-0">
           <div className="flex items-start space-x-3.5 rtl:space-x-reverse">
             {/* Avatar with Verified Indicator */}
             <div className="relative shrink-0">
@@ -168,12 +210,12 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               </div>
             </div>
 
-            {/* Mobile close cross */}
+            {/* Accessible close button */}
             <button
               type="button"
               onClick={onClose}
-              className="sm:hidden p-1.5 rounded-lg text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition"
-              aria-label="Close"
+              className="p-1.5 rounded-xl text-theme-secondary hover:text-theme-text hover:bg-theme-soft-mint transition min-w-[36px] min-h-[36px] flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary"
+              aria-label={isUrdu ? 'مینو بند کریں' : 'Close menu'}
             >
               <X className="w-4 h-4" />
             </button>
@@ -370,6 +412,5 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
           </div>
         </div>
       </div>
-    </>
   );
 };
