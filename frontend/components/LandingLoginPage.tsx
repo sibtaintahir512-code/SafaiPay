@@ -17,18 +17,22 @@ import {
   EyeOff, 
   TrendingUp, 
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Truck,
+  Factory
 } from 'lucide-react';
 import { MobileOrbitLanding } from '@/components/MobileOrbitLanding';
 
 interface LandingLoginPageProps {
   onLogin: (identifier: string, pass: string) => Promise<void>;
+  onGuestLogin?: (role: 'customer' | 'collector' | 'recycler') => Promise<void>;
   isLoading: boolean;
   errorMessage: string | null;
 }
 
 export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
   onLogin,
+  onGuestLogin,
   isLoading,
   errorMessage,
 }) => {
@@ -37,6 +41,8 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
+  const [selectedGuestRole, setSelectedGuestRole] = useState<'customer' | 'collector' | 'recycler'>('customer');
+  const [isGuestSubmitting, setIsGuestSubmitting] = useState(false);
 
   // Mobile onboarding completion state (persisted in localStorage)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
@@ -78,6 +84,16 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
     if (isLoading) return;
     if (!validate()) return;
     await onLogin(identifier.trim(), password);
+  };
+
+  const handleGuestSubmit = async (roleToUse: 'customer' | 'collector' | 'recycler') => {
+    if (!onGuestLogin || isLoading || isGuestSubmitting) return;
+    setIsGuestSubmitting(true);
+    try {
+      await onGuestLogin(roleToUse);
+    } finally {
+      setIsGuestSubmitting(false);
+    }
   };
 
   return (
@@ -272,6 +288,114 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                   )}
                 </button>
               </form>
+
+              {/* Guest User Option Divider & Selector (Mobile) */}
+              <div className="relative my-4 flex items-center justify-center">
+                <div className="w-full border-t border-[#D5E6DD]" />
+                <span className="absolute bg-white px-3 text-[10px] font-bold uppercase tracking-wider text-[#6B817C]">
+                  {isUrdu ? 'یا گیسٹ کے طور پر دیکھیں' : 'Or Explore as Guest'}
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-[#D5E6DD] bg-[#F4FAF7] p-3 text-left rtl:text-right space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5 rtl:space-x-reverse">
+                    <Sparkles className="w-3.5 h-3.5 text-[#16865F]" />
+                    <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#0F3D3E]">
+                      {isUrdu ? 'گیسٹ موڈ منتخب کریں' : 'Choose Guest Portal'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#16865F] bg-[#E1F4EB] px-2 py-0.5 rounded-full border border-[#D5E6DD]">
+                    {isUrdu ? 'فوری رسائی' : 'Instant Access'}
+                  </span>
+                </div>
+
+                <div
+                  className="grid grid-cols-3 gap-1.5 p-1 bg-white rounded-xl border border-[#D5E6DD]"
+                  role="radiogroup"
+                  aria-label={isUrdu ? 'گیسٹ موڈ کا انتخاب' : 'Select guest user mode'}
+                >
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={selectedGuestRole === 'customer'}
+                    onClick={() => setSelectedGuestRole('customer')}
+                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                      selectedGuestRole === 'customer'
+                        ? 'bg-[#16865F] text-white shadow-xs font-bold'
+                        : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
+                    }`}
+                  >
+                    <UserIcon className="w-3.5 h-3.5 mb-1 shrink-0" />
+                    <span className="text-[11px] leading-tight truncate">
+                      {isUrdu ? 'کسٹمر' : 'Customer'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={selectedGuestRole === 'collector'}
+                    onClick={() => setSelectedGuestRole('collector')}
+                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                      selectedGuestRole === 'collector'
+                        ? 'bg-[#16865F] text-white shadow-xs font-bold'
+                        : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
+                    }`}
+                  >
+                    <Truck className="w-3.5 h-3.5 mb-1 shrink-0" />
+                    <span className="text-[11px] leading-tight truncate">
+                      {isUrdu ? 'کولیکٹر' : 'Collector'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={selectedGuestRole === 'recycler'}
+                    onClick={() => setSelectedGuestRole('recycler')}
+                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                      selectedGuestRole === 'recycler'
+                        ? 'bg-[#16865F] text-white shadow-xs font-bold'
+                        : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
+                    }`}
+                  >
+                    <Factory className="w-3.5 h-3.5 mb-1 shrink-0" />
+                    <span className="text-[11px] leading-tight truncate">
+                      {isUrdu ? 'ری سائیکلر' : 'Recycler'}
+                    </span>
+                  </button>
+                </div>
+
+                <p className="text-[10px] text-[#5B6B66] text-center px-1 font-medium leading-tight">
+                  {selectedGuestRole === 'customer' && (isUrdu ? 'گھریلو کچرا ری سائیکل کریں، پک اپ بک کریں اور ادائیگی دیکھیں' : 'Book household scrap pickups & track digital payouts')}
+                  {selectedGuestRole === 'collector' && (isUrdu ? 'علاقائی جابز قبول کریں، اسکیل وزن ریکارڈ کریں اور کمائیں' : 'Accept verified neighborhood jobs & record scale weights')}
+                  {selectedGuestRole === 'recycler' && (isUrdu ? 'صنعتی ری سائیکلرز کے لیے تصدیق شدہ خام مال بیچز' : 'Procure industrial post-consumer verified material streams')}
+                </p>
+
+                <button
+                  type="button"
+                  disabled={isLoading || isGuestSubmitting}
+                  onClick={() => handleGuestSubmit(selectedGuestRole)}
+                  className="w-full bg-white hover:bg-[#E6F4EC] text-[#16865F] border border-[#16865F] font-extrabold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse min-h-[44px] shadow-2xs hover:shadow-xs active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                >
+                  {isGuestSubmitting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#16865F]" />
+                      <span>{isUrdu ? 'گیسٹ سائن ان ہو رہا ہے...' : 'Starting guest session...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        {isUrdu 
+                          ? `بطور ${selectedGuestRole === 'customer' ? 'کسٹمر' : selectedGuestRole === 'collector' ? 'کولیکٹر' : 'ری سائیکلر'} داخل ہوں`
+                          : `Sign In as Guest ${selectedGuestRole.charAt(0).toUpperCase() + selectedGuestRole.slice(1)}`}
+                      </span>
+                      {isUrdu ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className="mt-5 pt-4 border-t border-[#D5E6DD] text-center">
                 <Link
@@ -599,6 +723,114 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                 )}
               </button>
             </form>
+
+            {/* Guest User Option Divider & Selector (Desktop) */}
+            <div className="relative my-4 flex items-center justify-center">
+              <div className="w-full border-t border-[#D5E6DD]" />
+              <span className="absolute bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-[#6B817C]">
+                {isUrdu ? 'یا گیسٹ کے طور پر دیکھیں' : 'Or Explore as Guest'}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-[#D5E6DD] bg-[#F4FAF7] p-3 text-left rtl:text-right space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-1.5 rtl:space-x-reverse">
+                  <Sparkles className="w-3.5 h-3.5 text-[#1B7F5C]" />
+                  <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#0F3D3E]">
+                    {isUrdu ? 'گیسٹ موڈ منتخب کریں' : 'Choose Guest Portal'}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-[#1B7F5C] bg-[#E1F4EB] px-2 py-0.5 rounded-full border border-[#D5E6DD]">
+                  {isUrdu ? 'فوری رسائی' : 'Instant Access'}
+                </span>
+              </div>
+
+              <div
+                className="grid grid-cols-3 gap-1.5 p-1 bg-white rounded-xl border border-[#D5E6DD]"
+                role="radiogroup"
+                aria-label={isUrdu ? 'گیسٹ موڈ کا انتخاب' : 'Select guest user mode'}
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedGuestRole === 'customer'}
+                  onClick={() => setSelectedGuestRole('customer')}
+                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                    selectedGuestRole === 'customer'
+                      ? 'bg-[#1B7F5C] text-white shadow-xs font-bold'
+                      : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
+                  }`}
+                >
+                  <UserIcon className="w-3.5 h-3.5 mb-1 shrink-0" />
+                  <span className="text-[11px] leading-tight truncate">
+                    {isUrdu ? 'کسٹمر' : 'Customer'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedGuestRole === 'collector'}
+                  onClick={() => setSelectedGuestRole('collector')}
+                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                    selectedGuestRole === 'collector'
+                      ? 'bg-[#1B7F5C] text-white shadow-xs font-bold'
+                      : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
+                  }`}
+                >
+                  <Truck className="w-3.5 h-3.5 mb-1 shrink-0" />
+                  <span className="text-[11px] leading-tight truncate">
+                    {isUrdu ? 'کولیکٹر' : 'Collector'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedGuestRole === 'recycler'}
+                  onClick={() => setSelectedGuestRole('recycler')}
+                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                    selectedGuestRole === 'recycler'
+                      ? 'bg-[#1B7F5C] text-white shadow-xs font-bold'
+                      : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
+                  }`}
+                >
+                  <Factory className="w-3.5 h-3.5 mb-1 shrink-0" />
+                  <span className="text-[11px] leading-tight truncate">
+                    {isUrdu ? 'ری سائیکلر' : 'Recycler'}
+                  </span>
+                </button>
+              </div>
+
+              <p className="text-[10px] text-[#5B6B66] text-center px-1 font-medium leading-tight">
+                {selectedGuestRole === 'customer' && (isUrdu ? 'گھریلو کچرا ری سائیکل کریں، پک اپ بک کریں اور ادائیگی دیکھیں' : 'Book household scrap pickups & track digital payouts')}
+                {selectedGuestRole === 'collector' && (isUrdu ? 'علاقائی جابز قبول کریں، اسکیل وزن ریکارڈ کریں اور کمائیں' : 'Accept verified neighborhood jobs & record scale weights')}
+                {selectedGuestRole === 'recycler' && (isUrdu ? 'صنعتی ری سائیکلرز کے لیے تصدیق شدہ خام مال بیچز' : 'Procure industrial post-consumer verified material streams')}
+              </p>
+
+              <button
+                type="button"
+                disabled={isLoading || isGuestSubmitting}
+                onClick={() => handleGuestSubmit(selectedGuestRole)}
+                className="w-full bg-white hover:bg-[#E6F4EC] text-[#1B7F5C] border border-[#1B7F5C] font-extrabold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse min-h-[44px] shadow-2xs hover:shadow-xs active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+              >
+                {isGuestSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#1B7F5C]" />
+                    <span>{isUrdu ? 'گیسٹ سائن ان ہو رہا ہے...' : 'Starting guest session...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {isUrdu 
+                        ? `بطور ${selectedGuestRole === 'customer' ? 'کسٹمر' : selectedGuestRole === 'collector' ? 'کولیکٹر' : 'ری سائیکلر'} داخل ہوں`
+                        : `Sign In as Guest ${selectedGuestRole.charAt(0).toUpperCase() + selectedGuestRole.slice(1)}`}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
 
             {/* Create Account Link */}
             <div className="mt-6 pt-5 border-t border-[#D5E6DD] text-center">

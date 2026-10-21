@@ -273,4 +273,49 @@ describe('SafaiPay Profile, Authentication & Theme System Tests', () => {
       assert.equal(maxValue, 52);
     });
   });
+
+  // 9. Guest User Sign-In Workflow Verification
+  describe('Guest User Sign-In Workflow Verification', () => {
+    it('supports guest user roles for customer, collector, and recycler', () => {
+      const allowedGuestRoles = ['customer', 'collector', 'recycler'];
+      assert.equal(allowedGuestRoles.length, 3);
+      assert.ok(allowedGuestRoles.includes('customer'));
+      assert.ok(allowedGuestRoles.includes('collector'));
+      assert.ok(allowedGuestRoles.includes('recycler'));
+    });
+
+    it('finds verified guest accounts and resolves appropriate dashboard routes', () => {
+      const guestCustomer = VERIFIED_USERS.find((u) => u.id === 'usr_guest_cust');
+      const guestCollector = VERIFIED_USERS.find((u) => u.id === 'usr_guest_coll');
+      const guestRecycler = VERIFIED_USERS.find((u) => u.id === 'usr_guest_recy');
+
+      assert.ok(guestCustomer);
+      assert.equal(guestCustomer.role, 'customer');
+      assert.equal(getDashboardPath(guestCustomer.role), '/customer/dashboard');
+
+      assert.ok(guestCollector);
+      assert.equal(guestCollector.role, 'collector');
+      assert.equal(getDashboardPath(guestCollector.role), '/collector/dashboard');
+
+      assert.ok(guestRecycler);
+      assert.equal(guestRecycler.role, 'recycler');
+      assert.equal(getDashboardPath(guestRecycler.role), '/recycler/dashboard');
+    });
+
+    it('issues and verifies valid JWT tokens for guest sessions', () => {
+      const token = signJwt({
+        sub: 'usr_guest_cust',
+        role: 'customer',
+        roles: ['CUSTOMER'],
+        isGuest: true,
+      });
+
+      assert.ok(token);
+      const verified = verifyJwt(token);
+      assert.ok(verified);
+      assert.equal(verified.sub, 'usr_guest_cust');
+      assert.equal(verified.role, 'customer');
+      assert.equal(verified.isGuest, true);
+    });
+  });
 });

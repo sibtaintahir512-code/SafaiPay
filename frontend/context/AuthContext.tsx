@@ -5,6 +5,7 @@ import { User, UserRole } from '@/lib/types';
 import { 
   getCurrentUser, 
   loginWithCredentials, 
+  loginAsGuest as loginAsGuestApi,
   logoutUser, 
   removeAuthToken, 
   getAuthToken 
@@ -15,6 +16,7 @@ interface AuthContextType {
   role: UserRole | 'unknown' | null;
   isLoading: boolean;
   login: (identifier: string, pass: string) => Promise<User>;
+  loginAsGuest: (role: 'customer' | 'collector' | 'recycler') => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
   updateUser: (partial: Partial<User>) => void;
@@ -61,6 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsGuest = async (guestRole: 'customer' | 'collector' | 'recycler'): Promise<User> => {
+    setIsLoading(true);
+    try {
+      const authResult = await loginAsGuestApi(guestRole);
+      setUser(authResult.user);
+      return authResult.user;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -82,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: user ? user.role : null,
         isLoading,
         login,
+        loginAsGuest,
         logout,
         refreshUser,
         updateUser,

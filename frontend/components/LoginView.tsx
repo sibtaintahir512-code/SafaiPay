@@ -8,7 +8,7 @@ import { getDashboardPath } from '@/lib/api';
 import { RefreshCw } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { user, role, login, isLoading: authLoading } = useAuth();
+  const { user, role, login, loginAsGuest, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -35,6 +35,20 @@ export const LoginView: React.FC = () => {
     }
   };
 
+  const handleGuestLogin = async (guestRole: 'customer' | 'collector' | 'recycler') => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const authenticatedUser = await loginAsGuest(guestRole);
+      const destination = getDashboardPath(authenticatedUser.role);
+      router.replace(destination);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to initialize guest mode.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Prevent login page flickering while checking existing session
   if (authLoading || (user && role && role !== 'unknown')) {
     return (
@@ -52,6 +66,7 @@ export const LoginView: React.FC = () => {
   return (
     <LandingLoginPage
       onLogin={handleLogin}
+      onGuestLogin={handleGuestLogin}
       isLoading={isSubmitting}
       errorMessage={errorMessage}
     />

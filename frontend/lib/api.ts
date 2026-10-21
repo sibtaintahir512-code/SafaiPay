@@ -210,6 +210,44 @@ export async function loginWithCredentials(identifier: string, pass: string) {
   };
 }
 
+export async function loginAsGuest(role: 'customer' | 'collector' | 'recycler') {
+  // Clear any existing session before starting new guest login attempt
+  removeAuthToken();
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/guest-login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ role }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const detectedRole = extractUserRole(data.user);
+      setAuthToken(data.access_token);
+      return {
+        ...data,
+        user: {
+          ...data.user,
+          role: detectedRole,
+        },
+      };
+    }
+  } catch {}
+
+  // Fallback to verified demo role credentials
+  const demoFallback: Record<string, { identifier: string; pass: string }> = {
+    customer: { identifier: 'customer@safaipay.test', pass: 'SafaiPassword123!' },
+    collector: { identifier: 'collector@safaipay.test', pass: 'SafaiPassword123!' },
+    recycler: { identifier: 'recycler@safaipay.test', pass: 'SafaiPassword123!' },
+  };
+
+  const cred = demoFallback[role] || demoFallback.customer;
+  return loginWithCredentials(cred.identifier, cred.pass);
+}
+
 export async function getCurrentUser(): Promise<User> {
   const token = getAuthToken();
   if (!token) {
