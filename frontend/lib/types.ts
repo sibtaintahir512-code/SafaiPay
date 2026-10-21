@@ -75,6 +75,7 @@ export interface PickupRequest {
   pricing_calculations: PricingCalculation[];
   images?: WasteImage[];
   payment?: PaymentRecord | null;
+  scale_photo_url?: string | null;
 }
 
 export interface CollectorEarningsSummary {

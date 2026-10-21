@@ -108,9 +108,13 @@ function saveLocalRates(rates: MaterialRate[]) {
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
+
+  // Only default to application/json if body is not FormData and Content-Type was not set
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -128,7 +132,9 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       const errJson = await res.json();
       errMessage = errJson.detail || errJson.message || JSON.stringify(errJson);
     } catch {}
-    throw new Error(errMessage);
+    const error: any = new Error(errMessage);
+    error.status = res.status;
+    throw error;
   }
 
   if (res.status === 204) {
@@ -156,7 +162,9 @@ async function uploadRequest<T>(endpoint: string, formData: FormData): Promise<T
       const errJson = await res.json();
       errMessage = errJson.detail || errJson.message || JSON.stringify(errJson);
     } catch {}
-    throw new Error(errMessage);
+    const error: any = new Error(errMessage);
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 }
@@ -572,11 +580,45 @@ export async function startPickup(pickupId: string, latitude = 24.8607, longitud
       method: 'POST',
       body: JSON.stringify({ gps_latitude: latitude, gps_longitude: longitude }),
     });
-  } catch {
+  } catch (err: any) {
+    if (err.status && err.status < 500) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {
         return { ...p, status: 'in_progress' };
+      }
+      return p;
+    });
+    saveLocalPickups(updated);
+    return updated.find(p => p.id === pickupId)!;
+  }
+}
+
+export async function uploadPickupPhoto(pickupId: string, formData: FormData): Promise<PickupRequest> {
+  try {
+    return await request<PickupRequest>(`/pickups/${pickupId}/upload-photo`, {
+      method: 'POST',
+      body: formData,
+    });
+  } catch (err: any) {
+    if (err.status && err.status < 500) throw err;
+    const list = getLocalPickups();
+    const updated = list.map(p => {
+      if (p.id === pickupId) {
+        const file = (formData.get('file') || formData.get('photo')) as File | null;
+        const photoUrl = file ? URL.createObjectURL(file) : `/uploads/proofs/proof-${pickupId}-${Date.now()}.jpg`;
+        const newImages = p.images ? [...p.images] : [];
+        newImages.push({
+          id: `img-${Date.now()}`,
+          image_type: 'scale_display',
+          image_url: photoUrl,
+          caption: 'On-site scale photo evidence',
+        });
+        return {
+          ...p,
+          images: newImages,
+          scale_photo_url: photoUrl,
+        };
       }
       return p;
     });
@@ -605,7 +647,8 @@ export async function submitWeight(
         notes: 'Certified field scale measurement',
       }),
     });
-  } catch {
+  } catch (err: any) {
+    if (err.status && err.status < 500) throw err;
     const list = getLocalPickups();
     const rates = getLocalRates();
     const target = list.find(p => p.id === pickupId);
@@ -618,6 +661,7 @@ export async function submitWeight(
         return {
           ...p,
           status: 'weight_verified',
+          scale_photo_url: payload.scale_photo_url || p.scale_photo_url,
           pricing_calculations: [
             {
               id: `calc-${Date.now()}`,
@@ -645,11 +689,24 @@ export async function confirmPickup(pickupId: string) {
       method: 'POST',
       body: JSON.stringify({ customer_notes: 'Verified and accepted weight' }),
     });
-  } catch {
+  } catch (err: any) {
+    if (err.status && err.status < 500) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {
-        return { ...p, status: 'payment_completed' };
+        const calc = p.pricing_calculations?.[0];
+        const amount = calc?.total_price || 1200;
+        return {
+          ...p,
+          status: 'completed',
+          payment: {
+            id: `pay-${pickupId}`,
+            amount_pkr: amount,
+            transaction_reference: `TXN-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${pickupId.slice(-6).toUpperCase()}`,
+            status: 'completed' as const,
+            retry_count: 0,
+          },
+        };
       }
       return p;
     });

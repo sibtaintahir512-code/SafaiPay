@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { INITIAL_PICKUPS, INITIAL_MATERIAL_RATES } from '@/lib/mockData';
+import { INITIAL_MATERIAL_RATES } from '@/lib/mockData';
 import { PickupRequest } from '@/lib/types';
+import { getAllPickups } from '@/lib/pickupStore';
 
 export async function GET() {
-  return NextResponse.json(INITIAL_PICKUPS);
+  return NextResponse.json(getAllPickups());
 }
 
 export async function POST(req: NextRequest) {
@@ -40,6 +41,9 @@ export async function POST(req: NextRequest) {
         },
       ],
     };
+
+    const store = getAllPickups();
+    store.unshift(newPickup);
 
     return NextResponse.json(newPickup, { status: 201 });
   } catch (err: any) {

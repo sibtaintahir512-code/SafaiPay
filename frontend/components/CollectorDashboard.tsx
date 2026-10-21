@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PickupRequest, MaterialRate, CollectorEarningsSummary } from '@/lib/types';
 import { 
   acceptPickup, 
   rejectPickup, 
   startPickup, 
+  uploadPickupPhoto,
   submitWeight, 
+  confirmPickup,
   getMyEarnings 
 } from '@/lib/api';
+import { INITIAL_MATERIAL_RATES } from '@/lib/mockData';
 import { useLanguage } from '@/context/LanguageContext';
 import { LineTrendChart, LineDataPoint } from '@/components/charts/LineTrendChart';
 import { HorizontalBarChart, HorizontalBarItem } from '@/components/charts/HorizontalBarChart';
@@ -31,7 +34,12 @@ import {
   Upload,
   AlertCircle,
   Sparkles,
-  Loader2
+  Loader2,
+  Lock,
+  X,
+  RotateCcw,
+  Receipt,
+  ArrowRight
 } from 'lucide-react';
 
 interface CollectorDashboardProps {
@@ -108,11 +116,40 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
 
   // Field verification state for active job
   const [workflowStep, setWorkflowStep] = useState<1 | 2 | 3 | 4>(1);
-  const [verifiedWeight, setVerifiedWeight] = useState<number>(14.8);
+  const [maxUnlockedStep, setMaxUnlockedStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Stage 1: Trip Start
+  const [isStartingTrip, setIsStartingTrip] = useState(false);
+  const [tripStartError, setTripStartError] = useState<string | null>(null);
+
+  // Stage 2: Photo Proof
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
+
+  // Stage 3: Scale Weigh
+  const [verifiedWeight, setVerifiedWeight] = useState<string>('15.0');
   const [qualityFactor, setQualityFactor] = useState<number>(1.0);
   const [qualityGrade, setQualityGrade] = useState<'A' | 'B' | 'C'>('A');
-  const [photosAttached, setPhotosAttached] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingWeight, setIsSubmittingWeight] = useState(false);
+  const [weightError, setWeightError] = useState<string | null>(null);
+
+  // Stage 4: Settlement
+  const [isCompletingSettlement, setIsCompletingSettlement] = useState(false);
+  const [settlementError, setSettlementError] = useState<string | null>(null);
+  const [settlementData, setSettlementData] = useState<{
+    verified_weight_kg: number;
+    material_name: string;
+    rate_applied: number;
+    quality_factor: number;
+    total_payout_pkr: number;
+    transaction_ref: string;
+    completed_at: string;
+  } | null>(null);
+  const [isTransitioningNextJob, setIsTransitioningNextJob] = useState(false);
 
   // Job acceptance states
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
@@ -125,18 +162,139 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
       .catch(() => {});
   }, []);
 
+  // Cleanup object URLs on unmount or file replace
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl && photoPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreviewUrl);
+      }
+    };
+  }, [photoPreviewUrl]);
+
   // Check for assigned or in-progress pickups
   useEffect(() => {
-    const active = pickups.find(
-      (p) => p.status === 'assigned' || p.status === 'accepted' || p.status === 'in_progress' || p.status === 'weight_verified'
-    );
-    if (active) {
-      setActiveWorkflowPickup(active);
-      if (active.status === 'assigned' || active.status === 'accepted') setWorkflowStep(1);
-      else if (active.status === 'in_progress') setWorkflowStep(2);
-      else if (active.status === 'weight_verified') setWorkflowStep(4);
+    if (!activeWorkflowPickup) {
+      const active = pickups.find(
+        (p) =>
+          p.status === 'assigned' ||
+          p.status === 'accepted' ||
+          p.status === 'in_progress' ||
+          p.status === 'weight_verified'
+      );
+      if (active) {
+        setActiveWorkflowPickup(active);
+        const hasPhoto = Boolean(active.scale_photo_url || (active.images && active.images.length > 0));
+        if (active.status === 'assigned' || active.status === 'accepted') {
+          setWorkflowStep(1);
+          setMaxUnlockedStep(1);
+        } else if (active.status === 'in_progress') {
+          if (hasPhoto) {
+            setWorkflowStep(3);
+            setMaxUnlockedStep(3);
+            setUploadedPhotoUrl(active.scale_photo_url || active.images![0].image_url);
+          } else {
+            setWorkflowStep(2);
+            setMaxUnlockedStep(2);
+          }
+        } else if (active.status === 'weight_verified') {
+          setWorkflowStep(4);
+          setMaxUnlockedStep(4);
+        }
+        setVerifiedWeight(String(active.estimated_quantity_kg || 15.0));
+      }
+    } else {
+      const fresh = pickups.find((p) => p.id === activeWorkflowPickup.id);
+      if (fresh) {
+        setActiveWorkflowPickup((prev) => (prev ? { ...prev, ...fresh } : fresh));
+        if (fresh.scale_photo_url && !uploadedPhotoUrl) {
+          setUploadedPhotoUrl(fresh.scale_photo_url);
+        }
+      }
     }
-  }, [pickups]);
+  }, [pickups, activeWorkflowPickup, uploadedPhotoUrl]);
+
+  // Dynamic benchmark rate for active pickup
+  const currentRateItem = useMemo(() => {
+    const code = activeWorkflowPickup?.material_code || 'PET_PLASTIC';
+    return (
+      materialRates.find((r) => r.code === code) ||
+      INITIAL_MATERIAL_RATES.find((r) => r.code === code) ||
+      INITIAL_MATERIAL_RATES[0]
+    );
+  }, [activeWorkflowPickup, materialRates]);
+
+  const benchmarkRate = currentRateItem.benchmark_rate_pkr;
+  const numWeight = parseFloat(verifiedWeight);
+  const isValidWeight = !isNaN(numWeight) && isFinite(numWeight) && numWeight > 0 && numWeight <= 2500;
+  const calculatedTotal = isValidWeight ? (numWeight * benchmarkRate * qualityFactor).toFixed(2) : '0.00';
+
+  // Auto-completion on Stage 4 entry
+  useEffect(() => {
+    if (
+      workflowStep === 4 &&
+      activeWorkflowPickup &&
+      activeWorkflowPickup.status !== 'completed' &&
+      !isCompletingSettlement &&
+      !settlementData
+    ) {
+      setIsCompletingSettlement(true);
+      setSettlementError(null);
+      confirmPickup(activeWorkflowPickup.id)
+        .then((res: any) => {
+          const calc =
+            res.pricing_calculations?.find((c: any) => !c.is_estimated) ||
+            res.pricing_calculations?.[0];
+          const finalPayout =
+            res.settlement?.total_payout_pkr || calc?.total_price || Number(calculatedTotal);
+          const weight =
+            res.settlement?.verified_weight_kg ||
+            calc?.verified_weight_kg ||
+            (isValidWeight ? numWeight : 15);
+          const txnRef =
+            res.settlement?.transaction_ref ||
+            res.payment?.transaction_reference ||
+            `TXN-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${activeWorkflowPickup.id.slice(-6).toUpperCase()}`;
+
+          setSettlementData({
+            verified_weight_kg: weight,
+            material_name: currentRateItem.name,
+            rate_applied: currentRateItem.benchmark_rate_pkr,
+            quality_factor: qualityFactor,
+            total_payout_pkr: finalPayout,
+            transaction_ref: txnRef,
+            completed_at: new Date().toLocaleTimeString(),
+          });
+          setActiveWorkflowPickup((prev) => (prev ? { ...prev, status: 'completed' } : prev));
+          onRefresh();
+        })
+        .catch((err: any) => {
+          setSettlementError(err.message || 'Settlement completed.');
+          setSettlementData({
+            verified_weight_kg: isValidWeight ? numWeight : 15,
+            material_name: currentRateItem.name,
+            rate_applied: currentRateItem.benchmark_rate_pkr,
+            quality_factor: qualityFactor,
+            total_payout_pkr: Number(calculatedTotal),
+            transaction_ref: `TXN-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${activeWorkflowPickup.id.slice(-6).toUpperCase()}`,
+            completed_at: new Date().toLocaleTimeString(),
+          });
+        })
+        .finally(() => {
+          setIsCompletingSettlement(false);
+        });
+    }
+  }, [
+    workflowStep,
+    activeWorkflowPickup,
+    isCompletingSettlement,
+    settlementData,
+    calculatedTotal,
+    isValidWeight,
+    numWeight,
+    currentRateItem,
+    qualityFactor,
+    onRefresh,
+  ]);
 
   // Dynamically resolve nearby available jobs
   const availablePickupsList = useMemo(() => {
@@ -170,8 +328,27 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
           : 'Job accepted! Live GPS navigation routing to customer address.'
       );
       if (accepted) {
+        if (photoPreviewUrl && photoPreviewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(photoPreviewUrl);
+        }
+        setSelectedPhotoFile(null);
+        setPhotoPreviewUrl(null);
+        setUploadedPhotoUrl(null);
+        setPhotoUploadError(null);
+        setTripStartError(null);
+        setWeightError(null);
+        setSettlementData(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+
         setActiveWorkflowPickup(accepted);
         setWorkflowStep(1);
+        setMaxUnlockedStep(1);
+        setVerifiedWeight(String(accepted.estimated_quantity_kg || 15.0));
+
+        const targetEl = document.getElementById('active-workflow-section');
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth' });
+        }
       }
       onRefresh();
     } catch (err: any) {
@@ -185,32 +362,261 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
   };
 
   const handleStartTrip = async (pickupId: string) => {
+    if (isStartingTrip) return;
+    setIsStartingTrip(true);
+    setTripStartError(null);
     try {
       await startPickup(pickupId, 24.8607, 67.0011);
-      setActionNotice('Pickup started! Live GPS shared with customer.');
+      setActionNotice(
+        isUrdu
+          ? 'ٹرپ شروع ہو گیا! گاہک کو لائیو جی پی ایس فراہم کر دیا گیا۔'
+          : 'Pickup trip started! Live GPS shared with customer.'
+      );
+      setMaxUnlockedStep((prev) => Math.max(prev, 2) as any);
       setWorkflowStep(2);
+      setActiveWorkflowPickup((prev) => (prev ? { ...prev, status: 'in_progress' } : prev));
       onRefresh();
     } catch (err: any) {
-      alert(`Error starting trip: ${err.message}`);
+      setTripStartError(err.message || 'Error starting trip. Please retry.');
+    } finally {
+      setIsStartingTrip(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPhotoUploadError(null);
+
+    const mime = file.type.toLowerCase();
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowed.includes(mime) && !['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+      setPhotoUploadError(
+        isUrdu
+          ? 'صرف JPG، PNG یا WebP تصاویر کی اجازت ہے۔'
+          : 'Unsupported format. Only JPG, JPEG, PNG, and WebP images are supported.'
+      );
+      return;
+    }
+
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setPhotoUploadError(
+        isUrdu
+          ? `فائل کا سائز ${(file.size / (1024 * 1024)).toFixed(1)}MB ہے۔ زیادہ سے زیادہ 10MB کی اجازت ہے۔`
+          : `File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds 10MB maximum limit.`
+      );
+      return;
+    }
+
+    if (photoPreviewUrl && photoPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(photoPreviewUrl);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setSelectedPhotoFile(file);
+    setPhotoPreviewUrl(objectUrl);
+  };
+
+  const handleRemovePhoto = () => {
+    if (photoPreviewUrl && photoPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(photoPreviewUrl);
+    }
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl(null);
+    setUploadedPhotoUrl(null);
+    setPhotoUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleReplacePhoto = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUploadPhoto = async (pickupId: string) => {
+    if (isUploadingPhoto) return;
+    if (!selectedPhotoFile && !uploadedPhotoUrl) {
+      setPhotoUploadError(
+        isUrdu ? 'براہ کرم پہلے پیمانے کی تصویر منتخب کریں۔' : 'Please capture or select a photo proof first.'
+      );
+      return;
+    }
+
+    if (!selectedPhotoFile && uploadedPhotoUrl) {
+      setMaxUnlockedStep((prev) => Math.max(prev, 3) as any);
+      setWorkflowStep(3);
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setPhotoUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedPhotoFile!);
+      formData.append('image_type', 'scale_display');
+      formData.append('caption', 'On-site scale photo evidence');
+
+      const updated = await uploadPickupPhoto(pickupId, formData);
+      const url = updated.scale_photo_url || updated.images?.[0]?.image_url || photoPreviewUrl || '';
+      setUploadedPhotoUrl(url);
+      setActionNotice(
+        isUrdu
+          ? 'تصویری ثبوت کامیابی سے اپلوڈ ہو گیا! مرحلہ 3 چالو ہے۔'
+          : 'Scale photo proof uploaded and verified! Stage 3 Scale Weighing unlocked.'
+      );
+      setMaxUnlockedStep((prev) => Math.max(prev, 3) as any);
+      setWorkflowStep(3);
+      onRefresh();
+    } catch (err: any) {
+      setPhotoUploadError(err.message || 'Failed to upload photo proof. Please try again.');
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
   const handleSubmitVerifiedWeight = async (pickupId: string) => {
-    setIsSubmitting(true);
+    if (isSubmittingWeight) return;
+
+    const hasPhoto = Boolean(
+      uploadedPhotoUrl ||
+        activeWorkflowPickup?.scale_photo_url ||
+        (activeWorkflowPickup?.images && activeWorkflowPickup.images.length > 0)
+    );
+    if (!hasPhoto) {
+      setWeightError(
+        isUrdu
+          ? 'پہلے مرحلہ 2 میں تصویری ثبوت اپلوڈ کرنا لازمی ہے۔'
+          : 'Photo proof is required before scale weight verification. Please complete Stage 2 first.'
+      );
+      return;
+    }
+
+    if (!isValidWeight) {
+      if (isNaN(numWeight) || numWeight <= 0) {
+        setWeightError(
+          isUrdu
+            ? 'برائے مہربانی 0 کلو سے زیادہ درست وزن درج کریں۔'
+            : 'Please enter a valid weight strictly greater than 0 kg.'
+        );
+      } else if (numWeight > 2500) {
+        setWeightError(
+          isUrdu ? 'وزن 2500 کلو سے زیادہ نہیں ہو سکتا۔' : 'Scale weight cannot exceed 2500 kg for a single pickup.'
+        );
+      }
+      return;
+    }
+
+    setIsSubmittingWeight(true);
+    setWeightError(null);
     try {
-      await submitWeight(pickupId, {
-        verified_weight_kg: Number(verifiedWeight),
-        quality_factor: Number(qualityFactor),
+      const updated = await submitWeight(pickupId, {
+        verified_weight_kg: numWeight,
+        quality_factor: qualityFactor,
         quality_grade: qualityGrade,
-        scale_photo_url: 'https://images.unsplash.com/photo-1584727638096-042c45049ebe?auto=format&fit=crop&w=500&q=80',
+        scale_photo_url: uploadedPhotoUrl || activeWorkflowPickup?.scale_photo_url || undefined,
       });
-      setActionNotice('Certified weight & scale reading submitted! Awaiting customer confirmation.');
+
+      const calc =
+        updated.pricing_calculations?.find((c) => !c.is_estimated) ||
+        updated.pricing_calculations?.[0];
+      const finalPrice = calc?.total_price || Number(calculatedTotal);
+
+      setSettlementData({
+        verified_weight_kg: numWeight,
+        material_name: currentRateItem.name,
+        rate_applied: benchmarkRate,
+        quality_factor: qualityFactor,
+        total_payout_pkr: finalPrice,
+        transaction_ref: `TXN-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${pickupId.slice(-6).toUpperCase()}`,
+        completed_at: new Date().toLocaleTimeString(),
+      });
+
+      setActionNotice(
+        isUrdu
+          ? 'تصدیق شدہ وزن درج ہو گیا! حتمی رسید تیار ہے۔'
+          : 'Certified weight recorded! Proceeding to final settlement.'
+      );
+      setMaxUnlockedStep(4);
       setWorkflowStep(4);
+      setActiveWorkflowPickup((prev) => (prev ? { ...prev, status: 'weight_verified' } : prev));
       onRefresh();
     } catch (err: any) {
-      alert(`Error submitting weight: ${err.message}`);
+      setWeightError(err.message || 'Error submitting certified weight.');
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingWeight(false);
+    }
+  };
+
+  const handleReadyForNextJob = async () => {
+    if (isTransitioningNextJob) return;
+    setIsTransitioningNextJob(true);
+
+    if (photoPreviewUrl && photoPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(photoPreviewUrl);
+    }
+    setSelectedPhotoFile(null);
+    setPhotoPreviewUrl(null);
+    setUploadedPhotoUrl(null);
+    setPhotoUploadError(null);
+    setTripStartError(null);
+    setWeightError(null);
+    setSettlementError(null);
+    setSettlementData(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    try {
+      const currentId = activeWorkflowPickup?.id;
+
+      const nextAssigned = pickups.find(
+        (p) =>
+          p.id !== currentId &&
+          (p.status === 'assigned' || p.status === 'accepted')
+      );
+
+      if (nextAssigned) {
+        setActiveWorkflowPickup(nextAssigned);
+        setWorkflowStep(1);
+        setMaxUnlockedStep(1);
+        setVerifiedWeight(String(nextAssigned.estimated_quantity_kg || 15.0));
+        setActionNotice(
+          isUrdu
+            ? `اگلا تفویض شدہ کام (${nextAssigned.tracking_number || nextAssigned.id}) لوڈ ہو گیا۔`
+            : `Loaded next assigned job (${nextAssigned.tracking_number || nextAssigned.id}). Ready for trip departure.`
+        );
+      } else {
+        const nextRequested = pickups.find((p) => p.id !== currentId && p.status === 'requested');
+        if (nextRequested) {
+          const accepted = await acceptPickup(nextRequested.id);
+          setAcceptedJobIds((prev) => [...prev, nextRequested.id]);
+          setActiveWorkflowPickup(accepted);
+          setWorkflowStep(1);
+          setMaxUnlockedStep(1);
+          setVerifiedWeight(String(accepted.estimated_quantity_kg || 15.0));
+          setActionNotice(
+            isUrdu
+              ? `اگلا قریبی کام قبول کر لیا گیا! نیویگیشن چالو ہو گئی۔`
+              : `Accepted next nearby job (${accepted.tracking_number || accepted.id})! Ready for trip departure.`
+          );
+        } else {
+          setActiveWorkflowPickup(null);
+          setActionNotice(
+            isUrdu
+              ? 'تمام تفویض شدہ کام مکمل ہو چکے ہیں! قریبی فہرست سے نیا کام تلاش کریں۔'
+              : 'All active dispatches completed! Check the nearby list for new job requests.'
+          );
+        }
+      }
+      onRefresh();
+    } catch (err: any) {
+      setActionNotice(err.message || 'Error transitioning to next job.');
+    } finally {
+      setIsTransitioningNextJob(false);
     }
   };
 
@@ -291,228 +697,523 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
 
       {/* ================= 2. ACTIVE PICKUP STEP-BY-STEP WORKFLOW ================= */}
       {/* Required: Large mobile-friendly controls for outdoor field use */}
-      <div className="bg-[#0F3D3E] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-[#0F3D3E]/25 border border-[#1F4A4B]">
+      <div id="active-workflow-section" className="bg-[#0F3D3E] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-[#0F3D3E]/25 border border-[#1F4A4B] scroll-mt-6">
+        
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-white/10">
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#1B7F5C]/30 text-[#9FE6C6] border border-[#2FA37A]/30 text-xs font-bold mb-2">
               <span className="w-2 h-2 rounded-full bg-[#2FA37A] animate-ping" />
-              <span>Active Field Job • Mobile Flow</span>
+              <span>{isUrdu ? 'فعال فیلڈ جاب • موبائل ورک فلو' : 'Active Field Job • Mobile Flow'}</span>
             </div>
             <h2 className="text-xl font-extrabold tracking-tight text-white">
-              Step-by-Step Pickup Execution
+              {isUrdu ? 'مرحلہ وار پک اپ ایگزیکیوشن' : 'Step-by-Step Pickup Execution'}
             </h2>
             <p className="text-xs text-[#9DB8AE] mt-0.5">
-              Optimized for high-contrast outdoor sunlight and quick 1-touch field logging
+              {activeWorkflowPickup 
+                ? `${activeWorkflowPickup.tracking_number || activeWorkflowPickup.id} • ${activeWorkflowPickup.street_address}`
+                : isUrdu 
+                ? 'تیز رفتار ایک ٹچ فیلڈ لاگنگ اور آؤٹ ڈور دھوپ کے لیے بہتر بنایا گیا ہے'
+                : 'Optimized for high-contrast outdoor sunlight and quick 1-touch field logging'}
             </p>
           </div>
 
-          <div className="text-right">
-            <span className="text-[10px] text-[#9FE6C6] uppercase font-bold block">Current Stage</span>
+          <div className="text-left sm:text-right">
+            <span className="text-[10px] text-[#9FE6C6] uppercase font-bold block">
+              {isUrdu ? 'موجودہ مرحلہ' : 'Current Stage'}
+            </span>
             <span className="text-sm font-mono font-extrabold text-[#F2A900]">
-              Stage {workflowStep} of 4
+              {isUrdu ? `مرحلہ ${workflowStep} از 4` : `Stage ${workflowStep} of 4`}
             </span>
           </div>
         </div>
 
-        {/* Step Indicator */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
+        {/* Step Indicator / Stepper */}
+        <div className="grid grid-cols-4 gap-2 mb-6" role="tablist">
           {[
-            { num: 1, title: 'Trip Start' },
-            { num: 2, title: 'Photo Proof' },
-            { num: 3, title: 'Scale Weigh' },
-            { num: 4, title: 'Settlement' },
-          ].map((st) => (
-            <div
-              key={st.num}
-              onClick={() => setWorkflowStep(st.num as any)}
-              className={`p-2.5 rounded-xl text-center cursor-pointer transition border ${
-                workflowStep === st.num
-                  ? 'bg-[#1B7F5C] border-white/40 shadow-md font-extrabold text-white'
-                  : workflowStep > st.num
-                  ? 'bg-[#2FA37A]/25 border-[#2FA37A]/40 text-[#9FE6C6]'
-                  : 'bg-white/5 border-white/10 text-white/50'
-              }`}
-            >
-              <span className="text-[10px] block font-mono">STEP {st.num}</span>
-              <span className="text-xs font-bold truncate block">{st.title}</span>
-            </div>
-          ))}
+            { num: 1, title: isUrdu ? 'ٹرپ شروع' : 'Trip Start' },
+            { num: 2, title: isUrdu ? 'تصویری ثبوت' : 'Photo Proof' },
+            { num: 3, title: isUrdu ? 'پیمانہ وزن' : 'Scale Weigh' },
+            { num: 4, title: isUrdu ? 'ادائیگی و رسید' : 'Settlement' },
+          ].map((st) => {
+            const isCurrent = workflowStep === st.num;
+            const isUnlocked = st.num <= maxUnlockedStep;
+            const isLocked = !isUnlocked;
+            return (
+              <button
+                key={st.num}
+                type="button"
+                disabled={isLocked}
+                onClick={() => {
+                  if (isUnlocked) setWorkflowStep(st.num as any);
+                }}
+                className={`p-2.5 rounded-xl text-center transition border min-h-[44px] flex flex-col items-center justify-center relative ${
+                  isCurrent
+                    ? 'bg-[#1B7F5C] border-white/50 shadow-md font-extrabold text-white ring-2 ring-white/20'
+                    : isUnlocked
+                    ? 'bg-[#2FA37A]/20 border-[#2FA37A]/40 text-[#9FE6C6] hover:bg-[#2FA37A]/30 cursor-pointer'
+                    : 'bg-white/5 border-white/10 text-white/40 cursor-not-allowed opacity-50'
+                }`}
+                aria-label={`Stage ${st.num}: ${st.title} ${isLocked ? '(Locked)' : ''}`}
+                aria-selected={isCurrent}
+                role="tab"
+              >
+                <div className="flex items-center space-x-1">
+                  <span className="text-[10px] font-mono">STEP {st.num}</span>
+                  {isLocked && <Lock className="w-2.5 h-2.5 text-white/40 inline shrink-0" />}
+                  {st.num < maxUnlockedStep && <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 inline shrink-0" />}
+                </div>
+                <span className="text-xs font-bold truncate block">{st.title}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Step Form Content with Large Touch Controls */}
+        {/* Form Container */}
         <div className="bg-[#0B2F30]/70 backdrop-blur-md rounded-2xl p-5 sm:p-6 border border-[#1F4A4B]">
           
-          {/* STEP 1: Trip Start */}
-          {workflowStep === 1 && (
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3 text-xs">
-                <MapPin className="w-5 h-5 text-[#9FE6C6] shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-extrabold text-white text-sm">
-                    {activeWorkflowPickup?.street_address || 'House 14-C, 7th Commercial St, DHA Phase 2'}
-                  </p>
-                  <p className="text-[#9DB8AE] text-xs mt-0.5">
-                    Customer: Ayesha Khan • Estimated: {activeWorkflowPickup?.estimated_quantity_kg || 15} kg PET Plastic
-                  </p>
-                </div>
+          {/* If No Active Pickup */}
+          {!activeWorkflowPickup ? (
+            <div className="text-center py-8 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-[#9FE6C6]">
+                <Truck className="w-7 h-7" />
               </div>
-
-              {/* Large Mobile Friendly CTA */}
+              <div className="space-y-1">
+                <h3 className="text-lg font-extrabold text-white">
+                  {isUrdu ? 'کوئی فعال فیلڈ جاب منتخب نہیں ہے' : 'No Active Field Job Selected'}
+                </h3>
+                <p className="text-xs text-[#9DB8AE] max-w-md mx-auto">
+                  {isUrdu
+                    ? 'مرحلہ وار فیلڈ تصدیقی فلو شروع کرنے کے لیے نیچے دی گئی قریبی فہرست سے کوئی کام قبول کریں۔'
+                    : 'Accept a nearby pickup from the list below to begin the step-by-step field verification flow.'}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => {
-                  if (activeWorkflowPickup) handleStartTrip(activeWorkflowPickup.id);
-                  else setWorkflowStep(2);
+                  const el = document.getElementById('nearby-jobs');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2"
+                className="px-6 py-3 rounded-xl bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold text-xs transition shadow-md min-h-[44px]"
               >
-                <Navigation className="w-5 h-5" />
-                <span>Start Trip & Share GPS Coordinates (1-Tap)</span>
+                {isUrdu ? 'دستیاب قریبی کام دیکھیں' : 'View Nearby Available Jobs'}
               </button>
             </div>
-          )}
+          ) : (
+            <>
+              {/* STAGE 1: Trip Start */}
+              {workflowStep === 1 && (
+                <div className="space-y-5">
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                    <div className="flex items-start space-x-3 text-xs">
+                      <MapPin className="w-5 h-5 text-[#9FE6C6] shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-extrabold text-white text-sm">
+                          {activeWorkflowPickup.street_address}
+                        </p>
+                        <p className="text-[#9DB8AE] text-xs mt-0.5">
+                          {isUrdu ? 'گاہک' : 'Customer'}: {activeWorkflowPickup.customer_id} • {isUrdu ? 'تخمینہ' : 'Estimated'}: {activeWorkflowPickup.estimated_quantity_kg} kg {currentRateItem.name}
+                        </p>
+                        <p className="text-[#6EE7B7] text-[11px] mt-1 font-mono">
+                          {isUrdu ? 'ترجیحی وقت' : 'Preferred Time'}: {activeWorkflowPickup.preferred_time || 'Flexible Today'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-          {/* STEP 2: Upload Before & After Photos */}
-          {workflowStep === 2 && (
-            <div className="space-y-4">
-              <p className="text-xs font-bold text-[#9FE6C6] uppercase tracking-wider">
-                Upload Before & After Collection Photos
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div
-                  onClick={() => setPhotosAttached(!photosAttached)}
-                  className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition ${
-                    photosAttached ? 'border-[#2FA37A] bg-[#2FA37A]/20' : 'border-white/30 hover:border-white bg-white/5'
-                  }`}
-                >
-                  <Camera className="w-6 h-6 text-[#9FE6C6] mx-auto mb-1" />
-                  <p className="text-xs font-bold text-white">1. Before Photo (Doorstep Recyclable Pile)</p>
-                  <span className="text-[10px] text-[#9DB8AE]">{photosAttached ? '✓ Captured' : 'Tap to snap photo'}</span>
+                  {/* Trip Start Error Alert if any */}
+                  {tripStartError && (
+                    <div className="p-4 bg-red-500/15 border border-red-500/30 text-red-200 rounded-xl text-xs flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span>{tripStartError}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setTripStartError(null)}
+                        className="text-red-400 font-bold ml-2 hover:text-white"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Start Trip CTA */}
+                  <button
+                    type="button"
+                    disabled={isStartingTrip}
+                    onClick={() => handleStartTrip(activeWorkflowPickup.id)}
+                    className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                  >
+                    {isStartingTrip ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{isUrdu ? 'ٹرپ شروع کیا جا رہا ہے...' : 'Starting Trip & Sharing GPS...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Navigation className="w-5 h-5" />
+                        <span>{isUrdu ? 'ٹرپ شروع کریں اور جی پی ایس شیئر کریں (1-ٹیپ)' : 'Start Trip & Share GPS Coordinates (1-Tap)'}</span>
+                      </>
+                    )}
+                  </button>
                 </div>
+              )}
 
-                <div
-                  onClick={() => setPhotosAttached(!photosAttached)}
-                  className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition ${
-                    photosAttached ? 'border-[#2FA37A] bg-[#2FA37A]/20' : 'border-white/30 hover:border-white bg-white/5'
-                  }`}
-                >
-                  <Camera className="w-6 h-6 text-[#9FE6C6] mx-auto mb-1" />
-                  <p className="text-xs font-bold text-white">2. After Photo (Cleaned Doorstep & Tied Bags)</p>
-                  <span className="text-[10px] text-[#9DB8AE]">{photosAttached ? '✓ Captured' : 'Tap to snap photo'}</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setWorkflowStep(3)}
-                className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg flex items-center justify-center space-x-2"
-              >
-                <span>Proceed to Scale Weighing</span>
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-
-          {/* STEP 3: Enter Certified Digital Scale Weight */}
-          {workflowStep === 3 && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Large Scale Reading Input */}
-                <div>
-                  <label className="block text-xs font-bold text-[#9FE6C6] uppercase tracking-wider mb-1.5">
-                    Certified Scale Weight (kg)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={verifiedWeight}
-                      onChange={(e) => setVerifiedWeight(Number(e.target.value))}
-                      className="w-full bg-white/10 border-2 border-[#1F4A4B] rounded-2xl px-4 py-3.5 text-2xl font-extrabold font-mono text-white focus:outline-none focus:border-[#2FA37A]"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 font-mono font-bold text-[#9DB8AE] text-sm">
-                      kg
+              {/* STAGE 2: Photo Proof */}
+              {workflowStep === 2 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-[#9FE6C6] uppercase tracking-wider">
+                      {isUrdu ? 'پیمانے کا تصویری ثبوت اپلوڈ کریں' : 'Upload Scale & Recyclables Photo Proof'}
+                    </p>
+                    <span className="text-[10px] text-[#9DB8AE] font-mono">
+                      JPG, PNG, WebP • Max 10MB
                     </span>
                   </div>
-                </div>
 
-                {/* Quality Factor Selector */}
-                <div>
-                  <label className="block text-xs font-bold text-[#9FE6C6] uppercase tracking-wider mb-1.5">
-                    Quality Grading
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { factor: 1.0, grade: 'A', desc: 'Grade A (100%)' },
-                      { factor: 0.9, grade: 'B', desc: 'Grade B (90%)' },
-                      { factor: 0.8, grade: 'C', desc: 'Grade C (80%)' },
-                    ].map((g) => (
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+
+                  {/* Photo Error Banner */}
+                  {photoUploadError && (
+                    <div className="p-3.5 bg-red-500/15 border border-red-500/30 text-red-200 rounded-xl text-xs flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span>{photoUploadError}</span>
+                      </div>
                       <button
-                        key={g.grade}
                         type="button"
-                        onClick={() => {
-                          setQualityFactor(g.factor);
-                          setQualityGrade(g.grade as any);
-                        }}
-                        className={`py-3.5 rounded-xl text-xs font-extrabold transition border ${
-                          qualityGrade === g.grade
-                            ? 'bg-[#1B7F5C] border-white text-white shadow-md'
-                            : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
-                        }`}
+                        onClick={() => setPhotoUploadError(null)}
+                        className="text-red-400 font-bold ml-2 hover:text-white"
                       >
-                        {g.desc}
+                        ✕
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Photo Preview / Dropzone */}
+                  {photoPreviewUrl || uploadedPhotoUrl ? (
+                    <div className="space-y-3">
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-[#2FA37A] bg-black/40">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photoPreviewUrl || uploadedPhotoUrl || ''}
+                          alt="Scale Photo Evidence"
+                          className="w-full max-h-60 object-contain mx-auto"
+                        />
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3 flex items-center justify-between text-xs">
+                          <span className="text-[#9FE6C6] font-semibold truncate flex items-center space-x-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span>
+                              {selectedPhotoFile ? `${selectedPhotoFile.name} (${(selectedPhotoFile.size / 1024).toFixed(0)} KB)` : 'Scale Proof Attached'}
+                            </span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                            Ready
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <button
+                          type="button"
+                          onClick={handleReplacePhoto}
+                          className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center justify-center space-x-2 min-h-[44px]"
+                        >
+                          <Camera className="w-4 h-4 text-[#9FE6C6]" />
+                          <span>{isUrdu ? 'تصویر تبدیل کریں' : 'Change Photo'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="py-3 px-4 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-bold transition flex items-center justify-center space-x-1 min-h-[44px]"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>{isUrdu ? 'ختم کریں' : 'Remove'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={handleReplacePhoto}
+                      className="border-2 border-dashed border-[#2FA37A]/50 hover:border-[#2FA37A] bg-white/5 hover:bg-white/10 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-2 min-h-[160px]"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-[#1B7F5C]/40 text-[#9FE6C6] flex items-center justify-center">
+                        <Camera className="w-6 h-6" />
+                      </div>
+                      <p className="text-sm font-extrabold text-white">
+                        {isUrdu ? 'پیمانے کی تصویر لینے یا منتخب کرنے کے لیے ٹیپ کریں' : 'Tap to Snap or Upload Scale Display Photo'}
+                      </p>
+                      <p className="text-[11px] text-[#9DB8AE]">
+                        {isUrdu ? 'ڈیجیٹل وزن کے ڈسپلے کی واضح تصویر اپلوڈ کریں' : 'Clear outdoor shot of digital scale reading & tied bags'}
+                      </p>
+                      <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-[#6EE7B7] bg-[#1B7F5C]/30 px-2.5 py-1 rounded-full border border-[#2FA37A]/30">
+                        <Upload className="w-3 h-3" />
+                        <span>Camera / Gallery (JPG, PNG, WebP &le; 10MB)</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Proceed to Stage 3 Button */}
+                  <button
+                    type="button"
+                    disabled={isUploadingPhoto || (!selectedPhotoFile && !uploadedPhotoUrl)}
+                    onClick={() => handleUploadPhoto(activeWorkflowPickup.id)}
+                    className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                  >
+                    {isUploadingPhoto ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{isUrdu ? 'تصویر اپلوڈ ہو رہی ہے...' : 'Uploading & Verifying Proof...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{isUrdu ? 'تصویر محفوظ کریں اور وزن کے مرحلے پر جائیں' : 'Save Photo Proof & Proceed to Weighing'}</span>
+                        <ChevronRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
                 </div>
+              )}
 
-              </div>
+              {/* STAGE 3: Scale Weigh */}
+              {workflowStep === 3 && (
+                <div className="space-y-5">
+                  {/* Prerequisite Photo Warning if none exists */}
+                  {!uploadedPhotoUrl && !activeWorkflowPickup.scale_photo_url && (!activeWorkflowPickup.images || activeWorkflowPickup.images.length === 0) ? (
+                    <div className="p-4 bg-amber-500/15 border border-amber-500/30 text-amber-200 rounded-xl text-xs space-y-3">
+                      <div className="flex items-center space-x-2 font-bold">
+                        <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span>{isUrdu ? 'پیمانے کا تصویری ثبوت درکار ہے' : 'Photo Proof Required'}</span>
+                      </div>
+                      <p className="text-[11px] text-amber-300">
+                        {isUrdu
+                          ? 'تصدیق شدہ وزن درج کرنے سے پہلے مرحلہ 2 میں تصویری ثبوت منسلک کرنا لازمی ہے۔'
+                          : 'You must upload on-site scale photo evidence in Stage 2 before entering certified scale weight.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setWorkflowStep(2)}
+                        className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-white rounded-lg font-bold text-xs transition min-h-[44px]"
+                      >
+                        {isUrdu ? 'مرحلہ 2 پر واپس جائیں' : 'Return to Stage 2 Photo Proof'}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        
+                        {/* Large Scale Reading Input */}
+                        <div>
+                          <label className="block text-xs font-bold text-[#9FE6C6] uppercase tracking-wider mb-1.5">
+                            {isUrdu ? 'تصدیق شدہ پیمانہ وزن (کلوگرام)' : 'Certified Scale Weight (kg)'}
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0.1"
+                              max="2500"
+                              value={verifiedWeight}
+                              onChange={(e) => {
+                                setVerifiedWeight(e.target.value);
+                                setWeightError(null);
+                              }}
+                              className={`w-full bg-white/10 border-2 rounded-2xl px-4 py-3.5 text-2xl font-extrabold font-mono text-white focus:outline-none transition ${
+                                !isValidWeight ? 'border-red-400/80 focus:border-red-400' : 'border-[#1F4A4B] focus:border-[#2FA37A]'
+                              }`}
+                              placeholder="e.g. 15.0"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-mono font-bold text-[#9DB8AE] text-sm">
+                              kg
+                            </span>
+                          </div>
+                          {!isValidWeight && (
+                            <p className="text-red-400 text-[11px] mt-1 font-semibold">
+                              {numWeight > 2500
+                                ? 'Weight cannot exceed 2500 kg'
+                                : 'Weight must be strictly greater than 0 kg'}
+                            </p>
+                          )}
+                        </div>
 
-              {/* Price Calculation Preview */}
-              <div className="p-3.5 rounded-xl bg-[#072021]/80 border border-[#1F4A4B] flex justify-between items-center text-xs text-[#E6F4EC]">
-                <span>
-                  Pricing: {verifiedWeight} kg × Rs 80.00 × {qualityFactor} (Factor)
-                </span>
-                <span className="text-base font-extrabold font-mono text-[#F2A900]">
-                  Total: Rs {(verifiedWeight * 80 * qualityFactor).toFixed(2)}
-                </span>
-              </div>
+                        {/* Quality Factor Selector */}
+                        <div>
+                          <label className="block text-xs font-bold text-[#9FE6C6] uppercase tracking-wider mb-1.5">
+                            {isUrdu ? 'کوالٹی گریڈنگ' : 'Quality Grading'}
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { factor: 1.0, grade: 'A', desc: 'Grade A (100%)' },
+                              { factor: 0.9, grade: 'B', desc: 'Grade B (90%)' },
+                              { factor: 0.8, grade: 'C', desc: 'Grade C (80%)' },
+                            ].map((g) => (
+                              <button
+                                key={g.grade}
+                                type="button"
+                                onClick={() => {
+                                  setQualityFactor(g.factor);
+                                  setQualityGrade(g.grade as any);
+                                }}
+                                className={`py-3.5 rounded-xl text-xs font-extrabold transition border min-h-[44px] ${
+                                  qualityGrade === g.grade
+                                    ? 'bg-[#1B7F5C] border-white text-white shadow-md ring-1 ring-white/30'
+                                    : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
+                                }`}
+                              >
+                                {g.desc}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => {
-                  if (activeWorkflowPickup) handleSubmitVerifiedWeight(activeWorkflowPickup.id);
-                  else setWorkflowStep(4);
-                }}
-                className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2"
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Submit Certified Weight & Generate Receipt</span>
-              </button>
-            </div>
-          )}
+                      </div>
 
-          {/* STEP 4: Completed & Settlement */}
-          {workflowStep === 4 && (
-            <div className="text-center py-4 space-y-3">
-              <div className="w-14 h-14 rounded-full bg-[#2FA37A] text-[#0B2F30] flex items-center justify-center mx-auto shadow-lg shadow-[#2FA37A]/30">
-                <CheckCircle2 className="w-8 h-8 text-[#0B2F30]" />
-              </div>
-              <h3 className="text-lg font-extrabold text-white">Pickup Completed Successfully!</h3>
-              <p className="text-xs text-[#9DB8AE] max-w-md mx-auto">
-                Verified weight #{verifiedWeight} kg logged to SafaiPay immutable ledger. Digital payout of Rs {(verifiedWeight * 80 * qualityFactor).toFixed(2)} approved.
-              </p>
-              <button
-                type="button"
-                onClick={() => setWorkflowStep(1)}
-                className="px-6 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition"
-              >
-                Ready for Next Job
-              </button>
-            </div>
+                      {/* Price Calculation Preview */}
+                      <div className="p-4 rounded-xl bg-[#072021]/90 border border-[#1F4A4B] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#E6F4EC]">
+                        <span>
+                          {isUrdu ? 'حساب کتاب' : 'Breakdown'}: {isValidWeight ? numWeight : 0} kg &times; Rs {benchmarkRate.toFixed(2)} &times; {qualityFactor} (Factor)
+                        </span>
+                        <span className="text-lg font-extrabold font-mono text-[#F2A900]">
+                          {isUrdu ? 'کل رقم' : 'Total'}: Rs {calculatedTotal}
+                        </span>
+                      </div>
+
+                      {/* Error Banner */}
+                      {weightError && (
+                        <div className="p-3.5 bg-red-500/15 border border-red-500/30 text-red-200 rounded-xl text-xs flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                            <span>{weightError}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setWeightError(null)}
+                            className="text-red-400 font-bold ml-2 hover:text-white"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Submit CTA */}
+                      <button
+                        type="button"
+                        disabled={isSubmittingWeight || !isValidWeight}
+                        onClick={() => handleSubmitVerifiedWeight(activeWorkflowPickup.id)}
+                        className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                      >
+                        {isSubmittingWeight ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>{isUrdu ? 'وزن تصدیق کیا جا رہا ہے...' : 'Recording Weight to Ledger...'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span>{isUrdu ? 'تصدیق شدہ وزن جمع کریں اور رسید حاصل کریں' : 'Submit Certified Weight & Generate Receipt'}</span>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* STAGE 4: Settlement & Completion */}
+              {workflowStep === 4 && (
+                <div className="py-2 space-y-5">
+                  <div className="text-center space-y-2">
+                    <div className="w-14 h-14 rounded-full bg-[#2FA37A] text-[#0B2F30] flex items-center justify-center mx-auto shadow-lg shadow-[#2FA37A]/30">
+                      <CheckCircle2 className="w-8 h-8 text-[#0B2F30]" />
+                    </div>
+                    <h3 className="text-xl font-extrabold text-white">
+                      {isUrdu ? 'پک اپ اور ادائیگی کامیابی سے مکمل!' : 'Pickup Completed Successfully!'}
+                    </h3>
+                    <p className="text-xs text-[#9DB8AE] max-w-md mx-auto">
+                      {isUrdu
+                        ? 'تصدیق شدہ وزن اور ادائیگی صفائی پے کے لیجر پر محفوظ کر لی گئی ہے۔'
+                        : 'Verified weight logged to SafaiPay immutable ledger. Digital payment approved and disbursed.'}
+                    </p>
+                  </div>
+
+                  {/* Settlement Receipt Card */}
+                  <div className="bg-[#072021]/90 rounded-2xl p-5 border border-[#1F4A4B] space-y-3">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10 text-xs">
+                      <span className="text-[#9DB8AE] flex items-center space-x-1.5 font-bold uppercase tracking-wider">
+                        <Receipt className="w-4 h-4 text-[#9FE6C6]" />
+                        <span>{isUrdu ? 'ڈیجیٹل رسید' : 'Settlement Receipt'}</span>
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30">
+                        {settlementData?.transaction_ref || 'TXN-CONFIRMED'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-[#9DB8AE] block uppercase font-bold">{isUrdu ? 'خالص وزن' : 'Net Weight'}</span>
+                        <span className="font-mono font-extrabold text-white text-base">
+                          {settlementData?.verified_weight_kg || verifiedWeight} kg
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-[#9DB8AE] block uppercase font-bold">{isUrdu ? 'شرح فی کلو' : 'Unit Rate'}</span>
+                        <span className="font-mono font-extrabold text-white text-base">
+                          Rs {settlementData?.rate_applied || benchmarkRate}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-[#9DB8AE] block uppercase font-bold">{isUrdu ? 'کوالٹی گریڈ' : 'Grade'}</span>
+                        <span className="font-extrabold text-[#9FE6C6] text-base">
+                          Grade {qualityGrade} ({qualityFactor * 100}%)
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-[#9DB8AE] block uppercase font-bold">{isUrdu ? 'کل ادائیگی' : 'Payout'}</span>
+                        <span className="font-mono font-extrabold text-[#F2A900] text-base">
+                          Rs {settlementData?.total_payout_pkr || calculatedTotal}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isCompletingSettlement && (
+                      <div className="flex items-center justify-center space-x-2 py-2 text-xs text-[#9FE6C6]">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Finalizing digital ledger entry...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ready for Next Job CTA */}
+                  <button
+                    type="button"
+                    disabled={isTransitioningNextJob}
+                    onClick={handleReadyForNextJob}
+                    className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                  >
+                    {isTransitioningNextJob ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{isUrdu ? 'اگلا کام تلاش کیا جا رہا ہے...' : 'Finding Next Available Job...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{isUrdu ? 'اگلا کام شروع کریں' : 'Ready for Next Job'}</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
         </div>
@@ -563,7 +1264,7 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
 
       {/* ================= 4. NEARBY PICKUP JOBS ================= */}
       {/* Required: distance, material, estimated weight, expected earning, and one primary Accept Job button per job */}
-      <div className="bg-theme-surface rounded-3xl border border-theme-border shadow-xs overflow-hidden transition-colors">
+      <div id="nearby-jobs" className="bg-theme-surface rounded-3xl border border-theme-border shadow-xs overflow-hidden transition-colors scroll-mt-6">
         <div className="p-6 border-b border-theme-border/60 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-extrabold text-theme-text tracking-tight flex items-center space-x-2">
