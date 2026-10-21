@@ -234,18 +234,23 @@ export async function loginAsGuest(role: 'customer' | 'collector' | 'recycler') 
           role: detectedRole,
         },
       };
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Guest login request rejected (${res.status})`);
     }
-  } catch {}
-
-  // Fallback to verified demo role credentials
-  const demoFallback: Record<string, { identifier: string; pass: string }> = {
-    customer: { identifier: 'customer@safaipay.test', pass: 'SafaiPassword123!' },
-    collector: { identifier: 'collector@safaipay.test', pass: 'SafaiPassword123!' },
-    recycler: { identifier: 'recycler@safaipay.test', pass: 'SafaiPassword123!' },
-  };
-
-  const cred = demoFallback[role] || demoFallback.customer;
-  return loginWithCredentials(cred.identifier, cred.pass);
+  } catch (err: any) {
+    // Only fall back to local demo credentials if network connection failed completely (offline mode)
+    if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+      const demoFallback: Record<string, { identifier: string; pass: string }> = {
+        customer: { identifier: 'customer@safaipay.test', pass: 'SafaiPassword123!' },
+        collector: { identifier: 'collector@safaipay.test', pass: 'SafaiPassword123!' },
+        recycler: { identifier: 'recycler@safaipay.test', pass: 'SafaiPassword123!' },
+      };
+      const cred = demoFallback[role] || demoFallback.customer;
+      return loginWithCredentials(cred.identifier, cred.pass);
+    }
+    throw err;
+  }
 }
 
 export async function getCurrentUser(): Promise<User> {

@@ -9,6 +9,8 @@ describe('SafaiPay UI/UX, Dark Mode, Dashboard & Charts Audit Tests', () => {
       const mockPickups: PickupRequest[] = [
         {
           id: 'p-1',
+          tracking_number: 'SP-2026-P1',
+          city: 'Karachi',
           customer_id: 'cust-1',
           material_code: 'PET_PLASTIC',
           estimated_quantity_kg: 10,
@@ -16,21 +18,23 @@ describe('SafaiPay UI/UX, Dark Mode, Dashboard & Charts Audit Tests', () => {
           street_address: 'Clifton Block 7',
           preferred_time: '2-4 PM',
           created_at: '2026-06-01T10:00:00Z',
-          updated_at: '2026-06-01T12:00:00Z',
           pricing_calculations: [
             {
               id: 'calc-1',
-              pickup_request_id: 'p-1',
+              material_code: 'PET_PLASTIC',
               verified_weight_kg: 15.5,
               material_rate_applied: 80,
               quality_factor: 1.0,
               total_price: 1240,
-              created_at: '2026-06-01T11:00:00Z',
+              calculation_breakdown: '15.5kg @ 80 PKR/kg',
+              is_estimated: false,
             },
           ],
         },
         {
           id: 'p-2',
+          tracking_number: 'SP-2026-P2',
+          city: 'Karachi',
           customer_id: 'cust-1',
           material_code: 'CARDBOARD_OCC',
           estimated_quantity_kg: 20,
@@ -38,21 +42,23 @@ describe('SafaiPay UI/UX, Dark Mode, Dashboard & Charts Audit Tests', () => {
           street_address: 'Clifton Block 7',
           preferred_time: '4-6 PM',
           created_at: '2026-06-10T10:00:00Z',
-          updated_at: '2026-06-10T12:00:00Z',
           pricing_calculations: [
             {
               id: 'calc-2',
-              pickup_request_id: 'p-2',
+              material_code: 'CARDBOARD_OCC',
               verified_weight_kg: 25,
               material_rate_applied: 35,
               quality_factor: 1.0,
               total_price: 875,
-              created_at: '2026-06-10T11:00:00Z',
+              calculation_breakdown: '25kg @ 35 PKR/kg',
+              is_estimated: false,
             },
           ],
         },
         {
           id: 'p-3',
+          tracking_number: 'SP-2026-P3',
+          city: 'Karachi',
           customer_id: 'cust-1',
           material_code: 'MIXED_METAL',
           estimated_quantity_kg: 5,
@@ -60,7 +66,7 @@ describe('SafaiPay UI/UX, Dark Mode, Dashboard & Charts Audit Tests', () => {
           street_address: 'Clifton Block 7',
           preferred_time: 'Flexible',
           created_at: '2026-06-15T10:00:00Z',
-          updated_at: '2026-06-15T12:00:00Z',
+          pricing_calculations: [],
         },
       ];
 

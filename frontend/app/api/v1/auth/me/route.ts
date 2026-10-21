@@ -53,6 +53,8 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const isGuest = Boolean(payload.isGuest || payload.is_guest || user.id.startsWith('usr_guest_'));
+
   return NextResponse.json({
     id: user.id,
     phone_number: user.phone_number,
@@ -64,6 +66,8 @@ export async function GET(req: NextRequest) {
     is_active: user.is_active,
     created_at: user.created_at,
     [`${user.role}_profile`]: user.profile,
+    isGuest,
+    is_guest: isGuest,
   });
 }
 
@@ -79,6 +83,22 @@ export async function PUT(req: NextRequest) {
 
     const token = authHeader.substring(7).trim();
     const body = await req.json().catch(() => ({}));
+
+    const payload = verifyJwt(token);
+    if (!payload || !payload.sub) {
+      return NextResponse.json(
+        { detail: 'Invalid or expired session token.' },
+        { status: 401 }
+      );
+    }
+
+    // Guest demo profiles are strictly read-only
+    if (payload.isGuest || payload.is_guest || payload.sub.startsWith('usr_guest_')) {
+      return NextResponse.json(
+        { detail: 'Guest demo accounts cannot modify profile information. Profile is read-only.' },
+        { status: 403 }
+      );
+    }
 
     const fastApiUrl = process.env.FASTAPI_BACKEND_URL;
     if (fastApiUrl) {
@@ -98,14 +118,6 @@ export async function PUT(req: NextRequest) {
       } catch {
         // Fallback
       }
-    }
-
-    const payload = verifyJwt(token);
-    if (!payload || !payload.sub) {
-      return NextResponse.json(
-        { detail: 'Invalid or expired session token.' },
-        { status: 401 }
-      );
     }
 
     const userIdentifier = payload.phone_number || payload.email || payload.sub;

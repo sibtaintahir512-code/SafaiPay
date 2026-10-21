@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import { UserRole } from './types';
 
-// Server-side JWT secret - defaults to a secure internal key if env not provided
-const JWT_SECRET = process.env.JWT_SECRET || 'safaipay-secure-edge-auth-secret-key-2026';
+// Server-side JWT secret - loaded from environment variables with fallback
+const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || process.env.SECRET_KEY || 'safaipay-secure-edge-auth-secret-key-2026';
 
 // Password hashing helper using crypto.pbkdf2Sync
 export function hashPassword(password: string): string {
@@ -132,6 +132,103 @@ export function recordFailedLogin(identifier: string) {
 export function clearFailedLogins(identifier: string) {
   const clean = identifier.trim().toLowerCase();
   failedAttemptsMap.delete(clean);
+}
+
+// Guest login abuse prevention (rate limiting per IP)
+const guestAttemptsMap: Map<string, number[]> = new Map();
+const GUEST_RATE_LIMIT = 30; // max 30 guest logins per minute per IP
+const GUEST_WINDOW_MS = 60 * 1000;
+
+export function checkGuestRateLimit(ip: string): { isLimited: boolean; retryAfterSeconds: number } {
+  const now = Date.now();
+  const attempts = guestAttemptsMap.get(ip) || [];
+  const recent = attempts.filter((t) => now - t < GUEST_WINDOW_MS);
+  guestAttemptsMap.set(ip, recent);
+
+  if (recent.length >= GUEST_RATE_LIMIT) {
+    const oldestInWindow = Math.min(...recent);
+    const retryAfter = Math.ceil((GUEST_WINDOW_MS - (now - oldestInWindow)) / 1000) || 1;
+    return { isLimited: true, retryAfterSeconds: retryAfter };
+  }
+
+  recent.push(now);
+  guestAttemptsMap.set(ip, recent);
+  return { isLimited: false, retryAfterSeconds: 0 };
+}
+
+// Standardized Server-side Request Authentication & RBAC Guard
+export interface AuthenticatedSession {
+  user: RegisteredUser;
+  payload: Record<string, any>;
+  isGuest: boolean;
+}
+
+export function authenticateRequest(
+  req: { headers: { get: (name: string) => string | null } },
+  options?: {
+    allowedRoles?: UserRole[];
+    disallowGuests?: boolean;
+  }
+): { session?: AuthenticatedSession; error?: { detail: string; status: number } } {
+  const authHeader = req.headers.get('authorization') || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return {
+      error: { detail: 'Authentication token is required.', status: 401 },
+    };
+  }
+
+  const token = authHeader.substring(7).trim();
+  const payload = verifyJwt(token);
+  if (!payload || !payload.sub) {
+    return {
+      error: { detail: 'Invalid or expired session token.', status: 401 },
+    };
+  }
+
+  const user = VERIFIED_USERS.find(
+    (u) =>
+      u.id === payload.sub ||
+      u.phone_number === payload.phone_number ||
+      u.email === payload.email
+  );
+
+  if (!user || !user.is_active) {
+    return {
+      error: { detail: 'User session not found or account deactivated.', status: 401 },
+    };
+  }
+
+  const isGuest = Boolean(
+    payload.isGuest || payload.is_guest || user.id.startsWith('usr_guest_')
+  );
+
+  if (options?.allowedRoles && options.allowedRoles.length > 0) {
+    if (!options.allowedRoles.includes(user.role)) {
+      return {
+        error: {
+          detail: `Access denied: Requires one of roles: ${options.allowedRoles.join(', ')}.`,
+          status: 403,
+        },
+      };
+    }
+  }
+
+  if (options?.disallowGuests && isGuest) {
+    return {
+      error: {
+        detail: 'Guest demo accounts are restricted from performing this action.',
+        status: 403,
+      },
+    };
+  }
+
+  return {
+    session: {
+      user,
+      payload,
+      isGuest,
+    },
+  };
 }
 
 // Standalone Verified Accounts Registry (Secure PBKDF2 Hashes)

@@ -12,6 +12,22 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.substring(7).trim();
+    const payload = verifyJwt(token);
+    if (!payload || !payload.sub) {
+      return NextResponse.json(
+        { detail: 'Invalid or expired session token.' },
+        { status: 401 }
+      );
+    }
+
+    // Guest demo accounts are strictly forbidden from changing passwords
+    if (payload.isGuest || payload.is_guest || String(payload.sub).startsWith('usr_guest_')) {
+      return NextResponse.json(
+        { detail: 'Guest demo accounts cannot modify security credentials. Guest demo accounts are read-only.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const currentPassword = String(body.current_password || '');
     const newPassword = String(body.new_password || '');
@@ -67,14 +83,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Serverless fallback
-    const payload = verifyJwt(token);
-    if (!payload || !payload.sub) {
-      return NextResponse.json(
-        { detail: 'Invalid or expired session token.' },
-        { status: 401 }
-      );
-    }
-
     const userIdentifier = payload.phone_number || payload.email || payload.sub;
     changeUserPassword(userIdentifier, currentPassword, newPassword);
 

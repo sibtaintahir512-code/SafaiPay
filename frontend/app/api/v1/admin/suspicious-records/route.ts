@@ -1,6 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { authenticateRequest } from '@/lib/serverAuth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = authenticateRequest(req, { allowedRoles: ['admin'], disallowGuests: true });
+  if (auth.error) {
+    return NextResponse.json({ detail: auth.error.detail }, { status: auth.error.status });
+  }
+
   return NextResponse.json({
     count: 2,
     records: [

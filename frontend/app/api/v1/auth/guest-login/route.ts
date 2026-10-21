@@ -1,12 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { VERIFIED_USERS, signJwt } from '@/lib/serverAuth';
+import { VERIFIED_USERS, signJwt, checkGuestRateLimit } from '@/lib/serverAuth';
 import { UserRole } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const role = (body.role || 'customer').toLowerCase().trim() as UserRole;
+    // 1. Abuse protection and rate limiting per IP
+    const clientIp =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      '127.0.0.1';
 
+    const rateCheck = checkGuestRateLimit(clientIp);
+    if (rateCheck.isLimited) {
+      return NextResponse.json(
+        { detail: 'Too many guest login requests. Please wait a moment and try again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateCheck.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+
+    // 2. Reject missing or empty role with HTTP 400
+    if (!body || !body.role || typeof body.role !== 'string' || !body.role.trim()) {
+      return NextResponse.json(
+        { detail: 'Role is required. Choose either customer, collector, or recycler.' },
+        { status: 400 }
+      );
+    }
+
+    const role = body.role.toLowerCase().trim() as UserRole;
     const allowedRoles: UserRole[] = ['customer', 'collector', 'recycler'];
     if (!allowedRoles.includes(role)) {
       return NextResponse.json(
@@ -15,7 +42,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Try finding dedicated guest user first, or standard role user
+    // 3. Resolve dedicated guest user (usr_guest_cust, usr_guest_coll, usr_guest_recy)
     const guestUser =
       VERIFIED_USERS.find((u) => u.id === `usr_guest_${role.slice(0, 4)}`) ||
       VERIFIED_USERS.find((u) => u.role === role);
@@ -27,7 +54,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate signed JWT token for the guest session (valid for 24 hours)
+    // 4. Generate signed JWT token with exactly 24-hour expiration (86400 seconds)
     const token = signJwt(
       {
         sub: guestUser.id,
@@ -36,6 +63,7 @@ export async function POST(req: NextRequest) {
         phone_number: guestUser.phone_number,
         email: guestUser.email,
         isGuest: true,
+        is_guest: true,
       },
       86400
     );
@@ -44,6 +72,9 @@ export async function POST(req: NextRequest) {
       access_token: token,
       token_type: 'Bearer',
       expires_in: 86400,
+      role: guestUser.role,
+      isGuest: true,
+      is_guest: true,
       user: {
         id: guestUser.id,
         phone_number: guestUser.phone_number,
@@ -56,6 +87,7 @@ export async function POST(req: NextRequest) {
         created_at: guestUser.created_at,
         [`${guestUser.role}_profile`]: guestUser.profile,
         isGuest: true,
+        is_guest: true,
       },
     });
   } catch (err: any) {

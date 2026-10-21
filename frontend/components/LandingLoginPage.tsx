@@ -96,6 +96,23 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
     }
   };
 
+  const handleGuestRoleKeyDown = (e: React.KeyboardEvent, role: 'customer' | 'collector' | 'recycler') => {
+    const roles: ('customer' | 'collector' | 'recycler')[] = ['customer', 'collector', 'recycler'];
+    const currentIndex = roles.indexOf(role);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextIndex = (currentIndex + 1) % roles.length;
+      setSelectedGuestRole(roles[nextIndex]);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevIndex = (currentIndex - 1 + roles.length) % roles.length;
+      setSelectedGuestRole(roles[prevIndex]);
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      setSelectedGuestRole(role);
+    }
+  };
+
   return (
     <>
       {/* =========================================================================
@@ -319,51 +336,75 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                     type="button"
                     role="radio"
                     aria-checked={selectedGuestRole === 'customer'}
+                    tabIndex={selectedGuestRole === 'customer' ? 0 : -1}
+                    onKeyDown={(e) => handleGuestRoleKeyDown(e, 'customer')}
                     onClick={() => setSelectedGuestRole('customer')}
-                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                    disabled={isLoading || isGuestSubmitting}
+                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer relative ${
                       selectedGuestRole === 'customer'
-                        ? 'bg-[#16865F] text-white shadow-xs font-bold'
+                        ? 'bg-[#16865F] text-white shadow-xs font-bold ring-2 ring-[#16865F]/30'
                         : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
                     }`}
                   >
-                    <UserIcon className="w-3.5 h-3.5 mb-1 shrink-0" />
+                    <UserIcon className="w-3.5 h-3.5 mb-0.5 shrink-0" />
                     <span className="text-[11px] leading-tight truncate">
                       {isUrdu ? 'کسٹمر' : 'Customer'}
                     </span>
+                    {selectedGuestRole === 'customer' && (
+                      <span className="text-[8px] uppercase tracking-wider font-extrabold bg-white/20 text-white px-1 py-0.2 rounded-full mt-0.5">
+                        {isUrdu ? 'فعال' : 'Active'}
+                      </span>
+                    )}
                   </button>
 
                   <button
                     type="button"
                     role="radio"
                     aria-checked={selectedGuestRole === 'collector'}
+                    tabIndex={selectedGuestRole === 'collector' ? 0 : -1}
+                    onKeyDown={(e) => handleGuestRoleKeyDown(e, 'collector')}
                     onClick={() => setSelectedGuestRole('collector')}
-                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                    disabled={isLoading || isGuestSubmitting}
+                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer relative ${
                       selectedGuestRole === 'collector'
-                        ? 'bg-[#16865F] text-white shadow-xs font-bold'
+                        ? 'bg-[#16865F] text-white shadow-xs font-bold ring-2 ring-[#16865F]/30'
                         : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
                     }`}
                   >
-                    <Truck className="w-3.5 h-3.5 mb-1 shrink-0" />
+                    <Truck className="w-3.5 h-3.5 mb-0.5 shrink-0" />
                     <span className="text-[11px] leading-tight truncate">
                       {isUrdu ? 'کولیکٹر' : 'Collector'}
                     </span>
+                    {selectedGuestRole === 'collector' && (
+                      <span className="text-[8px] uppercase tracking-wider font-extrabold bg-white/20 text-white px-1 py-0.2 rounded-full mt-0.5">
+                        {isUrdu ? 'فعال' : 'Active'}
+                      </span>
+                    )}
                   </button>
 
                   <button
                     type="button"
                     role="radio"
                     aria-checked={selectedGuestRole === 'recycler'}
+                    tabIndex={selectedGuestRole === 'recycler' ? 0 : -1}
+                    onKeyDown={(e) => handleGuestRoleKeyDown(e, 'recycler')}
                     onClick={() => setSelectedGuestRole('recycler')}
-                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                    disabled={isLoading || isGuestSubmitting}
+                    className={`py-2 px-1 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer relative ${
                       selectedGuestRole === 'recycler'
-                        ? 'bg-[#16865F] text-white shadow-xs font-bold'
+                        ? 'bg-[#16865F] text-white shadow-xs font-bold ring-2 ring-[#16865F]/30'
                         : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
                     }`}
                   >
-                    <Factory className="w-3.5 h-3.5 mb-1 shrink-0" />
+                    <Factory className="w-3.5 h-3.5 mb-0.5 shrink-0" />
                     <span className="text-[11px] leading-tight truncate">
                       {isUrdu ? 'ری سائیکلر' : 'Recycler'}
                     </span>
+                    {selectedGuestRole === 'recycler' && (
+                      <span className="text-[8px] uppercase tracking-wider font-extrabold bg-white/20 text-white px-1 py-0.2 rounded-full mt-0.5">
+                        {isUrdu ? 'فعال' : 'Active'}
+                      </span>
+                    )}
                   </button>
                 </div>
 
@@ -388,7 +429,7 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                     <>
                       <span>
                         {isUrdu 
-                          ? `بطور ${selectedGuestRole === 'customer' ? 'کسٹمر' : selectedGuestRole === 'collector' ? 'کولیکٹر' : 'ری سائیکلر'} داخل ہوں`
+                          ? `بطور گیسٹ ${selectedGuestRole === 'customer' ? 'کسٹمر' : selectedGuestRole === 'collector' ? 'کولیکٹر' : 'ری سائیکلر'} داخل ہوں`
                           : `Sign In as Guest ${selectedGuestRole.charAt(0).toUpperCase() + selectedGuestRole.slice(1)}`}
                       </span>
                       {isUrdu ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
@@ -754,51 +795,75 @@ export const LandingLoginPage: React.FC<LandingLoginPageProps> = ({
                   type="button"
                   role="radio"
                   aria-checked={selectedGuestRole === 'customer'}
+                  tabIndex={selectedGuestRole === 'customer' ? 0 : -1}
+                  onKeyDown={(e) => handleGuestRoleKeyDown(e, 'customer')}
                   onClick={() => setSelectedGuestRole('customer')}
-                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                  disabled={isLoading || isGuestSubmitting}
+                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer relative ${
                     selectedGuestRole === 'customer'
-                      ? 'bg-[#1B7F5C] text-white shadow-xs font-bold'
+                      ? 'bg-[#16865F] text-white shadow-xs font-bold ring-2 ring-[#16865F]/30'
                       : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
                   }`}
                 >
-                  <UserIcon className="w-3.5 h-3.5 mb-1 shrink-0" />
+                  <UserIcon className="w-3.5 h-3.5 mb-0.5 shrink-0" />
                   <span className="text-[11px] leading-tight truncate">
                     {isUrdu ? 'کسٹمر' : 'Customer'}
                   </span>
+                  {selectedGuestRole === 'customer' && (
+                    <span className="text-[8px] uppercase tracking-wider font-extrabold bg-white/20 text-white px-1 py-0.2 rounded-full mt-0.5">
+                      {isUrdu ? 'فعال' : 'Active'}
+                    </span>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   role="radio"
                   aria-checked={selectedGuestRole === 'collector'}
+                  tabIndex={selectedGuestRole === 'collector' ? 0 : -1}
+                  onKeyDown={(e) => handleGuestRoleKeyDown(e, 'collector')}
                   onClick={() => setSelectedGuestRole('collector')}
-                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                  disabled={isLoading || isGuestSubmitting}
+                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer relative ${
                     selectedGuestRole === 'collector'
-                      ? 'bg-[#1B7F5C] text-white shadow-xs font-bold'
+                      ? 'bg-[#16865F] text-white shadow-xs font-bold ring-2 ring-[#16865F]/30'
                       : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
                   }`}
                 >
-                  <Truck className="w-3.5 h-3.5 mb-1 shrink-0" />
+                  <Truck className="w-3.5 h-3.5 mb-0.5 shrink-0" />
                   <span className="text-[11px] leading-tight truncate">
                     {isUrdu ? 'کولیکٹر' : 'Collector'}
                   </span>
+                  {selectedGuestRole === 'collector' && (
+                    <span className="text-[8px] uppercase tracking-wider font-extrabold bg-white/20 text-white px-1 py-0.2 rounded-full mt-0.5">
+                      {isUrdu ? 'فعال' : 'Active'}
+                    </span>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   role="radio"
                   aria-checked={selectedGuestRole === 'recycler'}
+                  tabIndex={selectedGuestRole === 'recycler' ? 0 : -1}
+                  onKeyDown={(e) => handleGuestRoleKeyDown(e, 'recycler')}
                   onClick={() => setSelectedGuestRole('recycler')}
-                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer ${
+                  disabled={isLoading || isGuestSubmitting}
+                  className={`py-2 px-1.5 rounded-lg text-center transition-all min-h-[44px] flex flex-col items-center justify-center cursor-pointer relative ${
                     selectedGuestRole === 'recycler'
-                      ? 'bg-[#1B7F5C] text-white shadow-xs font-bold'
+                      ? 'bg-[#16865F] text-white shadow-xs font-bold ring-2 ring-[#16865F]/30'
                       : 'text-[#5B6B66] hover:text-[#0F3D3E] hover:bg-[#E6F4EC]/60 font-semibold'
                   }`}
                 >
-                  <Factory className="w-3.5 h-3.5 mb-1 shrink-0" />
+                  <Factory className="w-3.5 h-3.5 mb-0.5 shrink-0" />
                   <span className="text-[11px] leading-tight truncate">
                     {isUrdu ? 'ری سائیکلر' : 'Recycler'}
                   </span>
+                  {selectedGuestRole === 'recycler' && (
+                    <span className="text-[8px] uppercase tracking-wider font-extrabold bg-white/20 text-white px-1 py-0.2 rounded-full mt-0.5">
+                      {isUrdu ? 'فعال' : 'Active'}
+                    </span>
+                  )}
                 </button>
               </div>
 
