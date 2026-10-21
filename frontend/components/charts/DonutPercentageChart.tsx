@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
+import { PieChart } from 'lucide-react';
 
 export interface DonutSegment {
   label: string;
@@ -29,7 +30,20 @@ export const DonutPercentageChart: React.FC<DonutPercentageChartProps> = ({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
-  if (!segments || segments.length === 0) return null;
+  if (!segments || segments.length === 0) {
+    return (
+      <div className="bg-theme-surface rounded-2xl border border-theme-border p-6 shadow-xs flex flex-col items-center justify-center min-h-[220px] text-center transition-colors">
+        <div className="w-12 h-12 rounded-2xl bg-theme-soft-mint text-theme-primary flex items-center justify-center mb-3">
+          <PieChart className="w-6 h-6" />
+        </div>
+        <h3 className="text-sm font-bold text-theme-text">{title}</h3>
+        {subtitle && <p className="text-xs text-theme-secondary mt-1">{subtitle}</p>}
+        <p className="text-xs text-theme-secondary/80 mt-2 max-w-xs">
+          No distribution data logged for this period.
+        </p>
+      </div>
+    );
+  }
 
   // SVG parameters
   const size = 180;

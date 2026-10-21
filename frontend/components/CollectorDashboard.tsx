@@ -178,24 +178,24 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
   );
 
   return (
-    <div className="space-y-8 pb-12 font-sans">
+    <div className="space-y-8 pb-12 font-sans transition-colors duration-200">
       
       {/* ================= 1. COLLECTOR HEADER & TODAY'S EARNINGS ================= */}
-      <div className="bg-white rounded-3xl border border-[#D5E6DD] p-6 sm:p-8 shadow-xs">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border p-6 sm:p-8 shadow-xs transition-colors">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           
           {/* Identity & Status */}
           <div className="space-y-2">
             <div className="flex items-center space-x-3">
-              <span className={`w-3.5 h-3.5 rounded-full ${isOnline ? 'bg-[#2FA37A] animate-pulse' : 'bg-slate-400'}`} />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[#5B6B66]">
+              <span className={`w-3.5 h-3.5 rounded-full ${isOnline ? 'bg-theme-primary animate-pulse' : 'bg-slate-400'}`} />
+              <span className="text-xs font-extrabold uppercase tracking-wider text-theme-secondary">
                 {isOnline ? 'Online • Ready for Doorstep Dispatches' : 'Offline • Shift Paused'}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F3D3E] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-text tracking-tight">
               Karachi South Field Collector
             </h1>
-            <p className="text-xs text-[#5B6B66]">
+            <p className="text-xs text-theme-secondary">
               Assigned Hub: Clifton Hub #04 • Calibrated Digital Sensor Scale ID #SP-SCL-8910
             </p>
           </div>
@@ -204,7 +204,7 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
           <div className="flex flex-wrap items-center gap-4">
             
             {/* Today's Earnings Card - Deep Teal Hero Card with Gold Value */}
-            <div className="bg-[#0F3D3E] border border-[#1F4A4B] rounded-2xl px-5 py-3 shadow-md shadow-[#0F3D3E]/15">
+            <div className="bg-[#0F3D3E] dark:bg-[#072021] border border-[#1F4A4B] dark:border-[#173F3C] rounded-2xl px-5 py-3 shadow-md shadow-[#0F3D3E]/15 transition-colors">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#9FE6C6] block">
                 {t('collector.today_earnings', "Today's Earnings")}
               </span>
@@ -221,7 +221,7 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
               onClick={() => setIsOnline(!isOnline)}
               className={`px-5 py-4 rounded-2xl text-xs font-extrabold transition shadow-md flex items-center space-x-2 active:scale-98 ${
                 isOnline
-                  ? 'bg-[#1B7F5C] hover:bg-[#146B4D] text-white shadow-[#1B7F5C]/25 ring-2 ring-[#2FA37A]/20'
+                  ? 'bg-theme-primary hover:bg-[#146B4D] text-white shadow-theme-primary/25 ring-2 ring-theme-primary/20'
                   : 'bg-[#0B2F30] hover:bg-[#0F3D3E] text-white shadow-[#0B2F30]/25'
               }`}
             >
@@ -236,12 +236,12 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
 
       {/* Action Notice Alert */}
       {actionNotice && (
-        <div className="p-4 bg-[#E6F4EC] border border-[#D5E6DD] text-[#0F3D3E] rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs">
+        <div className="p-4 bg-theme-soft-mint border border-theme-primary/40 text-theme-text rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs transition-colors">
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-[#1B7F5C] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-theme-primary shrink-0" />
             <span>{actionNotice}</span>
           </div>
-          <button onClick={() => setActionNotice(null)} className="text-[#1B7F5C] font-bold ml-4 hover:text-[#146B4D]">
+          <button onClick={() => setActionNotice(null)} className="text-theme-primary font-bold ml-4 hover:text-theme-text">
             ✕
           </button>
         </div>
@@ -520,51 +520,51 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
 
       {/* ================= 4. NEARBY PICKUP JOBS ================= */}
       {/* Required: distance, material, estimated weight, expected earning, and one primary Accept Job button per job */}
-      <div className="bg-white rounded-3xl border border-[#D5E6DD] shadow-xs overflow-hidden">
-        <div className="p-6 border-b border-[#D5E6DD]/60 flex items-center justify-between">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border shadow-xs overflow-hidden transition-colors">
+        <div className="p-6 border-b border-theme-border/60 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-extrabold text-[#0F3D3E] tracking-tight flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2FA37A]" />
+            <h2 className="text-sm font-extrabold text-theme-text tracking-tight flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-theme-primary" />
               <span>{t('collector.nearby_jobs', 'Nearby Available Pickup Jobs')}</span>
             </h2>
-            <p className="text-xs text-[#5B6B66] mt-0.5">
+            <p className="text-xs text-theme-secondary mt-0.5">
               Instant acceptance • Real-time GPS distance radius • Guaranteed benchmark rates
             </p>
           </div>
 
-          <span className="text-xs font-bold text-[#146B4D] bg-[#E6F4EC] px-3 py-1 rounded-full border border-[#D5E6DD]">
+          <span className="text-xs font-bold text-theme-primary bg-theme-soft-mint px-3 py-1 rounded-full border border-theme-border">
             {SAMPLE_NEARBY_JOBS.length} Jobs in 3km Radius
           </span>
         </div>
 
-        <div className="divide-y divide-[#D5E6DD]/60">
+        <div className="divide-y divide-theme-border/60">
           {SAMPLE_NEARBY_JOBS.map((job) => (
             <div
               key={job.id}
-              className="p-5 sm:p-6 hover:bg-[#F4FAF7] transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className="p-5 sm:p-6 hover:bg-theme-soft-mint/30 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
             >
               <div className="space-y-1.5 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#E6F4EC] text-[#146B4D] text-[11px] font-extrabold font-mono border border-[#D5E6DD]">
+                  <span className="px-2.5 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary text-[11px] font-extrabold font-mono border border-theme-border">
                     {job.distance} away
                   </span>
-                  <span className="font-extrabold text-[#0F3D3E] text-sm">
+                  <span className="font-extrabold text-theme-text text-sm">
                     {job.material_name}
                   </span>
-                  <span className="text-[#5B6B66] text-xs">• {job.preferred_time}</span>
+                  <span className="text-theme-secondary text-xs">• {job.preferred_time}</span>
                 </div>
 
-                <p className="text-xs text-[#5B6B66] flex items-center space-x-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#5B6B66] shrink-0" />
+                <p className="text-xs text-theme-secondary flex items-center space-x-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-theme-secondary shrink-0" />
                   <span>{job.street_address}</span>
                 </p>
 
                 <div className="flex items-center space-x-4 text-xs font-mono pt-1">
-                  <span className="text-[#5B6B66]">
-                    Est. Weight: <strong className="text-[#0F3D3E]">{job.estimated_quantity_kg} kg</strong>
+                  <span className="text-theme-secondary">
+                    Est. Weight: <strong className="text-theme-text">{job.estimated_quantity_kg} kg</strong>
                   </span>
-                  <span className="text-[#0F3D3E] font-medium flex items-center gap-1.5">
-                    Est. Payout: <strong className="bg-[#E6F4EC] text-[#146B4D] px-2 py-0.5 rounded border border-[#D5E6DD]">Rs {job.expected_earning_pkr}</strong>
+                  <span className="text-theme-text font-medium flex items-center gap-1.5">
+                    Est. Payout: <strong className="bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded border border-theme-border">Rs {job.expected_earning_pkr}</strong>
                   </span>
                 </div>
               </div>
@@ -573,7 +573,7 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
               <div className="shrink-0 flex items-center space-x-3">
                 <button
                   onClick={() => handleAcceptJob(job.id)}
-                  className="w-full sm:w-auto bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold px-6 py-3 rounded-xl text-xs transition shadow-md shadow-[#1B7F5C]/20 flex items-center justify-center space-x-2 active:scale-98"
+                  className="w-full sm:w-auto bg-theme-primary hover:bg-[#146B4D] text-white font-extrabold px-6 py-3 rounded-xl text-xs transition shadow-md shadow-theme-primary/20 flex items-center justify-center space-x-2 active:scale-98"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{t('collector.accept_job', 'Accept Job')}</span>

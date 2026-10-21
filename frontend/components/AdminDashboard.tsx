@@ -197,26 +197,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
 
   return (
-    <div className="space-y-8 pb-12 font-sans">
+    <div className="space-y-8 pb-12 font-sans transition-colors duration-200">
       
       {/* ================= 1. FRAUD ALERT BANNER ================= */}
       {/* Required: Clearly show “2 alerts require review” */}
-      <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
         <div className="flex items-start sm:items-center space-x-3.5">
           <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/30">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-200 bg-amber-200/80 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
                 Fraud Engine Alert
               </span>
-              <span className="text-xs text-amber-700 font-semibold">• High Priority</span>
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">• High Priority</span>
             </div>
-            <h2 className="text-base sm:text-lg font-extrabold text-amber-950 mt-0.5">
+            <h2 className="text-base sm:text-lg font-extrabold text-theme-text mt-0.5">
               2 alerts require review
             </h2>
-            <p className="text-xs text-amber-800 leading-snug">
+            <p className="text-xs text-theme-secondary leading-snug">
               Unusual scale weight variance (+14.2 kg over historical household average) detected in Clifton Hub #4.
             </p>
           </div>
@@ -232,12 +232,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Action Notification Alert */}
       {actionAlert && (
-        <div className="p-4 bg-[#E6F4EC] border border-[#D5E6DD] text-[#0F3D3E] rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs">
+        <div className="p-4 bg-theme-soft-mint border border-theme-primary/40 text-theme-text rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs transition-colors">
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-[#1B7F5C] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-theme-primary shrink-0" />
             <span>{actionAlert}</span>
           </div>
-          <button onClick={() => setActionAlert(null)} className="text-[#1B7F5C] font-bold ml-4 hover:text-[#146B4D]">
+          <button onClick={() => setActionAlert(null)} className="text-theme-primary font-bold ml-4 hover:text-theme-text">
             ✕
           </button>
         </div>
@@ -248,74 +248,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Metric 1: 428 total pickups */}
-        <div className="bg-white rounded-2xl border border-[#D5E6DD] p-5 shadow-xs hover:shadow-sm transition">
+        <div className="bg-theme-surface rounded-2xl border border-theme-border p-5 shadow-xs hover:shadow-sm transition">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[#5B6B66]">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-theme-secondary">
               {t('admin.total_pickups', 'Total Pickups')}
             </span>
-            <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#146B4D] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center">
               <Truck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold font-mono text-[#0F3D3E] tracking-tight">
+          <div className="text-3xl font-extrabold font-mono text-theme-text tracking-tight">
             428
           </div>
-          <div className="flex items-center space-x-1.5 text-[11px] text-[#146B4D] font-bold mt-2">
+          <div className="flex items-center space-x-1.5 text-[11px] text-theme-primary font-bold mt-2">
             <span>+14.8% this month</span>
-            <span className="text-[#5B6B66] font-normal">• 98.2% completion</span>
+            <span className="text-theme-secondary font-normal">• 98.2% completion</span>
           </div>
         </div>
 
         {/* Metric 2: 8,420 kg material recycled */}
-        <div className="bg-white rounded-2xl border border-[#D5E6DD] p-5 shadow-xs hover:shadow-sm transition">
+        <div className="bg-theme-surface rounded-2xl border border-theme-border p-5 shadow-xs hover:shadow-sm transition">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[#5B6B66]">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-theme-secondary">
               {t('admin.total_recycled', 'Material Recycled')}
             </span>
-            <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#146B4D] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center">
               <Scale className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold font-mono text-[#1B7F5C] tracking-tight">
+          <div className="text-3xl font-extrabold font-mono text-theme-primary tracking-tight">
             8,420 kg
           </div>
-          <div className="flex items-center space-x-1.5 text-[11px] text-[#146B4D] font-bold mt-2">
+          <div className="flex items-center space-x-1.5 text-[11px] text-theme-primary font-bold mt-2">
             <span>100% verified scale readings</span>
           </div>
         </div>
 
         {/* Metric 3: Rs 312,000 collector earnings */}
-        <div className="bg-white rounded-2xl border border-[#D5E6DD] p-5 shadow-xs hover:shadow-sm transition">
+        <div className="bg-theme-surface rounded-2xl border border-theme-border p-5 shadow-xs hover:shadow-sm transition">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[#5B6B66]">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-theme-secondary">
               {t('admin.collector_earnings', 'Collector Earnings')}
             </span>
-            <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#146B4D] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold font-mono text-[#0F3D3E] tracking-tight">
+          <div className="text-3xl font-extrabold font-mono text-theme-text tracking-tight">
             Rs 312,000
           </div>
-          <div className="flex items-center space-x-1.5 text-[11px] text-[#146B4D] font-bold mt-2">
+          <div className="flex items-center space-x-1.5 text-[11px] text-theme-primary font-bold mt-2">
             <span>Disbursed via digital wallet</span>
           </div>
         </div>
 
         {/* Metric 4: 2 fraud alerts */}
-        <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-xs hover:shadow-sm transition bg-amber-50/20">
+        <div className="bg-theme-surface rounded-2xl border border-amber-500/30 p-5 shadow-xs hover:shadow-sm transition bg-amber-500/5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-900">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
               {t('admin.fraud_alerts', 'Fraud Alerts')}
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold font-mono text-amber-800 tracking-tight">
+          <div className="text-3xl font-extrabold font-mono text-amber-600 dark:text-amber-400 tracking-tight">
             2
           </div>
-          <div className="flex items-center space-x-1.5 text-[11px] text-amber-800 font-bold mt-2">
+          <div className="flex items-center space-x-1.5 text-[11px] text-amber-700 dark:text-amber-400 font-bold mt-2">
             <span>Requires administrative audit</span>
           </div>
         </div>
@@ -355,9 +355,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* ================= 4. NAVIGATION TABS ================= */}
       {/* Required Tabs: Operations, Dispatch, Pricing, Payments, Fraud Alerts, Reports */}
-      <div className="bg-white rounded-3xl border border-[#D5E6DD] shadow-xs overflow-hidden">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border shadow-xs overflow-hidden transition-colors">
         
-        <div className="border-b border-[#D5E6DD]/60 px-6 pt-4">
+        <div className="border-b border-theme-border/60 px-6 pt-4">
           <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto pb-4 scrollbar-none">
             {[
               { id: 'operations', label: 'Operations' },
@@ -373,8 +373,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'bg-[#1B7F5C] text-white shadow-xs font-extrabold'
-                    : 'text-[#5B6B66] hover:bg-[#E6F4EC] hover:text-[#0F3D3E]'
+                    ? 'bg-theme-primary text-white shadow-xs font-extrabold'
+                    : 'text-theme-secondary hover:bg-theme-soft-mint hover:text-theme-text'
                 }`}
               >
                 {tab.label}
@@ -386,12 +386,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* TAB 1: OPERATIONS (Readable Pickup Operations Table) */}
         {activeTab === 'operations' && (
           <div>
-            <div className="p-6 border-b border-[#D5E6DD]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-6 border-b border-theme-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-extrabold text-[#0F3D3E]">
+                <h3 className="text-sm font-extrabold text-theme-text">
                   Pickup Operations Ledger
                 </h3>
-                <p className="text-xs text-[#5B6B66] mt-0.5">
+                <p className="text-xs text-theme-secondary mt-0.5">
                   Complete real-time log of customer bookings, scale verifications, and collector dispatches
                 </p>
               </div>
@@ -403,12 +403,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder="Filter by ID or address..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3 py-1.5 text-xs text-[#0F3D3E] focus:outline-none focus:border-[#1B7F5C]"
+                  className="bg-theme-bg border border-theme-border rounded-xl px-3 py-1.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3 py-1.5 text-xs text-[#0F3D3E] font-bold focus:outline-none focus:border-[#1B7F5C]"
+                  className="bg-theme-bg border border-theme-border rounded-xl px-3 py-1.5 text-xs text-theme-text font-bold focus:outline-none focus:border-theme-primary"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="requested">Requested</option>
@@ -422,7 +422,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#E6F4EC] text-[#0F3D3E] border-b border-[#D5E6DD] uppercase tracking-wider font-bold text-[10px]">
+                <thead className="bg-theme-soft-mint/40 text-theme-secondary border-b border-theme-border uppercase tracking-wider font-bold text-[10px]">
                   <tr>
                     <th className="px-6 py-3.5">ID</th>
                     <th className="px-6 py-3.5">Material</th>
@@ -433,34 +433,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="px-6 py-3.5 text-right">Quick Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#D5E6DD]/60">
+                <tbody className="divide-y divide-theme-border/60">
                   {filteredPickups.map((p) => {
                     const calc = p.pricing_calculations?.[0];
                     const weight = calc ? calc.verified_weight_kg : p.estimated_quantity_kg;
                     const price = calc ? calc.total_price : p.estimated_quantity_kg * 80;
 
                     return (
-                      <tr key={p.id} className="hover:bg-[#E6F4EC]/40 transition">
-                        <td className="px-6 py-4 font-mono font-bold text-[#0F3D3E]">
+                      <tr key={p.id} className="hover:bg-theme-soft-mint/30 transition">
+                        <td className="px-6 py-4 font-mono font-bold text-theme-text">
                           #{p.id.slice(0, 8)}
                         </td>
-                        <td className="px-6 py-4 font-bold text-[#0F3D3E]">
+                        <td className="px-6 py-4 font-bold text-theme-text">
                           {p.material_code}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-[#0F3D3E] font-semibold block">{p.street_address}</span>
-                          <span className="text-[11px] text-[#5B6B66]">Karachi South Hub</span>
+                          <span className="text-theme-text font-semibold block">{p.street_address}</span>
+                          <span className="text-[11px] text-theme-secondary">Karachi South Hub</span>
                         </td>
-                        <td className="px-6 py-4 font-mono font-extrabold text-[#146B4D]">
+                        <td className="px-6 py-4 font-mono font-extrabold text-theme-primary">
                           {weight} kg
                         </td>
-                        <td className="px-6 py-4 font-mono font-bold text-[#0F3D3E]">
-                          <span className="bg-[#E6F4EC] text-[#146B4D] px-2 py-0.5 rounded border border-[#D5E6DD] font-bold">
+                        <td className="px-6 py-4 font-mono font-bold text-theme-text">
+                          <span className="bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded border border-theme-border font-bold">
                             Rs {price.toFixed(2)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#E6F4EC] text-[#146B4D] border border-[#D5E6DD]">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-theme-soft-mint text-theme-primary border border-theme-border">
                             {p.status}
                           </span>
                         </td>
@@ -471,7 +471,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 const collector = collectors[0]?.id || 'col-demo';
                                 handleAssignCollectorAction(p.id, collector);
                               }}
-                              className="px-3 py-1 bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-bold rounded-lg text-xs"
+                              className="px-3 py-1 bg-theme-primary hover:bg-[#146B4D] text-white font-bold rounded-lg text-xs transition"
                             >
                               Assign Collector
                             </button>
@@ -479,7 +479,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {p.status === 'payment_pending' && (
                             <button
                               onClick={() => handleSimulatePayment(p.id)}
-                              className="px-3 py-1 bg-[#2FA37A] hover:bg-[#1B7F5C] text-white font-bold rounded-lg text-xs"
+                              className="px-3 py-1 bg-theme-primary hover:bg-[#146B4D] text-white font-bold rounded-lg text-xs transition"
                             >
                               Disburse Payout
                             </button>
@@ -497,20 +497,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* TAB 2: DISPATCH */}
         {activeTab === 'dispatch' && (
           <div className="p-6 space-y-4">
-            <h3 className="text-sm font-extrabold text-[#0F3D3E]">Active Field Collector Fleets</h3>
+            <h3 className="text-sm font-extrabold text-theme-text">Active Field Collector Fleets</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { name: 'Tariq Mehmood', hub: 'Clifton Hub #4', vehicle: 'Motorized Loader #KHI-901', status: 'In Transit', rating: '4.9 ★' },
                 { name: 'Rashid Ali', hub: 'DHA Phase 2 Hub', vehicle: 'Eco Rickshaw #KHI-412', status: 'At Doorstep Weighing', rating: '4.8 ★' },
                 { name: 'Zahid Khan', hub: 'Gulshan Depot', vehicle: 'Mini Flatbed #KHI-118', status: 'Available for Dispatch', rating: '5.0 ★' },
               ].map((f, i) => (
-                <div key={i} className="p-4 bg-[#F4FAF7] rounded-2xl border border-[#D5E6DD] space-y-2">
+                <div key={i} className="p-4 bg-theme-bg rounded-2xl border border-theme-border space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-[#0F3D3E] text-xs">{f.name}</span>
-                    <span className="text-[10px] font-bold bg-[#E6F4EC] text-[#146B4D] px-2 py-0.5 rounded-full border border-[#D5E6DD]">{f.status}</span>
+                    <span className="font-bold text-theme-text text-xs">{f.name}</span>
+                    <span className="text-[10px] font-bold bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded-full border border-theme-border">{f.status}</span>
                   </div>
-                  <p className="text-[11px] text-[#5B6B66]">{f.vehicle} • {f.hub}</p>
-                  <p className="text-xs font-mono font-bold text-[#146B4D]">Rating: {f.rating}</p>
+                  <p className="text-[11px] text-theme-secondary">{f.vehicle} • {f.hub}</p>
+                  <p className="text-xs font-mono font-bold text-theme-primary">Rating: {f.rating}</p>
                 </div>
               ))}
             </div>
@@ -521,37 +521,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === 'pricing' && (
           <div className="p-6 space-y-6">
             <div>
-              <h3 className="text-sm font-extrabold text-[#0F3D3E]">Benchmark Scrap Price Management</h3>
-              <p className="text-xs text-[#5B6B66] mt-0.5">
+              <h3 className="text-sm font-extrabold text-theme-text">Benchmark Scrap Price Management</h3>
+              <p className="text-xs text-theme-secondary mt-0.5">
                 Update market pricing rates. Changes apply to all future automated customer calculations.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {materialRates.map((m) => (
-                <div key={m.code} className="p-4 bg-[#F4FAF7] rounded-2xl border border-[#D5E6DD] space-y-1">
-                  <span className="text-xs font-bold text-[#0F3D3E] block">{m.code}</span>
-                  <div className="text-2xl font-extrabold font-mono text-[#0F3D3E]">
+                <div key={m.code} className="p-4 bg-theme-bg rounded-2xl border border-theme-border space-y-1">
+                  <span className="text-xs font-bold text-theme-text block">{m.code}</span>
+                  <div className="text-2xl font-extrabold font-mono text-theme-text">
                     Rs {m.benchmark_rate_pkr}/kg
                   </div>
-                  <span className="text-[10px] text-[#5B6B66]">Effective rate across pilot hub</span>
+                  <span className="text-[10px] text-theme-secondary">Effective rate across pilot hub</span>
                 </div>
               ))}
             </div>
 
             {/* Price Edit Box with Confirmation requirement */}
-            <div className="p-5 bg-[#F4FAF7] rounded-2xl border border-[#D5E6DD] space-y-4 max-w-xl">
-              <h4 className="text-xs font-extrabold text-[#0F3D3E] uppercase tracking-wider">
+            <div className="p-5 bg-theme-bg rounded-2xl border border-theme-border space-y-4 max-w-xl">
+              <h4 className="text-xs font-extrabold text-theme-text uppercase tracking-wider">
                 Adjust Material Benchmark Rate
               </h4>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-bold text-[#5B6B66] block mb-1">Target Stream</label>
+                  <label className="text-[11px] font-bold text-theme-secondary block mb-1">Target Stream</label>
                   <select
                     value={targetMaterial}
                     onChange={(e) => setTargetMaterial(e.target.value)}
-                    className="w-full bg-white border border-[#D5E6DD] rounded-xl px-3 py-2 text-xs font-bold text-[#0F3D3E]"
+                    className="w-full bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-xs font-bold text-theme-text focus:outline-none focus:border-theme-primary"
                   >
                     <option value="PET_PLASTIC">PET Plastic</option>
                     <option value="CARDBOARD_OCC">Cardboard</option>
@@ -560,23 +560,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-[#5B6B66] block mb-1">New Rate (PKR/kg)</label>
+                  <label className="text-[11px] font-bold text-theme-secondary block mb-1">New Rate (PKR/kg)</label>
                   <input
                     type="number"
                     value={newRate}
                     onChange={(e) => setNewRate(Number(e.target.value))}
-                    className="w-full bg-white border border-[#D5E6DD] rounded-xl px-3 py-2 text-xs font-mono font-bold text-[#0F3D3E]"
+                    className="w-full bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-xs font-mono font-bold text-theme-text focus:outline-none focus:border-theme-primary"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-[#5B6B66] block mb-1">Audit Trail Rationale</label>
+                <label className="text-[11px] font-bold text-theme-secondary block mb-1">Audit Trail Rationale</label>
                 <input
                   type="text"
                   value={rateNote}
                   onChange={(e) => setRateNote(e.target.value)}
-                  className="w-full bg-white border border-[#D5E6DD] rounded-xl px-3 py-2 text-xs text-[#0F3D3E]"
+                  className="w-full bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
 
@@ -584,7 +584,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 type="button"
                 onClick={handleExecuteRateUpdate}
                 disabled={isUpdatingRate}
-                className="bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold px-5 py-2.5 rounded-xl text-xs transition shadow-md shadow-[#1B7F5C]/25 flex items-center space-x-1.5"
+                className="bg-theme-primary hover:bg-[#146B4D] text-white font-extrabold px-5 py-2.5 rounded-xl text-xs transition shadow-md shadow-theme-primary/25 flex items-center space-x-1.5"
               >
                 <span>Update Benchmark Rate</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -596,11 +596,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* TAB 4: PAYMENTS */}
         {activeTab === 'payments' && (
           <div className="p-6 space-y-4">
-            <h3 className="text-sm font-extrabold text-[#0F3D3E]">Disbursed Digital Settlements</h3>
-            <p className="text-xs text-[#5B6B66]">Total disbursements: Rs 312,000 across 428 certified pickups.</p>
-            <div className="p-4 bg-[#E6F4EC] rounded-2xl border border-[#D5E6DD] text-xs text-[#0F3D3E] flex justify-between items-center">
+            <h3 className="text-sm font-extrabold text-theme-text">Disbursed Digital Settlements</h3>
+            <p className="text-xs text-theme-secondary">Total disbursements: Rs 312,000 across 428 certified pickups.</p>
+            <div className="p-4 bg-theme-soft-mint rounded-2xl border border-theme-border text-xs text-theme-text flex justify-between items-center">
               <span>All automated wallet batch settlements successfully reconciled. Zero failed charges.</span>
-              <span className="font-bold font-mono text-[#146B4D]">100% SLA</span>
+              <span className="font-bold font-mono text-theme-primary">100% SLA</span>
             </div>
           </div>
         )}
@@ -610,10 +610,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-amber-950">
+                <h3 className="text-sm font-extrabold text-amber-700 dark:text-amber-300">
                   Suspicious Records & Fraud Alerts (2)
                 </h3>
-                <p className="text-xs text-amber-800">
+                <p className="text-xs text-amber-600 dark:text-amber-400">
                   Automated heuristics flag abnormal scale variances and repeat cancellations.
                 </p>
               </div>
@@ -623,23 +623,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="space-y-3">
-              <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-extrabold text-amber-900">Alert #FR-2026-01: Scale Discrepancy</span>
-                    <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded">High Risk</span>
+                    <span className="text-xs font-extrabold text-amber-800 dark:text-amber-200">Alert #FR-2026-01: Scale Discrepancy</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold px-2 py-0.5 rounded">High Risk</span>
                   </div>
-                  <p className="text-xs text-[#5B6B66]">
+                  <p className="text-xs text-theme-secondary">
                     Pickup #SP-8812 recorded 48.5 kg PET Plastic vs customer estimated 10 kg (+385% variance).
                   </p>
-                  <span className="text-[10px] text-[#5B6B66] font-mono">Collector ID: #COL-104 • Clifton Hub 4</span>
+                  <span className="text-[10px] text-theme-secondary font-mono">Collector ID: #COL-104 • Clifton Hub 4</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => {
                       alert('Certified scale photo retrieved. Image exhibits legitimate commercial bundle.');
                     }}
-                    className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 font-bold rounded-xl text-xs hover:bg-amber-100"
+                    className="px-3 py-1.5 bg-theme-surface border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold rounded-xl text-xs hover:bg-amber-500/10"
                   >
                     Inspect Photo
                   </button>
@@ -654,16 +654,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-extrabold text-amber-900">Alert #FR-2026-02: Rapid Rate Arbitrage</span>
-                    <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded">Moderate</span>
+                    <span className="text-xs font-extrabold text-amber-800 dark:text-amber-200">Alert #FR-2026-02: Rapid Rate Arbitrage</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold px-2 py-0.5 rounded">Moderate</span>
                   </div>
-                  <p className="text-xs text-[#5B6B66]">
+                  <p className="text-xs text-theme-secondary">
                     Multiple micro-pickups scheduled within 20 mins from same IP address.
                   </p>
-                  <span className="text-[10px] text-[#5B6B66] font-mono">Location: DHA Phase 2 Commercial St</span>
+                  <span className="text-[10px] text-theme-secondary font-mono">Location: DHA Phase 2 Commercial St</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -685,34 +685,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-[#0F3D3E]">
+                <h3 className="text-sm font-extrabold text-theme-text">
                   {t('admin.audit_title', 'Operations Audit Log')}
                 </h3>
-                <p className="text-xs text-[#5B6B66] mt-0.5">
+                <p className="text-xs text-theme-secondary mt-0.5">
                   Cryptographically verified system events, rate updates, and administrator overrides
                 </p>
               </div>
               <button
                 onClick={() => alert('Exporting encrypted ESG compliance CSV audit report...')}
-                className="px-3.5 py-1.5 bg-[#E6F4EC] text-[#146B4D] font-bold text-xs rounded-xl border border-[#D5E6DD] hover:bg-[#D5E6DD]/60 flex items-center space-x-1"
+                className="px-3.5 py-1.5 bg-theme-soft-mint text-theme-primary font-bold text-xs rounded-xl border border-theme-border hover:bg-theme-border flex items-center space-x-1"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Audit CSV</span>
               </button>
             </div>
 
-            <div className="divide-y divide-[#D5E6DD]/60 text-xs">
+            <div className="divide-y divide-theme-border/60 text-xs">
               {AUDIT_LOG_RECORDS.map((log) => (
                 <div key={log.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <div className="space-y-0.5">
-                    <span className="font-bold text-[#0F3D3E]">{log.action}</span>
-                    <p className="text-[11px] text-[#5B6B66]">
-                      Operator: <strong className="text-[#0F3D3E]">{log.user}</strong> • IP: {log.ip}
+                    <span className="font-bold text-theme-text">{log.action}</span>
+                    <p className="text-[11px] text-theme-secondary">
+                      Operator: <strong className="text-theme-text">{log.user}</strong> • IP: {log.ip}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-mono text-[#146B4D] font-bold text-[11px] block">{log.id}</span>
-                    <span className="text-[10px] text-[#5B6B66]">{log.timestamp}</span>
+                    <span className="font-mono text-theme-primary font-bold text-[11px] block">{log.id}</span>
+                    <span className="text-[10px] text-theme-secondary">{log.timestamp}</span>
                   </div>
                 </div>
               ))}
@@ -724,41 +724,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === 'ai_governance' && (
           <div className="p-6 space-y-6">
             {/* Model Metadata & Metrics Card */}
-            <div className="bg-[#F4FAF7] border border-[#D5E6DD] rounded-2xl p-5 space-y-3">
+            <div className="bg-theme-bg border border-theme-border rounded-2xl p-5 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center space-x-2">
-                  <span className="font-mono text-xs font-bold bg-[#146B4D] text-white px-2 py-0.5 rounded">
+                  <span className="font-mono text-xs font-bold bg-theme-primary text-white px-2 py-0.5 rounded">
                     Active Model: demo-v1
                   </span>
-                  <span className="text-xs font-bold text-[#0F3D3E]">
+                  <span className="text-xs font-bold text-theme-text">
                     MobileNetV3-Small-FineTuned (Demo Interface)
                   </span>
                 </div>
-                <span className="text-xs text-[#5B6B66]">
+                <span className="text-xs text-theme-secondary">
                   Target: Karachi Informal Aggregation Hubs (Korangi, Shershah, SITE)
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="bg-white p-3 rounded-xl border border-[#D5E6DD]">
-                  <span className="text-[#5B6B66] text-[11px] block">Baseline Accuracy</span>
-                  <strong className="text-[#146B4D] font-mono text-base">91.2%</strong>
+                <div className="bg-theme-surface p-3 rounded-xl border border-theme-border">
+                  <span className="text-theme-secondary text-[11px] block">Baseline Accuracy</span>
+                  <strong className="text-theme-primary font-mono text-base">91.2%</strong>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-[#D5E6DD]">
-                  <span className="text-[#5B6B66] text-[11px] block">Precision</span>
-                  <strong className="text-[#146B4D] font-mono text-base">90.5%</strong>
+                <div className="bg-theme-surface p-3 rounded-xl border border-theme-border">
+                  <span className="text-theme-secondary text-[11px] block">Precision</span>
+                  <strong className="text-theme-primary font-mono text-base">90.5%</strong>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-[#D5E6DD]">
-                  <span className="text-[#5B6B66] text-[11px] block">Recall</span>
-                  <strong className="text-[#146B4D] font-mono text-base">89.8%</strong>
+                <div className="bg-theme-surface p-3 rounded-xl border border-theme-border">
+                  <span className="text-theme-secondary text-[11px] block">Recall</span>
+                  <strong className="text-theme-primary font-mono text-base">89.8%</strong>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-[#D5E6DD]">
-                  <span className="text-[#5B6B66] text-[11px] block">F1-Score</span>
-                  <strong className="text-[#146B4D] font-mono text-base">90.1%</strong>
+                <div className="bg-theme-surface p-3 rounded-xl border border-theme-border">
+                  <span className="text-theme-secondary text-[11px] block">F1-Score</span>
+                  <strong className="text-theme-primary font-mono text-base">90.1%</strong>
                 </div>
               </div>
 
-              <p className="text-[11px] text-[#5B6B66] leading-relaxed">
+              <p className="text-[11px] text-theme-secondary leading-relaxed">
                 <strong>Safety Fallback Notice:</strong> Pre-screenings with confidence &lt;70% or categorized as &apos;other/unknown&apos; are automatically held in this supervisor queue for human-in-the-loop verification before final digital weighing and customer payout.
               </p>
             </div>
@@ -767,35 +767,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-extrabold text-[#0F3D3E]">
+                  <h4 className="text-sm font-extrabold text-theme-text">
                     Low-Confidence Review Queue ({lowConfidencePredictions.length})
                   </h4>
-                  <p className="text-xs text-[#5B6B66]">
+                  <p className="text-xs text-theme-secondary">
                     Inspect flagged predictions and apply human-in-the-loop verification
                   </p>
                 </div>
               </div>
 
-              <div className="divide-y divide-[#D5E6DD]/60 border border-[#D5E6DD] rounded-2xl overflow-hidden bg-white">
+              <div className="divide-y divide-theme-border/60 border border-theme-border rounded-2xl overflow-hidden bg-theme-surface">
                 {lowConfidencePredictions.map((pred) => (
-                  <div key={pred.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-[#F4FAF7]/50">
+                  <div key={pred.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-theme-soft-mint/30 transition">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono text-xs font-bold text-[#146B4D] bg-[#E6F4EC] px-2 py-0.5 rounded">
+                        <span className="font-mono text-xs font-bold text-theme-primary bg-theme-soft-mint px-2 py-0.5 rounded">
                           {pred.id}
                         </span>
-                        <span className="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">
+                        <span className="text-xs bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full">
                           Confidence: {Math.round(pred.confidence * 100)}% (Low)
                         </span>
-                        <span className="text-xs bg-slate-100 text-slate-700 font-mono px-2 py-0.5 rounded">
+                        <span className="text-xs bg-theme-bg text-theme-secondary font-mono px-2 py-0.5 rounded">
                           AI: {pred.material}
                         </span>
                       </div>
-                      <p className="text-xs text-[#5B6B66]">
+                      <p className="text-xs text-theme-secondary">
                         Uploaded {new Date(pred.created_at).toLocaleTimeString()} &bull; Version: <strong>{pred.model_version}</strong>
                       </p>
                       {pred.verified_material && (
-                        <p className="text-xs text-[#146B4D] font-semibold">
+                        <p className="text-xs text-theme-primary font-semibold">
                           Verified As: {pred.verified_material}
                         </p>
                       )}
@@ -803,11 +803,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     <div className="flex items-center gap-2">
                       {verifyingId === pred.id ? (
-                        <div className="flex items-center gap-2 bg-[#E6F4EC] p-2 rounded-xl border border-[#D5E6DD]">
+                        <div className="flex items-center gap-2 bg-theme-soft-mint p-2 rounded-xl border border-theme-border">
                           <select
                             value={verifiedMaterialChoice}
                             onChange={(e) => setVerifiedMaterialChoice(e.target.value)}
-                            className="text-xs font-bold bg-white border border-[#D5E6DD] rounded-lg px-2 py-1"
+                            className="text-xs font-bold bg-theme-surface border border-theme-border rounded-lg px-2 py-1 text-theme-text"
                           >
                             <option value="PET plastic">PET plastic</option>
                             <option value="cardboard">Cardboard</option>
@@ -815,13 +815,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </select>
                           <button
                             onClick={() => handleVerifyPrediction(pred.id)}
-                            className="px-3 py-1 bg-[#146B4D] hover:bg-[#0F3D3E] text-white text-xs font-bold rounded-lg shadow-xs"
+                            className="px-3 py-1 bg-theme-primary hover:bg-[#146B4D] text-white text-xs font-bold rounded-lg shadow-xs"
                           >
                             Confirm
                           </button>
                           <button
                             onClick={() => setVerifyingId(null)}
-                            className="px-2 py-1 text-slate-500 text-xs font-bold"
+                            className="px-2 py-1 text-theme-secondary text-xs font-bold"
                           >
                             Cancel
                           </button>
@@ -832,7 +832,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             setVerifyingId(pred.id);
                             setVerifiedMaterialChoice('PET plastic');
                           }}
-                          className="px-3.5 py-1.5 bg-[#146B4D] hover:bg-[#0F3D3E] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1"
+                          className="px-3.5 py-1.5 bg-theme-primary hover:bg-[#146B4D] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Verify Material</span>
@@ -843,7 +843,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 ))}
 
                 {lowConfidencePredictions.length === 0 && (
-                  <div className="p-8 text-center text-xs text-[#5B6B66]">
+                  <div className="p-8 text-center text-xs text-theme-secondary">
                     No pending low-confidence predictions in review queue. All pre-screenings meet threshold.
                   </div>
                 )}
@@ -854,39 +854,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-extrabold text-[#0F3D3E]">
+                  <h4 className="text-sm font-extrabold text-theme-text">
                     Calibrated Warehouse Inventory ({warehouseInventory.length} lots)
                   </h4>
-                  <p className="text-xs text-[#5B6B66]">
+                  <p className="text-xs text-theme-secondary">
                     Completed physical pickups auto-transferred to inventory with single-sale duplicate protection
                   </p>
                 </div>
               </div>
 
-              <div className="divide-y divide-[#D5E6DD]/60 border border-[#D5E6DD] rounded-2xl overflow-hidden bg-white">
+              <div className="divide-y divide-theme-border/60 border border-theme-border rounded-2xl overflow-hidden bg-theme-surface">
                 {warehouseInventory.map((item) => (
                   <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono font-bold text-[#146B4D]">{item.id}</span>
-                        <span className="font-bold text-[#0F3D3E]">{item.verified_weight_kg} kg {item.material_type}</span>
-                        <span className="bg-[#E6F4EC] text-[#146B4D] font-bold px-2 py-0.5 rounded">
+                        <span className="font-mono font-bold text-theme-primary">{item.id}</span>
+                        <span className="font-bold text-theme-text">{item.verified_weight_kg} kg {item.material_type}</span>
+                        <span className="bg-theme-soft-mint text-theme-primary font-bold px-2 py-0.5 rounded">
                           Quality: {item.quality_grade || 'Tier A'} ({item.quality_factor})
                         </span>
                       </div>
-                      <p className="text-[#5B6B66]">
+                      <p className="text-theme-secondary">
                         Hub: <strong>{item.location}</strong> &bull; Status: <strong className="uppercase">{item.status}</strong>
                       </p>
                     </div>
 
-                    <span className="font-mono text-[11px] font-bold text-[#146B4D] bg-[#E6F4EC] px-2.5 py-1 rounded-full border border-[#D5E6DD]">
+                    <span className="font-mono text-[11px] font-bold text-theme-primary bg-theme-soft-mint px-2.5 py-1 rounded-full border border-theme-border">
                       Single Sale Protected
                     </span>
                   </div>
                 ))}
 
                 {warehouseInventory.length === 0 && (
-                  <div className="p-6 text-center text-xs text-[#5B6B66]">
+                  <div className="p-6 text-center text-xs text-theme-secondary">
                     No inventory lots recorded yet. Complete verified customer pickups to populate aggregation hub inventory.
                   </div>
                 )}
@@ -899,18 +899,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* ================= CONFIRMATION DIALOG (FOR DANGEROUS ACTIONS) ================= */}
       {confirmDialog && confirmDialog.isOpen && (
-        <div className="fixed inset-0 z-50 bg-[#0F3D3E]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-[#D5E6DD] space-y-4">
-            <div className="flex items-center space-x-3 text-rose-600">
-              <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center">
-                <AlertOctagon className="w-6 h-6 text-rose-600" />
+        <div className="fixed inset-0 z-50 bg-[#072021]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-theme-border space-y-4 text-theme-text transition-colors">
+            <div className="flex items-center space-x-3 text-rose-500">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/15 flex items-center justify-center">
+                <AlertOctagon className="w-6 h-6 text-rose-500" />
               </div>
-              <h3 className="font-extrabold text-[#0F3D3E] text-base">
+              <h3 className="font-extrabold text-theme-text text-base">
                 {confirmDialog.title}
               </h3>
             </div>
 
-            <p className="text-xs text-[#5B6B66] leading-relaxed">
+            <p className="text-xs text-theme-secondary leading-relaxed">
               {confirmDialog.description}
             </p>
 
@@ -918,7 +918,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmDialog(null)}
-                className="flex-1 py-2.5 rounded-xl border border-[#D5E6DD] text-xs font-bold text-[#5B6B66] hover:bg-[#F4FAF7]"
+                className="flex-1 py-2.5 rounded-xl border border-theme-border text-xs font-bold text-theme-secondary hover:bg-theme-bg"
               >
                 Cancel
               </button>

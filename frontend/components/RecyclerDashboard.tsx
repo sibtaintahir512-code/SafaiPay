@@ -229,21 +229,21 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
 
       {/* ================= 3. VERIFIED MATERIAL MARKETPLACE & FILTERS ================= */}
       {/* Required: Search & filters for material, quality, location, price, weight */}
-      <div className="bg-white rounded-3xl border border-[#D5E6DD] shadow-xs overflow-hidden">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border shadow-xs overflow-hidden transition-colors">
         
-        <div className="p-6 border-b border-[#D5E6DD]/60 space-y-4">
+        <div className="p-6 border-b border-theme-border/60 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-extrabold text-[#0F3D3E] tracking-tight flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#1B7F5C]" />
+              <h2 className="text-sm font-extrabold text-theme-text tracking-tight flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-theme-primary" />
                 <span>Verified Recyclable Material Batches</span>
               </h2>
-              <p className="text-xs text-[#5B6B66] mt-0.5">
+              <p className="text-xs text-theme-secondary mt-0.5">
                 Every batch certified with digital scale readings & tamper-evident QR provenance
               </p>
             </div>
             
-            <span className="text-xs font-mono font-bold text-[#146B4D] bg-[#E6F4EC] px-3 py-1 rounded-full border border-[#D5E6DD]">
+            <span className="text-xs font-mono font-bold text-theme-primary bg-theme-soft-mint px-3 py-1 rounded-full border border-theme-border">
               {filteredBatches.length} Verified Batches Available
             </span>
           </div>
@@ -258,9 +258,9 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
                 placeholder="Search by material, lot ID, or hub location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl pl-9 pr-4 py-2.5 text-xs text-[#0F3D3E] focus:outline-none focus:border-[#1B7F5C] focus:bg-white"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl pl-9 pr-4 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary focus:bg-theme-surface"
               />
-              <Search className="w-4 h-4 text-[#5B6B66] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-theme-secondary absolute left-3 top-1/2 -translate-y-1/2" />
             </div>
 
             {/* Material Filter */}
@@ -268,7 +268,7 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
               <select
                 value={filterMaterial}
                 onChange={(e) => setFilterMaterial(e.target.value)}
-                className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3 py-2.5 text-xs text-[#0F3D3E] font-bold focus:outline-none focus:border-[#1B7F5C]"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl px-3 py-2.5 text-xs text-theme-text font-bold focus:outline-none focus:border-theme-primary"
               >
                 <option value="ALL">All Material Streams</option>
                 <option value="PET_PLASTIC">PET Plastic</option>
@@ -283,7 +283,7 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
               <select
                 value={filterLocation}
                 onChange={(e) => setFilterLocation(e.target.value)}
-                className="w-full bg-[#F4FAF7] border border-[#D5E6DD] rounded-xl px-3 py-2.5 text-xs text-[#0F3D3E] font-bold focus:outline-none focus:border-[#1B7F5C]"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl px-3 py-2.5 text-xs text-theme-text font-bold focus:outline-none focus:border-theme-primary"
               >
                 <option value="ALL">All Hub Locations</option>
                 <option value="Karachi">Karachi Hubs</option>
@@ -296,13 +296,9 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
         </div>
 
         {/* Material Batch Cards / Table */}
-        {/* Required items explicitly present:
-            - PET Plastic, Grade A, 680 kg, Karachi, Rs 80/kg
-            - Cardboard, Dry Sorted, 1,200 kg, Lahore, Rs 35/kg
-            - Mixed Metal, Verified, 600 kg, Rawalpindi, market rate */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#E6F4EC] text-[#0F3D3E] border-b border-[#D5E6DD] uppercase tracking-wider font-bold text-[10px]">
+            <thead className="bg-theme-soft-mint/40 text-theme-secondary border-b border-theme-border uppercase tracking-wider font-bold text-[10px]">
               <tr>
                 <th className="px-6 py-4">Batch Lot ID</th>
                 <th className="px-6 py-4">Material Stream</th>
@@ -314,47 +310,46 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
                 <th className="px-6 py-4 text-right">Procurement Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D5E6DD]/60">
+            <tbody className="divide-y divide-theme-border/60">
               {filteredBatches.map((batch) => (
-                <tr key={batch.id} className="hover:bg-[#E6F4EC]/40 transition">
-                  <td className="px-6 py-4 font-mono font-bold text-[#0F3D3E]">
+                <tr key={batch.id} className="hover:bg-theme-soft-mint/30 transition">
+                  <td className="px-6 py-4 font-mono font-bold text-theme-text">
                     {batch.id}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="font-bold text-[#0F3D3E] block">{batch.material}</span>
-                    <span className="text-[11px] text-[#5B6B66]">{batch.hub}</span>
+                    <span className="font-bold text-theme-text block">{batch.material}</span>
+                    <span className="text-[11px] text-theme-secondary">{batch.hub}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#E6F4EC] text-[#146B4D] border border-[#D5E6DD]">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-theme-soft-mint text-theme-primary border border-theme-border">
                       {batch.quality}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono font-extrabold text-[#0F3D3E] text-sm">
+                  <td className="px-6 py-4 font-mono font-extrabold text-theme-text text-sm">
                     {batch.weightKg.toLocaleString()} kg
                   </td>
                   <td className="px-6 py-4">
-                    <span className="flex items-center space-x-1 text-[#0F3D3E] font-semibold">
-                      <MapPin className="w-3.5 h-3.5 text-[#5B6B66]" />
+                    <span className="flex items-center space-x-1 text-theme-text font-semibold">
+                      <MapPin className="w-3.5 h-3.5 text-theme-secondary" />
                       <span>{batch.location}</span>
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono font-bold text-[#0F3D3E]">
+                  <td className="px-6 py-4 font-mono font-bold text-theme-text">
                     {typeof batch.ratePerKg === 'number' ? `Rs ${batch.ratePerKg}/kg` : batch.ratePerKg}
                   </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => setSelectedTraceabilityBatch(batch)}
-                      className="text-[#1B7F5C] hover:text-[#146B4D] font-bold underline flex items-center space-x-1 text-xs"
+                      className="text-theme-primary hover:underline font-bold flex items-center space-x-1 text-xs"
                     >
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#2FA37A]" />
+                      <ShieldCheck className="w-3.5 h-3.5 text-theme-primary" />
                       <span>Trace Log</span>
                     </button>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {/* One clear "Request Batch" action */}
                     <button
                       onClick={() => handleRequestBatch(batch)}
-                      className="bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold px-4 py-2 rounded-xl text-xs transition shadow-sm shadow-[#1B7F5C]/20 active:scale-98"
+                      className="bg-theme-primary hover:bg-[#146B4D] text-white font-extrabold px-4 py-2 rounded-xl text-xs transition shadow-sm shadow-theme-primary/20 active:scale-98"
                     >
                       {t('recycler.request_batch', 'Request Batch')}
                     </button>
@@ -368,49 +363,49 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
       </div>
 
       {/* ================= 4. DISPATCH STATUS & TRACEABILITY ================= */}
-      <div className="bg-white rounded-3xl border border-[#D5E6DD] p-6 sm:p-7 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[#D5E6DD]/60">
+      <div className="bg-theme-surface rounded-3xl border border-theme-border p-6 sm:p-7 shadow-xs space-y-4 transition-colors">
+        <div className="flex items-center justify-between pb-3 border-b border-theme-border/60">
           <div>
-            <h2 className="text-sm font-extrabold text-[#0F3D3E] tracking-tight flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2FA37A]" />
+            <h2 className="text-sm font-extrabold text-theme-text tracking-tight flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-theme-primary" />
               <span>{t('recycler.traceability_title', 'Dispatch Status & Digital Supply Chain Traceability')}</span>
             </h2>
-            <p className="text-xs text-[#5B6B66] mt-0.5">
+            <p className="text-xs text-theme-secondary mt-0.5">
               Certified Chain-of-Custody (CoC) guarantees genuine post-consumer municipal waste origin
             </p>
           </div>
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#E6F4EC] text-[#146B4D] border border-[#D5E6DD]">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-theme-soft-mint text-theme-primary border border-theme-border">
             ESG Audit Compliant
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-[#F4FAF7] rounded-2xl border border-[#D5E6DD] space-y-2">
-            <div className="flex items-center space-x-2 text-xs font-bold text-[#0F3D3E]">
-              <Truck className="w-4 h-4 text-[#1B7F5C]" />
+          <div className="p-4 bg-theme-bg rounded-2xl border border-theme-border space-y-2">
+            <div className="flex items-center space-x-2 text-xs font-bold text-theme-text">
+              <Truck className="w-4 h-4 text-theme-primary" />
               <span>Dedicated Logistics Fleets</span>
             </div>
-            <p className="text-xs text-[#5B6B66] leading-snug">
+            <p className="text-xs text-theme-secondary leading-snug">
               B2B bulk transport with real-time GPS telemetry and tamper-evident sealed containers.
             </p>
           </div>
 
-          <div className="p-4 bg-[#F4FAF7] rounded-2xl border border-[#D5E6DD] space-y-2">
-            <div className="flex items-center space-x-2 text-xs font-bold text-[#0F3D3E]">
-              <Scale className="w-4 h-4 text-[#2FA37A]" />
+          <div className="p-4 bg-theme-bg rounded-2xl border border-theme-border space-y-2">
+            <div className="flex items-center space-x-2 text-xs font-bold text-theme-text">
+              <Scale className="w-4 h-4 text-theme-primary" />
               <span>Dual Weighbridge Calibration</span>
             </div>
-            <p className="text-xs text-[#5B6B66] leading-snug">
+            <p className="text-xs text-theme-secondary leading-snug">
               Origin sensor scale readings matched with destination industrial weighbridges within ±0.5%.
             </p>
           </div>
 
-          <div className="p-4 bg-[#F4FAF7] rounded-2xl border border-[#D5E6DD] space-y-2">
-            <div className="flex items-center space-x-2 text-xs font-bold text-[#0F3D3E]">
-              <BadgeCheck className="w-4 h-4 text-[#0F3D3E]" />
+          <div className="p-4 bg-theme-bg rounded-2xl border border-theme-border space-y-2">
+            <div className="flex items-center space-x-2 text-xs font-bold text-theme-text">
+              <BadgeCheck className="w-4 h-4 text-theme-primary" />
               <span>Immutable Chain Certificate</span>
             </div>
-            <p className="text-xs text-[#5B6B66] leading-snug">
+            <p className="text-xs text-theme-secondary leading-snug">
               Verifiable proof of circularity for EPR (Extended Producer Responsibility) regulatory compliance.
             </p>
           </div>
@@ -420,49 +415,49 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
       {/* ================= ORDER BATCH MODAL ================= */}
       {selectedBatchForOrder && (
         <div className="fixed inset-0 z-50 bg-[#0F3D3E]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-[#D5E6DD] space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-[#D5E6DD]/60">
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-theme-border space-y-5 text-theme-text transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-theme-border/60">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-xl bg-[#E6F4EC] text-[#146B4D] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-theme-soft-mint text-theme-primary flex items-center justify-center">
                   <ShoppingCart className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-[#0F3D3E] text-sm">B2B Material Order</h3>
-                  <p className="text-[10px] font-mono text-[#5B6B66]">Lot: {selectedBatchForOrder.id}</p>
+                  <h3 className="font-extrabold text-theme-text text-sm">B2B Material Order</h3>
+                  <p className="text-[10px] font-mono text-theme-secondary">Lot: {selectedBatchForOrder.id}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedBatchForOrder(null)}
-                className="text-[#5B6B66] hover:text-[#0F3D3E] text-sm font-bold"
+                className="text-theme-secondary hover:text-theme-text text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3 bg-[#F4FAF7] rounded-2xl p-4 text-xs border border-[#D5E6DD]">
+            <div className="space-y-3 bg-theme-bg rounded-2xl p-4 text-xs border border-theme-border">
               <div className="flex justify-between">
-                <span className="text-[#5B6B66]">Material Stream:</span>
-                <span className="font-bold text-[#0F3D3E]">{selectedBatchForOrder.material}</span>
+                <span className="text-theme-secondary">Material Stream:</span>
+                <span className="font-bold text-theme-text">{selectedBatchForOrder.material}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5B6B66]">Certified Weight:</span>
-                <span className="font-mono font-bold text-[#0F3D3E]">{selectedBatchForOrder.weightKg} kg</span>
+                <span className="text-theme-secondary">Certified Weight:</span>
+                <span className="font-mono font-bold text-theme-primary">{selectedBatchForOrder.weightKg} kg</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5B6B66]">Quality Standard:</span>
-                <span className="font-bold text-[#146B4D]">{selectedBatchForOrder.quality}</span>
+                <span className="text-theme-secondary">Quality Standard:</span>
+                <span className="font-bold text-theme-primary">{selectedBatchForOrder.quality}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5B6B66]">Hub Origin:</span>
-                <span className="font-medium text-[#0F3D3E]">{selectedBatchForOrder.hub} ({selectedBatchForOrder.location})</span>
+                <span className="text-theme-secondary">Hub Origin:</span>
+                <span className="font-medium text-theme-text">{selectedBatchForOrder.hub} ({selectedBatchForOrder.location})</span>
               </div>
-              <div className="pt-2 border-t border-[#D5E6DD] flex justify-between text-sm font-extrabold text-[#0F3D3E]">
+              <div className="pt-2 border-t border-theme-border flex justify-between text-sm font-extrabold text-theme-text">
                 <span>Estimated Invoice:</span>
-                <span className="font-mono bg-[#E6F4EC] text-[#146B4D] px-2 py-0.5 rounded border border-[#D5E6DD]">Rs {selectedBatchForOrder.totalEstimate.toLocaleString()}</span>
+                <span className="font-mono bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded border border-theme-border">Rs {selectedBatchForOrder.totalEstimate.toLocaleString()}</span>
               </div>
             </div>
 
-            <p className="text-[11px] text-[#5B6B66]">
+            <p className="text-[11px] text-theme-secondary">
               By confirming, you lock this batch for priority collection and dispatch. SafaiPay logistics team will coordinate gate pass & delivery timeline.
             </p>
 
@@ -470,14 +465,14 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedBatchForOrder(null)}
-                className="flex-1 py-2.5 rounded-xl border border-[#D5E6DD] text-xs font-bold text-[#5B6B66] hover:bg-[#F4FAF7]"
+                className="flex-1 py-2.5 rounded-xl border border-theme-border text-xs font-bold text-theme-secondary hover:bg-theme-bg"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmBatchOrder}
-                className="flex-1 bg-[#1B7F5C] hover:bg-[#146B4D] text-white font-extrabold py-2.5 rounded-xl text-xs transition shadow-md shadow-[#1B7F5C]/30"
+                className="flex-1 bg-theme-primary hover:bg-[#146B4D] text-white font-extrabold py-2.5 rounded-xl text-xs transition shadow-md shadow-theme-primary/30"
               >
                 Confirm Order
               </button>
@@ -489,33 +484,33 @@ export const RecyclerDashboard: React.FC<RecyclerDashboardProps> = ({
       {/* ================= TRACEABILITY PROVENANCE MODAL ================= */}
       {selectedTraceabilityBatch && (
         <div className="fixed inset-0 z-50 bg-[#0F3D3E]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#D5E6DD] space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#D5E6DD]/60">
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 shadow-2xl border border-theme-border space-y-4 text-theme-text transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-theme-border/60">
               <div className="flex items-center space-x-2">
-                <ShieldCheck className="w-5 h-5 text-[#2FA37A]" />
-                <h3 className="font-extrabold text-[#0F3D3E] text-sm">Chain-of-Custody Provenance</h3>
+                <ShieldCheck className="w-5 h-5 text-theme-primary" />
+                <h3 className="font-extrabold text-theme-text text-sm">Chain-of-Custody Provenance</h3>
               </div>
               <button
                 onClick={() => setSelectedTraceabilityBatch(null)}
-                className="text-[#5B6B66] hover:text-[#0F3D3E] text-sm font-bold"
+                className="text-theme-secondary hover:text-theme-text text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-2 text-xs text-[#5B6B66]">
-              <p><strong>Batch ID:</strong> <span className="text-[#0F3D3E]">{selectedTraceabilityBatch.id}</span></p>
-              <p><strong>Origin Scale Certificate:</strong> <span className="text-[#0F3D3E]">{selectedTraceabilityBatch.calibrationId}</span></p>
-              <p><strong>Aggregation Hub:</strong> <span className="text-[#0F3D3E]">{selectedTraceabilityBatch.hub}</span></p>
+            <div className="space-y-2 text-xs text-theme-secondary">
+              <p><strong>Batch ID:</strong> <span className="text-theme-text">{selectedTraceabilityBatch.id}</span></p>
+              <p><strong>Origin Scale Certificate:</strong> <span className="text-theme-text">{selectedTraceabilityBatch.calibrationId}</span></p>
+              <p><strong>Aggregation Hub:</strong> <span className="text-theme-text">{selectedTraceabilityBatch.hub}</span></p>
               <p><strong>Verification Standard:</strong> Digital hanging sensor calibration audited Oct 2026</p>
-              <div className="p-3 bg-[#E6F4EC] text-[#146B4D] rounded-xl text-[11px] font-medium border border-[#D5E6DD]">
+              <div className="p-3 bg-theme-soft-mint text-theme-primary rounded-xl text-[11px] font-medium border border-theme-border">
                 ✓ 100% verified informal waste collector doorstep diversion. No landfill contamination.
               </div>
             </div>
 
             <button
               onClick={() => setSelectedTraceabilityBatch(null)}
-              className="w-full bg-[#0F3D3E] hover:bg-[#0B2F30] text-white font-bold py-2.5 rounded-xl text-xs transition"
+              className="w-full bg-theme-primary hover:bg-[#146B4D] text-white font-bold py-2.5 rounded-xl text-xs transition"
             >
               Close Record
             </button>

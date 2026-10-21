@@ -2,6 +2,7 @@
 
 import React, { useState, useId } from 'react';
 import { useTheme } from '@/context/ThemeContext';
+import { Activity } from 'lucide-react';
 
 export interface LineDataPoint {
   label: string;
@@ -35,7 +36,21 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  if (!data || data.length === 0) return null;
+  // Graceful empty state when no data points are available
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-theme-surface rounded-2xl border border-theme-border p-6 shadow-xs flex flex-col items-center justify-center min-h-[260px] text-center transition-colors">
+        <div className="w-12 h-12 rounded-2xl bg-theme-soft-mint text-theme-primary flex items-center justify-center mb-3">
+          <Activity className="w-6 h-6" />
+        </div>
+        <h3 className="text-sm font-bold text-theme-text">{title}</h3>
+        {subtitle && <p className="text-xs text-theme-secondary mt-1">{subtitle}</p>}
+        <p className="text-xs text-theme-secondary/80 mt-2 max-w-xs">
+          No trend activity recorded yet. Verified recycling logs will automatically display here.
+        </p>
+      </div>
+    );
+  }
 
   const values = data.map((d) => d.value);
   const maxValue = Math.max(...values, 10);

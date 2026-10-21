@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { BarChart2 } from 'lucide-react';
 
 export interface BarDataPoint {
   label: string;
@@ -27,7 +28,20 @@ export const VerticalBarChart: React.FC<VerticalBarChartProps> = ({
   totalLabel,
   totalValue,
 }) => {
-  if (!data || data.length === 0) return null;
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-theme-surface rounded-2xl border border-theme-border p-6 shadow-xs flex flex-col items-center justify-center min-h-[220px] text-center transition-colors">
+        <div className="w-12 h-12 rounded-2xl bg-theme-soft-mint text-theme-primary flex items-center justify-center mb-3">
+          <BarChart2 className="w-6 h-6" />
+        </div>
+        <h3 className="text-sm font-bold text-theme-text">{title}</h3>
+        {subtitle && <p className="text-xs text-theme-secondary mt-1">{subtitle}</p>}
+        <p className="text-xs text-theme-secondary/80 mt-2 max-w-xs">
+          No volume statistics recorded yet.
+        </p>
+      </div>
+    );
+  }
 
   const maxValue = Math.max(...data.map((d) => d.value), 10);
 
