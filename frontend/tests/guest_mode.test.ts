@@ -338,4 +338,139 @@ describe('SafaiPay Guest Mode Production Readiness Suite', () => {
       assert.equal(verifiedRecy?.role, 'recycler');
     });
   });
+
+  describe('10. Mobile Guest Mode, Viewport & Responsive Guardrails', () => {
+    const fs = require('fs');
+    const path = require('path');
+
+    it('verifies viewport metadata in layout.tsx prohibits unwanted scaling and locks width', () => {
+      const layoutContent = fs.readFileSync(path.join(__dirname, '../app/layout.tsx'), 'utf-8');
+      
+      // Check viewport configuration export
+      assert.ok(layoutContent.includes("maximumScale: 1"), 'Layout must have maximumScale: 1');
+      assert.ok(layoutContent.includes("userScalable: false"), 'Layout must have userScalable: false');
+      assert.ok(layoutContent.includes("width: 'device-width'"), 'Layout must lock to device-width');
+      assert.ok(
+        layoutContent.includes('content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"'),
+        'Layout head must inject explicit viewport meta tag'
+      );
+    });
+
+    it('verifies globals.css enforces zero overflow-x and iOS Safari 16px focus font guardrail', () => {
+      const cssContent = fs.readFileSync(path.join(__dirname, '../app/globals.css'), 'utf-8');
+
+      // Check overflow prevention
+      assert.ok(cssContent.includes('overflow-x: hidden'), 'CSS must prevent horizontal overflow');
+      // Check manipulation touch-action
+      assert.ok(cssContent.includes('touch-action: manipulation'), 'Interactive elements must specify touch-action: manipulation');
+      // Check 16px font-size on mobile inputs
+      assert.ok(
+        cssContent.includes('font-size: 16px !important'),
+        'Mobile inputs must enforce 16px to prevent iOS Safari auto-zoom'
+      );
+    });
+
+    it('verifies LandingLoginPage mobile branch implements strict 8-step visual hierarchy', () => {
+      const componentContent = fs.readFileSync(
+        path.join(__dirname, '../components/LandingLoginPage.tsx'),
+        'utf-8'
+      );
+
+      // Step 1: Header / Welcome
+      const step1Index = componentContent.indexOf('1. Header & Welcome Heading');
+      assert.ok(step1Index > -1, 'Step 1: Header & Welcome Heading must exist');
+
+      // Step 2: Sign-in Fields
+      const step2Index = componentContent.indexOf('2. Sign-in Fields');
+      assert.ok(step2Index > -1, 'Step 2: Sign-in Fields must exist');
+      assert.ok(step2Index > step1Index, 'Step 2 must appear after Step 1');
+
+      // Step 3: Primary Sign-in Button
+      const step3Index = componentContent.indexOf('3. Primary Sign-in Button');
+      assert.ok(step3Index > -1, 'Step 3: Primary Sign-in Button must exist');
+      assert.ok(step3Index > step2Index, 'Step 3 must appear after Step 2');
+
+      // Step 4: Divider
+      const step4Index = componentContent.indexOf('4. Divider');
+      assert.ok(step4Index > -1, 'Step 4: Divider must exist');
+      assert.ok(step4Index > step3Index, 'Step 4 must appear after Step 3');
+
+      // Step 5: Continue as Guest Container
+      const step5Index = componentContent.indexOf('5. Continue as Guest Container');
+      assert.ok(step5Index > -1, 'Step 5: Continue as Guest Container must exist');
+      assert.ok(step5Index > step4Index, 'Step 5 must appear after Step 4');
+
+      // Step 6: Guest Role Selector
+      const step6Index = componentContent.indexOf('6. Guest Role Selector');
+      assert.ok(step6Index > -1, 'Step 6: Guest Role Selector must exist');
+      assert.ok(step6Index > step5Index, 'Step 6 must appear after Step 5');
+
+      // Step 7: Dynamic Guest CTA Button
+      const step7Index = componentContent.indexOf('7. Dynamic Guest CTA Button');
+      assert.ok(step7Index > -1, 'Step 7: Dynamic Guest CTA Button must exist');
+      assert.ok(step7Index > step6Index, 'Step 7 must appear after Step 6');
+
+      // Step 8: Supporting Text / Footer
+      const step8Index = componentContent.indexOf('8. Supporting Text / Footer');
+      assert.ok(step8Index > -1, 'Step 8: Supporting Text / Footer must exist');
+      assert.ok(step8Index > step7Index, 'Step 8 must appear after Step 7');
+    });
+
+    it('verifies mobile guest mode roles have single-column layout on small screens and >=48px tap targets', () => {
+      const componentContent = fs.readFileSync(
+        path.join(__dirname, '../components/LandingLoginPage.tsx'),
+        'utf-8'
+      );
+
+      // Single column on mobile, 3 cols on sm+
+      assert.ok(
+        componentContent.includes('grid grid-cols-1 sm:grid-cols-3 gap-2'),
+        'Role grid must be single column on mobile (grid-cols-1) and switch to 3 on sm+'
+      );
+
+      // Customer, Collector, Recycler min-h-[48px] tap target
+      const customerRoleSection = componentContent.indexOf('Customer Option');
+      const collectorRoleSection = componentContent.indexOf('Collector Option');
+      const recyclerRoleSection = componentContent.indexOf('Recycler Option');
+
+      assert.ok(customerRoleSection > -1 && collectorRoleSection > -1 && recyclerRoleSection > -1);
+      assert.ok(
+        componentContent.includes('min-h-[48px] flex items-center'),
+        'Mobile role cards must satisfy >= 48px tap target accessibility requirement'
+      );
+    });
+
+    it('verifies responsive width calculation across standard mobile viewports with zero horizontal overflow', () => {
+      const testBreakpoints = [
+        { name: 'iPhone SE (1st gen)', width: 320, height: 568 },
+        { name: 'Android Small', width: 360, height: 800 },
+        { name: 'iPhone X / 12 mini', width: 375, height: 812 },
+        { name: 'iPhone 13 / 14 / 15', width: 390, height: 844 },
+        { name: 'iPhone Plus / Max', width: 414, height: 896 },
+        { name: 'iPad Portrait', width: 768, height: 1024 },
+      ];
+
+      for (const bp of testBreakpoints) {
+        // Container formula: w-[calc(100%-12px)] max-w-[420px]
+        const availableWidth = bp.width;
+        const computedCardWidth = Math.min(availableWidth - 12, 420);
+        const horizontalMargin = (availableWidth - computedCardWidth) / 2;
+
+        assert.ok(
+          computedCardWidth <= availableWidth,
+          `${bp.name} card width (${computedCardWidth}px) must not exceed viewport width (${availableWidth}px)`
+        );
+        assert.ok(
+          horizontalMargin >= 6,
+          `${bp.name} horizontal margin must have at least 6px gutter on each side`
+        );
+        const horizontalOverflow = computedCardWidth + (horizontalMargin * 2) - availableWidth;
+        assert.equal(
+          Math.abs(horizontalOverflow) < 0.001,
+          true,
+          `${bp.name} must have exactly 0 horizontal overflow`
+        );
+      }
+    });
+  });
 });

@@ -15,6 +15,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: '#16865F',
 };
 
@@ -47,6 +51,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
         <script dangerouslySetInnerHTML={{ __html: antiFlickerScript }} />
       </head>
       <body className="bg-theme-bg text-theme-text min-h-screen antialiased selection:bg-theme-bright-mint selection:text-theme-deep-green font-sans transition-colors duration-200">
