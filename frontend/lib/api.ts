@@ -505,12 +505,43 @@ export async function acceptPickup(pickupId: string) {
     });
   } catch {
     const list = getLocalPickups();
+    let found = false;
     const updated = list.map(p => {
       if (p.id === pickupId) {
-        return { ...p, status: 'accepted', assigned_collector_id: 'usr-coll-001' };
+        found = true;
+        return { ...p, status: 'accepted', assigned_collector_id: 'usr_guest_coll' };
       }
       return p;
     });
+    if (!found) {
+      const fallbackJob: PickupRequest = {
+        id: pickupId,
+        tracking_number: `SP-2026-${pickupId.slice(-6).toUpperCase()}`,
+        customer_id: 'usr_guest_cust',
+        assigned_collector_id: 'usr_guest_coll',
+        material_code: 'PET_PLASTIC',
+        estimated_quantity_kg: 15,
+        street_address: 'House 14-C, 7th Commercial St, Phase 2, DHA, Karachi',
+        city: 'Karachi',
+        preferred_time: 'Within 45 mins',
+        notes: 'Accepted nearby job',
+        status: 'accepted',
+        created_at: new Date().toISOString(),
+        pricing_calculations: [
+          {
+            id: `calc-${pickupId}`,
+            material_code: 'PET_PLASTIC',
+            verified_weight_kg: 15,
+            material_rate_applied: 80,
+            quality_factor: 1.0,
+            total_price: 1200,
+            calculation_breakdown: '15 kg * 80 PKR/kg',
+            is_estimated: true,
+          },
+        ],
+      };
+      updated.unshift(fallbackJob);
+    }
     saveLocalPickups(updated);
     return updated.find(p => p.id === pickupId)!;
   }

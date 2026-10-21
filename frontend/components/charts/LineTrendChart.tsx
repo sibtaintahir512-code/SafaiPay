@@ -18,6 +18,7 @@ interface LineTrendChartProps {
   prefix?: string;
   highlightLabel?: string;
   highlightValue?: string;
+  footerLabel?: string;
 }
 
 export const LineTrendChart: React.FC<LineTrendChartProps> = ({
@@ -28,6 +29,7 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
   prefix = '',
   highlightLabel,
   highlightValue,
+  footerLabel,
 }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -61,7 +63,7 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
   const width = 640;
   const height = 260;
   const paddingX = 48;
-  const paddingTop = 42;
+  const paddingTop = 46;
   const paddingBottom = 44;
 
   const usableWidth = width - paddingX * 2;
@@ -161,7 +163,7 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
                   fill={labelColor}
                   className="text-[10px] font-mono font-medium"
                 >
-                  {prefix}{val}{unit ? ` ${unit}` : ''}
+                  {prefix}{val.toLocaleString()}{unit ? ` ${unit}` : ''}
                 </text>
               </g>
             );
@@ -269,7 +271,7 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
                     isHovered || isPeak ? 'font-black' : 'font-bold'
                   }`}
                 >
-                  {prefix}{p.value}{unit ? ` ${unit}` : ''}
+                  {prefix}{p.value.toLocaleString()}{unit ? ` ${unit}` : ''}
                 </text>
 
                 {/* Month / Period label at bottom axis */}
@@ -294,10 +296,10 @@ export const LineTrendChart: React.FC<LineTrendChartProps> = ({
       <div className="flex items-center justify-between pt-3 border-t border-theme-border/60 text-[11px] text-theme-secondary mt-1">
         <span className="flex items-center space-x-1.5 rtl:space-x-reverse">
           <span className="w-2.5 h-1 rounded-full bg-theme-primary inline-block" />
-          <span>Verified Weight Logs</span>
+          <span>{footerLabel || 'Verified Weight Logs'}</span>
         </span>
         <span className="font-mono text-theme-primary font-semibold">
-          High: {prefix}{maxValue}{unit ? ` ${unit}` : ''}
+          High: {prefix}{maxValue.toLocaleString()}{unit ? ` ${unit}` : ''}
         </span>
       </div>
     </div>

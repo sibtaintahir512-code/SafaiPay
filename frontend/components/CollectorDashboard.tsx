@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PickupRequest, MaterialRate, CollectorEarningsSummary } from '@/lib/types';
 import { 
   acceptPickup, 
@@ -30,7 +30,8 @@ import {
   ChevronRight,
   Upload,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 interface CollectorDashboardProps {
@@ -62,7 +63,7 @@ const JOBS_BY_MATERIAL_DATA: HorizontalBarItem[] = [
 // Realistic nearby mock pickup jobs if none returned from API
 const SAMPLE_NEARBY_JOBS = [
   {
-    id: 'demo-job-1',
+    id: 'sp-req-001',
     distance: '0.8 km',
     material_code: 'PET_PLASTIC',
     material_name: 'PET Plastic Bottles',
@@ -72,7 +73,7 @@ const SAMPLE_NEARBY_JOBS = [
     preferred_time: 'Within 45 mins',
   },
   {
-    id: 'demo-job-2',
+    id: 'sp-req-002',
     distance: '1.4 km',
     material_code: 'CARDBOARD_OCC',
     material_name: 'Corrugated Cardboard',
@@ -82,7 +83,7 @@ const SAMPLE_NEARBY_JOBS = [
     preferred_time: 'Today by 4:00 PM',
   },
   {
-    id: 'demo-job-3',
+    id: 'sp-req-003',
     distance: '2.1 km',
     material_code: 'MIXED_METAL',
     material_name: 'Mixed Scrap Metal',
@@ -113,6 +114,11 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
   const [photosAttached, setPhotosAttached] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Job acceptance states
+  const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
+  const [acceptedJobIds, setAcceptedJobIds] = useState<string[]>([]);
+  const [jobActionError, setJobActionError] = useState<string | null>(null);
+
   useEffect(() => {
     getMyEarnings()
       .then((data) => setEarnings(data))
@@ -132,13 +138,49 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
     }
   }, [pickups]);
 
+  // Dynamically resolve nearby available jobs
+  const availablePickupsList = useMemo(() => {
+    const unassigned = pickups.filter((p) => p.status === 'requested');
+    if (unassigned.length > 0) {
+      return unassigned.map((p, idx) => ({
+        id: p.id,
+        distance: `${(0.8 + idx * 0.6).toFixed(1)} km`,
+        material_code: p.material_code,
+        material_name: p.material_code.replace(/_/g, ' '),
+        estimated_quantity_kg: p.estimated_quantity_kg,
+        expected_earning_pkr: p.pricing_calculations?.[0]?.total_price || (p.estimated_quantity_kg * 80),
+        street_address: p.street_address,
+        preferred_time: p.preferred_time || 'Flexible Today',
+        status: p.status,
+      }));
+    }
+    return SAMPLE_NEARBY_JOBS;
+  }, [pickups]);
+
   const handleAcceptJob = async (pickupId: string) => {
+    if (acceptingJobId) return;
+    setAcceptingJobId(pickupId);
+    setJobActionError(null);
     try {
-      await acceptPickup(pickupId);
-      setActionNotice('Job accepted! GPS navigation routing to customer address.');
+      const accepted = await acceptPickup(pickupId);
+      setAcceptedJobIds((prev) => [...prev, pickupId]);
+      setActionNotice(
+        isUrdu
+          ? 'کام کامیابی سے قبول کر لیا گیا! نیویگیشن چالو ہو گئی۔'
+          : 'Job accepted! Live GPS navigation routing to customer address.'
+      );
+      if (accepted) {
+        setActiveWorkflowPickup(accepted);
+        setWorkflowStep(1);
+      }
       onRefresh();
     } catch (err: any) {
-      alert(`Error accepting job: ${err.message}`);
+      setJobActionError(
+        err.message ||
+          'Failed to accept job. It may have already been assigned to another collector or your session has expired.'
+      );
+    } finally {
+      setAcceptingJobId(null);
     }
   };
 
@@ -490,6 +532,7 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
             prefix="Rs "
             highlightLabel="Sunday Peak"
             highlightValue="Rs 2,400"
+            footerLabel="Verified Payout Earnings"
           />
         </div>
 
@@ -533,54 +576,101 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
           </div>
 
           <span className="text-xs font-bold text-theme-primary bg-theme-soft-mint px-3 py-1 rounded-full border border-theme-border">
-            {SAMPLE_NEARBY_JOBS.length} Jobs in 3km Radius
+            {availablePickupsList.length} Jobs in 3km Radius
           </span>
         </div>
 
-        <div className="divide-y divide-theme-border/60">
-          {SAMPLE_NEARBY_JOBS.map((job) => (
-            <div
-              key={job.id}
-              className="p-5 sm:p-6 hover:bg-theme-soft-mint/30 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
-            >
-              <div className="space-y-1.5 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary text-[11px] font-extrabold font-mono border border-theme-border">
-                    {job.distance} away
-                  </span>
-                  <span className="font-extrabold text-theme-text text-sm">
-                    {job.material_name}
-                  </span>
-                  <span className="text-theme-secondary text-xs">• {job.preferred_time}</span>
-                </div>
-
-                <p className="text-xs text-theme-secondary flex items-center space-x-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-theme-secondary shrink-0" />
-                  <span>{job.street_address}</span>
-                </p>
-
-                <div className="flex items-center space-x-4 text-xs font-mono pt-1">
-                  <span className="text-theme-secondary">
-                    Est. Weight: <strong className="text-theme-text">{job.estimated_quantity_kg} kg</strong>
-                  </span>
-                  <span className="text-theme-text font-medium flex items-center gap-1.5">
-                    Est. Payout: <strong className="bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded border border-theme-border">Rs {job.expected_earning_pkr}</strong>
-                  </span>
-                </div>
-              </div>
-
-              {/* One Primary "Accept Job" button per job */}
-              <div className="shrink-0 flex items-center space-x-3">
-                <button
-                  onClick={() => handleAcceptJob(job.id)}
-                  className="w-full sm:w-auto bg-theme-primary hover:bg-[#146B4D] text-white font-extrabold px-6 py-3 rounded-xl text-xs transition shadow-md shadow-theme-primary/20 flex items-center justify-center space-x-2 active:scale-98"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{t('collector.accept_job', 'Accept Job')}</span>
-                </button>
-              </div>
+        {/* Action Error Notice if API fails */}
+        {jobActionError && (
+          <div className="p-4 mx-6 my-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <span>{jobActionError}</span>
             </div>
-          ))}
+            <button
+              onClick={() => setJobActionError(null)}
+              className="text-red-500 hover:text-red-700 font-bold ml-4"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className="divide-y divide-theme-border/60">
+          {availablePickupsList.map((job) => {
+            const isAccepted = acceptedJobIds.includes(job.id) || (job as any).status === 'accepted';
+            const isCurrentlyAccepting = acceptingJobId === job.id;
+
+            return (
+              <div
+                key={job.id}
+                className="p-5 sm:p-6 hover:bg-theme-soft-mint/30 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-theme-soft-mint text-theme-primary text-[11px] font-extrabold font-mono border border-theme-border">
+                      {job.distance} away
+                    </span>
+                    <span className="font-extrabold text-theme-text text-sm">
+                      {job.material_name}
+                    </span>
+                    <span className="text-theme-secondary text-xs">• {job.preferred_time}</span>
+                    {isAccepted && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30">
+                        {isUrdu ? 'تفویض شدہ' : 'Assigned to You'}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-theme-secondary flex items-center space-x-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-theme-secondary shrink-0" />
+                    <span>{job.street_address}</span>
+                  </p>
+
+                  <div className="flex items-center space-x-4 text-xs font-mono pt-1">
+                    <span className="text-theme-secondary">
+                      Est. Weight: <strong className="text-theme-text">{job.estimated_quantity_kg} kg</strong>
+                    </span>
+                    <span className="text-theme-text font-medium flex items-center gap-1.5">
+                      Est. Payout: <strong className="bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded border border-theme-border">Rs {job.expected_earning_pkr}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* One Primary "Accept Job" button per job */}
+                <div className="shrink-0 flex items-center space-x-3">
+                  <button
+                    type="button"
+                    disabled={isCurrentlyAccepting || isAccepted}
+                    onClick={() => handleAcceptJob(job.id)}
+                    className={`w-full sm:w-auto font-extrabold px-6 py-3 rounded-xl text-xs transition flex items-center justify-center space-x-2 min-h-[44px] cursor-pointer ${
+                      isAccepted
+                        ? 'bg-[#134E39] text-[#A7F3D0] border border-[#2FA37A]/40 cursor-default shadow-xs'
+                        : 'bg-theme-primary hover:bg-[#146B4D] text-white shadow-md shadow-theme-primary/20 active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    {isCurrentlyAccepting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>{isUrdu ? 'قبول کیا جا رہا ہے...' : 'Accepting...'}</span>
+                      </>
+                    ) : isAccepted ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>{isUrdu ? 'قبول شدہ' : 'Accepted'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{t('collector.accept_job', 'Accept Job')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -41,25 +41,21 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click and Escape key
+  // Close on Escape key and focus management
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
       window.addEventListener('keydown', handleEscape);
+      // Ensure dropdown can receive focus for keyboard users
+      dropdownRef.current?.focus();
     }
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
       window.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);

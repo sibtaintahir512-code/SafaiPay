@@ -63,8 +63,8 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
       setUnreadCount(0);
     }
 
-    // Close menus on click outside
-    const handleClickOutside = (event: MouseEvent) => {
+    // Close menus on click / touch outside
+    const handleClickOutside = (event: Event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
@@ -83,9 +83,11 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [user]);
@@ -323,7 +325,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
               <button
                 type="button"
                 onClick={() => {
-                  setShowProfileMenu(!showProfileMenu);
+                  setShowProfileMenu((prev) => !prev);
                   setShowNotifications(false);
                 }}
                 className="h-[44px] md:h-[52px] rounded-[22px] md:rounded-[26px] pl-[4px] md:pl-[6px] pr-2 md:pr-[14px] rtl:pl-2 rtl:pr-[4px] rtl:md:pr-[6px] rtl:md:pl-[14px] flex items-center gap-2.5 transition-all duration-150 pill-focus hover:opacity-95"
