@@ -114,30 +114,30 @@ describe('SafaiPay Dashboard UI & Functionality Bug-Fix Pass Suite', () => {
     });
 
     it('anchors dropdown strictly below profile button with 4-8px gap', () => {
-      const topGapPx = 6; // strictly in 4-8px range
+      const topGapPx = 8; // strictly in 4-8px range
       const anchorRule = `calc(100% + ${topGapPx}px)`;
 
       assert.ok(topGapPx >= 4 && topGapPx <= 8, 'Gap must be between 4px and 8px');
-      assert.equal(anchorRule, 'calc(100% + 6px)');
+      assert.equal(anchorRule, 'calc(100% + 8px)');
 
       // Button heights across viewports
       const buttonMobileHeight = 44;
       const buttonDesktopHeight = 52;
 
-      const dropdownTopMobile = buttonMobileHeight + topGapPx; // 50px from container top
-      const dropdownTopDesktop = buttonDesktopHeight + topGapPx; // 58px from container top
+      const dropdownTopMobile = buttonMobileHeight + topGapPx; // 52px from container top
+      const dropdownTopDesktop = buttonDesktopHeight + topGapPx; // 60px from container top
 
       assert.ok(dropdownTopMobile > buttonMobileHeight, 'Mobile dropdown must start below button bottom');
       assert.ok(dropdownTopDesktop > buttonDesktopHeight, 'Desktop dropdown must start below button bottom');
     });
 
     it('animation translateY(-4px) maintains positive clearance and prevents upward overlap', () => {
-      const topGapPx = 6;
+      const topGapPx = 8;
       const animTranslateY = -4; // upward offset during animation start
 
-      const netClearanceAtAnimStart = topGapPx + animTranslateY; // 6 + (-4) = +2px
+      const netClearanceAtAnimStart = topGapPx + animTranslateY; // 8 + (-4) = +4px
       assert.ok(netClearanceAtAnimStart > 0, 'Dropdown must never touch or overlap button during animation');
-      assert.equal(netClearanceAtAnimStart, 2);
+      assert.equal(netClearanceAtAnimStart, 4);
     });
 
     it('horizontal viewport clamp prevents overflow outside 12px safe screen margins on mobile', () => {

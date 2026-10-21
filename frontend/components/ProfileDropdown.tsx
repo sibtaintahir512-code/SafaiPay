@@ -54,38 +54,50 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
     const checkBounds = () => {
       if (!dropdownRef.current) return;
-      const rect = dropdownRef.current.getBoundingClientRect();
       const parentRect = dropdownRef.current.parentElement?.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const edgePadding = 12; // 12px safe margin from viewport edges
 
-      // 1. Horizontal viewport clamp (prevent overflow outside left/right screen edges)
-      if (rect.left < edgePadding) {
-        setShiftX(edgePadding - rect.left);
-      } else if (rect.right > viewportWidth - edgePadding) {
-        setShiftX((viewportWidth - edgePadding) - rect.right);
+      if (!parentRect) return;
+
+      const dropdownWidth = Math.min(420, viewportWidth - 24);
+
+      // Deterministic horizontal clamp based on parent button rect (prevents oscillation)
+      if (!isUrdu) {
+        // LTR: Dropdown is right-aligned to parent container.
+        // Its unshifted left coordinate in viewport is (parentRect.right - dropdownWidth)
+        const unshiftedLeft = parentRect.right - dropdownWidth;
+        if (unshiftedLeft < edgePadding) {
+          setShiftX(edgePadding - unshiftedLeft); // Shift right to stay within edgePadding
+        } else {
+          setShiftX(0);
+        }
       } else {
-        setShiftX(0);
+        // RTL: Dropdown is left-aligned to parent container.
+        // Its unshifted right coordinate in viewport is (parentRect.left + dropdownWidth)
+        const unshiftedRight = parentRect.left + dropdownWidth;
+        if (unshiftedRight > viewportWidth - edgePadding) {
+          setShiftX((viewportWidth - edgePadding) - unshiftedRight); // Shift left to stay within edgePadding
+        } else {
+          setShiftX(0);
+        }
       }
 
-      // 2. Vertical available height calculation strictly below button bottom + 6px gap
-      if (parentRect) {
-        const availableHeight = viewportHeight - (parentRect.bottom + 6) - 16;
-        setMaxAvailableHeight(Math.max(260, Math.min(availableHeight, 640)));
-      }
+      // Vertical available space strictly below button bottom + 8px gap
+      const availableHeight = viewportHeight - (parentRect.bottom + 8) - 16;
+      setMaxAvailableHeight(Math.max(260, Math.min(availableHeight, 640)));
     };
 
-    const rafId = requestAnimationFrame(checkBounds);
+    checkBounds();
     window.addEventListener('resize', checkBounds);
     window.addEventListener('scroll', checkBounds, { passive: true });
 
     return () => {
-      cancelAnimationFrame(rafId);
       window.removeEventListener('resize', checkBounds);
       window.removeEventListener('scroll', checkBounds);
     };
-  }, [isOpen]);
+  }, [isOpen, isUrdu]);
 
   // Close on Escape key and focus management
   useEffect(() => {
@@ -158,13 +170,14 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
       tabIndex={-1}
       aria-label={isUrdu ? 'صارف اکاؤنٹ مینو' : 'User account menu'}
       style={{
-        top: 'calc(100% + 6px)',
+        top: 'calc(100% + 8px)',
+        marginTop: 0,
         ...(maxAvailableHeight ? { maxHeight: `${maxAvailableHeight}px` } : {}),
         ...(isUrdu
           ? { left: shiftX !== 0 ? `${shiftX}px` : '0px', right: 'auto' }
           : { right: shiftX !== 0 ? `${-shiftX}px` : '0px', left: 'auto' }),
       }}
-      className="absolute z-50 w-[min(420px,calc(100vw-24px))] bg-theme-surface rounded-2xl shadow-2xl border border-theme-border flex flex-col max-h-[calc(100dvh-80px)] animate-dropdown-in overflow-hidden text-theme-text"
+      className="absolute top-full mt-2 z-50 w-[min(420px,calc(100vw-24px))] bg-theme-surface rounded-2xl shadow-2xl border border-theme-border flex flex-col max-h-[calc(100dvh-80px)] animate-dropdown-in overflow-hidden text-theme-text"
     >
       {/* SECTION A: User Summary Section */}
       <div className="p-4 border-b border-theme-border bg-theme-bg/60 shrink-0">
