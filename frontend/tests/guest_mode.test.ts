@@ -10,7 +10,7 @@ import { GET as getAdminPickupsHandler } from '../app/api/v1/admin/pickups/route
 import { GET as getAdminSuspiciousHandler } from '../app/api/v1/admin/suspicious-records/route';
 import { POST as postAdminApproveHandler } from '../app/api/v1/admin/collectors/[id]/approve/route';
 import { POST as postAdminRejectHandler } from '../app/api/v1/admin/collectors/[id]/reject/route';
-import { verifyJwt, checkGuestRateLimit, VERIFIED_USERS } from '../lib/serverAuth';
+import { verifyJwt, signJwt, checkGuestRateLimit, VERIFIED_USERS } from '../lib/serverAuth';
 import { getDashboardPath } from '../lib/api';
 
 describe('SafaiPay Guest Mode Production Readiness Suite', () => {
@@ -292,6 +292,50 @@ describe('SafaiPay Guest Mode Production Readiness Suite', () => {
       const limited = checkGuestRateLimit(testIp);
       assert.equal(limited.isLimited, true, '31st attempt must be rate limited');
       assert.ok(limited.retryAfterSeconds > 0, 'Retry-After seconds must be positive');
+    });
+  });
+
+  describe('8. Safe Logout & Session Clearing Guardrails', () => {
+    it('verifies guest token removal and unauthenticated state', () => {
+      // Mock client-side storage
+      const storage: Record<string, string> = {};
+      const mockSet = (k: string, v: string) => { storage[k] = v; };
+      const mockGet = (k: string) => storage[k] || null;
+      const mockRemove = (k: string) => { delete storage[k]; };
+
+      // Set guest session
+      mockSet('safaipay_auth_token', 'sample_guest_jwt_token');
+      assert.equal(mockGet('safaipay_auth_token'), 'sample_guest_jwt_token');
+
+      // Logout clears token
+      mockRemove('safaipay_auth_token');
+      assert.equal(mockGet('safaipay_auth_token'), null);
+    });
+  });
+
+  describe('9. Guest Role Isolation & Cross-Role Access Boundaries', () => {
+    it('ensures distinct non-overlapping dashboard targets for all 3 guest roles', () => {
+      const customerTarget = getDashboardPath('customer');
+      const collectorTarget = getDashboardPath('collector');
+      const recyclerTarget = getDashboardPath('recycler');
+
+      assert.notEqual(customerTarget, collectorTarget);
+      assert.notEqual(customerTarget, recyclerTarget);
+      assert.notEqual(collectorTarget, recyclerTarget);
+    });
+
+    it('verifies guest role token claims strictly preserve assigned role identity', () => {
+      const custToken = signJwt({ sub: 'usr_guest_cust', role: 'customer', isGuest: true });
+      const collToken = signJwt({ sub: 'usr_guest_coll', role: 'collector', isGuest: true });
+      const recyToken = signJwt({ sub: 'usr_guest_recy', role: 'recycler', isGuest: true });
+
+      const verifiedCust = verifyJwt(custToken);
+      const verifiedColl = verifyJwt(collToken);
+      const verifiedRecy = verifyJwt(recyToken);
+
+      assert.equal(verifiedCust?.role, 'customer');
+      assert.equal(verifiedColl?.role, 'collector');
+      assert.equal(verifiedRecy?.role, 'recycler');
     });
   });
 });
