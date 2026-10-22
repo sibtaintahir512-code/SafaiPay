@@ -12,11 +12,12 @@ services:
     environment:
       - ENVIRONMENT=production
       - PROJECT_NAME=SafaiPay
-      - API_V1_STR=/api/v1
-      - DATABASE_URL=sqlite:///./safaipay.db
-      - SECRET_KEY=${SECRET_KEY:-safai-production-super-secret-key-change-me}
+      - API_V1_PREFIX=/api/v1
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/safaipay.db
+      - SYNC_DATABASE_URL=sqlite:////app/data/safaipay.db
+      - SECRET_KEY=${SECRET_KEY:-safai-production-super-secret-key-change-me-32b}
       - ACCESS_TOKEN_EXPIRE_MINUTES=1440
-      - BACKEND_CORS_ORIGINS=["http://localhost:3000","https://safaipay.vercel.app"]
+      - CORS_ORIGINS=["http://localhost:3000","https://safaipay.vercel.app"]
     volumes:
       - backend-data:/app/data
     healthcheck:

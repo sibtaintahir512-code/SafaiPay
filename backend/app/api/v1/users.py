@@ -13,6 +13,8 @@ from app.schemas.profiles import (
 )
 from app.api.deps import get_current_user, require_roles, check_user_profile_access
 from app.services.ai_service import AIService
+from app.core.security import sanitize_filename
+from app.core.rate_limiter import rate_limit_file_upload
 
 router = APIRouter(prefix="/users", tags=["User Profiles & RBAC"])
 
@@ -39,7 +41,7 @@ async def update_my_profile(
     await db.refresh(current_user)
     return current_user
 
-@router.post("/me/photo", response_model=UserWithProfileResponse)
+@router.post("/me/photo", response_model=UserWithProfileResponse, dependencies=[Depends(rate_limit_file_upload)])
 async def upload_my_profile_photo(
     file: UploadFile = File(..., description="Profile photo (JPEG, PNG, WebP, max 5MB)"),
     current_user: User = Depends(get_current_user),
@@ -47,7 +49,7 @@ async def upload_my_profile_photo(
 ):
     """Upload user profile photo with strict MIME and size validation."""
     file_bytes = await file.read()
-    filename = file.filename or "avatar.jpg"
+    filename = sanitize_filename(file.filename, default="avatar.jpg")
     mime_type = file.content_type or "image/jpeg"
 
     if len(file_bytes) > 5 * 1024 * 1024:

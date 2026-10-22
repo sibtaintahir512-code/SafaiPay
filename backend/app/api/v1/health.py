@@ -1,64 +1,111 @@
+"""System health, diagnostics, and container readiness probes."""
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, status, Response
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from fastapi import APIRouter, status, Response
 
-from app.core.database import get_db
+from app.core.database import check_db_health, get_db_migration_version
+from app.core.rate_limiter import check_redis_health
 from app.core.config import settings
 
 router = APIRouter(prefix="/health", tags=["System Health & Diagnostics"])
 
 @router.get("", status_code=status.HTTP_200_OK)
-async def system_health():
-    """Basic health check endpoint returning system status and metadata."""
+async def system_health(response: Response):
+    """Basic health check endpoint returning system status, metadata, database and redis state."""
+    db_ok, db_msg = await check_db_health()
+    redis_ok, redis_msg = check_redis_health()
+    version = await get_db_migration_version()
+    
+    if not db_ok:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
     return {
-        "status": "healthy",
+        "status": "healthy" if db_ok else "degraded",
         "service": settings.PROJECT_NAME,
         "environment": settings.ENVIRONMENT,
+        "database": "connected" if db_ok else "disconnected",
+        "redis": "connected" if redis_ok else "fallback_in_memory",
+        "migration_version": version,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+@router.get("/live", status_code=status.HTTP_200_OK)
+async def liveness_probe():
+    """Kubernetes & Render liveness probe verifying HTTP event loop responsiveness."""
+    return {
+        "status": "alive",
+        "service": settings.PROJECT_NAME,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 @router.get("/db", status_code=status.HTTP_200_OK)
-async def database_health(response: Response, db: AsyncSession = Depends(get_db)):
-    """Database connectivity health check performing a SELECT 1 query."""
-    try:
-        await db.execute(text("SELECT 1"))
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-    except Exception as e:
+async def database_health(response: Response):
+    """Database connectivity health check performing a lightweight query."""
+    db_ok, db_msg = await check_db_health()
+    version = await get_db_migration_version()
+    if not db_ok:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
             "status": "unhealthy",
             "database": "disconnected",
-            "error": str(e),
+            "error": "Database connectivity failed" if settings.ENVIRONMENT in ("production", "staging") else db_msg,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-@router.get("/ready", status_code=status.HTTP_200_OK)
-async def readiness_check(response: Response, db: AsyncSession = Depends(get_db)):
-    """Kubernetes/Container readiness probe."""
-    try:
-        await db.execute(text("SELECT 1"))
+    return {
+        "status": "healthy",
+        "database": "connected",
+        "message": db_msg,
+        "migration_version": version,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+@router.get("/redis", status_code=status.HTTP_200_OK)
+async def redis_health(response: Response):
+    """Redis distributed rate-limiter health check."""
+    redis_ok, redis_msg = check_redis_health()
+    if not redis_ok and settings.ENVIRONMENT == "production" and getattr(settings, "REDIS_FALLBACK_MODE", "warning") == "fail_closed":
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
-            "ready": True,
-            "components": {
-                "api": "UP",
-                "database": "UP",
-                "redis": "MOCK_READY" if settings.REDIS_MOCK_FALLBACK else "UP"
-            },
+            "status": "unhealthy",
+            "redis": "disconnected",
+            "error": "Redis rate limiter unavailable",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-    except Exception as e:
+
+    return {
+        "status": "healthy" if redis_ok else "degraded",
+        "redis": "connected" if redis_ok else "fallback_in_memory",
+        "mode": "distributed" if redis_ok else "local_sliding_window",
+        "message": redis_msg,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+@router.get("/ready", status_code=status.HTTP_200_OK)
+async def readiness_check(response: Response):
+    """Kubernetes/Container readiness probe."""
+    db_ok, db_msg = await check_db_health()
+    redis_ok, _ = check_redis_health()
+    version = await get_db_migration_version()
+    if not db_ok:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
             "ready": False,
             "components": {
                 "api": "UP",
-                "database": "DOWN"
+                "database": "DOWN",
+                "redis": "UP" if redis_ok else "FALLBACK_READY"
             },
-            "error": str(e),
+            "error": "Database connectivity failed" if settings.ENVIRONMENT in ("production", "staging") else db_msg,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
+
+    return {
+        "ready": True,
+        "components": {
+            "api": "UP",
+            "database": "UP",
+            "redis": "UP" if redis_ok else "FALLBACK_READY"
+        },
+        "migration_version": version,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }

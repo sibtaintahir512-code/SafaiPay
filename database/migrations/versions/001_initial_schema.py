@@ -15,6 +15,14 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
+    # 0. Enable PostGIS spatial extension on PostgreSQL if available
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        try:
+            op.execute(sa.text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+        except Exception:
+            pass  # Extension may require manual cloud dashboard toggle or already exist
+
     # 1. roles table
     op.create_table(
         'roles',

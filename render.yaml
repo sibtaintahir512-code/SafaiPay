@@ -1,0 +1,58 @@
+# ==============================================================================
+# SafaiPay Render Blueprint Specification (Infrastructure-As-Code)
+# Documentation: https://render.com/docs/blueprint-spec
+# DO NOT COMMIT REAL CREDENTIALS OR SECRETS TO THIS FILE
+# ==============================================================================
+
+services:
+  - type: web
+    name: safaipay-backend-staging
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /health/ready
+    autoDeploy: true
+    branch: main
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: ENVIRONMENT
+        value: staging
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DATABASE_URL
+        sync: false  # Configure in Render Dashboard with Supabase connection string
+      - key: REDIS_URL
+        sync: false  # Configure in Render Dashboard with Upstash rediss:// string
+      - key: SECRET_KEY
+        generateValue: true  # Render generates a secure random 256-bit token
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: CORS_ORIGINS
+        value: https://frontend-eight-livid-47.vercel.app,https://safaipay.vercel.app
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: DB_MAX_OVERFLOW
+        value: "5"
+      - key: DB_POOL_TIMEOUT
+        value: "30"
+      - key: DB_POOL_RECYCLE
+        value: "1800"
+      - key: DB_USE_NULL_POOL
+        value: "false"
+      - key: DB_SSL_MODE
+        value: require
+      - key: REDIS_MOCK_FALLBACK
+        value: "true"
+      - key: REDIS_FALLBACK_MODE
+        value: warning
+      - key: PAYMENT_MODE
+        value: sandbox
+      - key: PAYMENT_GATEWAY_SANDBOX
+        value: "true"
+      - key: SEED_DEMO_USERS
+        value: "false"

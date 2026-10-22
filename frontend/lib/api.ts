@@ -144,6 +144,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return res.json();
 }
 
+export function shouldRethrowError(err: any): boolean {
+  // If the server responded with an HTTP client error status (400-499: bad request,
+  // unauthorized 401, forbidden 403, not found 404, validation 422, rate limited 429),
+  // NEVER hide it behind a mock fallback.
+  if (err && typeof err.status === 'number' && err.status < 500) {
+    return true;
+  }
+  return false;
+}
+
 async function uploadRequest<T>(endpoint: string, formData: FormData): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {};
@@ -392,7 +402,8 @@ export async function createPickup(payload: {
         photo_url: payload.photo_url || null,
       }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     // Local fallback for offline/Vercel demo
     const all = getLocalPickups();
     const rates = getLocalRates();
@@ -448,7 +459,8 @@ export async function getPickups(userRole?: UserRole | 'unknown'): Promise<Picku
       return await request<PickupRequest[]>('/pickups');
     }
     return await request<PickupRequest[]>('/pickups');
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     // Offline / fallback storage
     const local = getLocalPickups();
     if (userRole === 'customer') {
@@ -501,7 +513,8 @@ export async function getAvailablePickups(): Promise<PickupRequest[]> {
 export async function getPickupById(id: string): Promise<PickupRequest> {
   try {
     return await request<PickupRequest>(`/pickups/${id}`);
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     const found = list.find(p => p.id === id);
     if (!found) throw new Error(`Pickup with id ${id} not found.`);
@@ -515,7 +528,8 @@ export async function assignCollector(pickupId: string, collectorId: string) {
       method: 'POST',
       body: JSON.stringify({ collector_id: collectorId }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {
@@ -535,7 +549,8 @@ export async function acceptPickup(pickupId: string) {
     return await request<PickupRequest>(`/pickups/${pickupId}/accept`, {
       method: 'POST',
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     let found = false;
     const updated = list.map(p => {
@@ -585,7 +600,8 @@ export async function rejectPickup(pickupId: string, reason: string) {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {
@@ -745,7 +761,8 @@ export async function cancelPickup(pickupId: string, reason: string) {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {
@@ -764,7 +781,8 @@ export async function disputePickup(pickupId: string, reason: string, disputeTyp
       method: 'POST',
       body: JSON.stringify({ reason, dispute_type: disputeType }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {
@@ -783,7 +801,8 @@ export async function ratePickup(pickupId: string, score: number, review?: strin
       method: 'POST',
       body: JSON.stringify({ rating_score: score, review_comment: review || '' }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     return { success: true, score };
   }
 }
@@ -798,7 +817,8 @@ export async function simulatePayment(pickupId: string, simulateFailure = false)
         failure_reason: simulateFailure ? 'Simulated settlement rejection / timeout' : undefined,
       }),
     });
-  } catch {
+  } catch (err: any) {
+    if (shouldRethrowError(err)) throw err;
     const list = getLocalPickups();
     const updated = list.map(p => {
       if (p.id === pickupId) {

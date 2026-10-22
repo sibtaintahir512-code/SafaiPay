@@ -8,6 +8,7 @@ from sqlalchemy import select, or_
 from app.models.user import User, Role, UserRole, RoleEnum
 from app.models.profiles import CustomerProfile, CollectorProfile, RecyclerProfile, AdminProfile
 from app.schemas.auth import UserRegisterRequest
+from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
 from app.services.audit_service import log_audit_event
 
@@ -224,16 +225,29 @@ async def authenticate_user(
     if user and user.hashed_password:
         is_valid_pwd = verify_password(password, user.hashed_password)
 
-    # Demo accounts convenience fallback
-    if not is_valid_pwd and user:
-        if user.email in ("admin@safaipay.test", "admin@safaipay.org") and password in ("AdminPassword123!", "SafaiPassword123!", "admin123", "admin"):
-            is_valid_pwd = True
-        elif password in ("SafaiPassword123!", "AdminPassword123!"):
-            is_valid_pwd = True
+    # Demo accounts convenience fallback (strictly restricted to non-production dev/testing environments)
+    if not is_valid_pwd and user and settings.ENVIRONMENT != "production":
+        demo_cohort = {
+            settings.DEMO_CUSTOMER_EMAIL,
+            settings.DEMO_COLLECTOR_EMAIL,
+            settings.DEMO_RECYCLER_EMAIL,
+            settings.DEMO_ADMIN_EMAIL,
+            settings.DEFAULT_ADMIN_EMAIL,
+            "admin@safaipay.test",
+            "admin@safaipay.org",
+            "customer@safaipay.test",
+            "collector@safaipay.test",
+            "recycler@safaipay.test",
+        }
+        if user.email in demo_cohort:
+            if user.email in ("admin@safaipay.test", "admin@safaipay.org") and password in ("AdminPassword123!", "SafaiPassword123!", "admin123", "admin"):
+                is_valid_pwd = True
+            elif password in ("SafaiPassword123!", "AdminPassword123!"):
+                is_valid_pwd = True
 
     if not user or not is_valid_pwd:
         record_failed_login(identifier)
-        # Log failure in audit log
+        # Log failure in audit log with masked identifier
         await log_audit_event(
             db=db,
             action_name="LOGIN_FAILURE",

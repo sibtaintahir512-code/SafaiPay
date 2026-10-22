@@ -73,7 +73,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onS
             </div>
           ) : users.length === 0 ? (
             <div className="text-center p-8 text-xs text-slate-400">
-              No users found matching "{query}"
+              No users found matching &quot;{query}&quot;
             </div>
           ) : (
             users.map((u) => (

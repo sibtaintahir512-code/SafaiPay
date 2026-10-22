@@ -12,20 +12,23 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 # Force test environment
 os.environ["ENVIRONMENT"] = "testing"
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test_safaipay.db"
-os.environ["SYNC_DATABASE_URL"] = "sqlite:///./test_safaipay.db"
+TEST_DB_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///./test_safaipay.db")
+os.environ["DATABASE_URL"] = TEST_DB_URL
+if "sqlite" in TEST_DB_URL:
+    os.environ.setdefault("SYNC_DATABASE_URL", "sqlite:///./test_safaipay.db")
+    connect_args = {"check_same_thread": False}
+else:
+    connect_args = {}
 
 from app.core.database import Base, get_db
 from app.main import app
 from app.core.security import create_access_token
 from database.seed import seed_database
 
-TEST_DB_URL = "sqlite+aiosqlite:///./test_safaipay.db"
-
 test_engine = create_async_engine(
     TEST_DB_URL,
     echo=False,
-    connect_args={"check_same_thread": False}
+    connect_args=connect_args
 )
 
 TestingSessionLocal = async_sessionmaker(

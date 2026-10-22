@@ -75,3 +75,49 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except (jwt.PyJWTError, Exception):
         return None
+
+# Canonical alias
+decode_access_token = decode_token
+
+import re
+import os
+
+def mask_pii(text: Optional[str]) -> str:
+    """Mask sensitive PII (CNIC, phone numbers, emails, tokens, database/redis URLs, passwords) in logs and audit trails."""
+    if not text:
+        return ""
+    s = str(text)
+
+    # 1. Mask CNIC (e.g. 42101-1234567-1 -> 42101-*******-1)
+    s = re.sub(r'(\b\d{5})-\d{7}-(\d\b)', r'\1-*******-\2', s)
+
+    # 2. Mask Pakistani mobile numbers (+923001234567 or 03001234567)
+    s = re.sub(r'(\+?923\d{2}|\b03\d{2})\d{4}(\d{3}\b)', r'\1****\2', s)
+
+    # 3. Mask email addresses (user@domain.com -> u***@domain.com)
+    s = re.sub(r'(\b[a-zA-Z0-9_.+-])[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b)', r'\1***@\2', s)
+
+    # 4. Mask JWT tokens
+    s = re.sub(r'(Bearer\s+)?ey[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]+', r'Bearer ey***[MASKED_TOKEN]', s)
+
+    # 5. Mask Database connection credentials (PostgreSQL / Supabase)
+    s = re.sub(r'(postgres(?:ql)?(?:\+asyncpg)?://[^:]+:)[^@]+(@)', r'\1***\2', s)
+
+    # 6. Mask Redis credentials (Upstash TLS / redis)
+    s = re.sub(r'(rediss?://[^:]+:)[^@]+(@)', r'\1***\2', s)
+
+    # 7. Mask passwords in JSON / query / logging strings
+    s = re.sub(r'([\"\'\b]password[\"\'\s]*[:=]\s*[\"\'])[^\"]+([\"\'])', r'\1***[MASKED_PASSWORD]\2', s, flags=re.IGNORECASE)
+
+    return s
+
+def sanitize_filename(filename: Optional[str], default: str = "upload.jpg") -> str:
+    """Sanitize user-provided filename to prevent path traversal and shell injection across OS platforms."""
+    if not filename:
+        return default
+    # Handle both POSIX and Windows path separators
+    clean = filename.replace("\\", "/").split("/")[-1].strip()
+    safe = re.sub(r'[^a-zA-Z0-9_.-]', '_', clean)
+    # Remove leading dots or slashes
+    safe = safe.lstrip('.').strip()
+    return safe or default

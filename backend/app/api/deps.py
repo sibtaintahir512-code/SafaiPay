@@ -57,6 +57,9 @@ async def get_current_user(
 
     return user
 
+# Alias for standard FastAPI naming conventions
+get_current_active_user = get_current_user
+
 def require_roles(allowed_roles: List[str]):
     """Role-Based Access Control dependency factory.
     Enforces that the authenticated user possesses at least one of the allowed roles.

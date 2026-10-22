@@ -14,6 +14,12 @@ from app.api.v1.analytics import router as analytics_router
 from app.api.v1.ai import router as ai_router
 from app.api.v1.marketplace import router as marketplace_router
 from app.api.v1.inventory import router as inventory_router
+from app.api.v1.pricing import router as pricing_router
+from app.api.v1.collectors import router as collectors_router
+from app.api.v1.customers import router as customers_router
+from app.api.v1.recyclers import router as recyclers_router
+from app.api.v1.reports import router as reports_router
+from app.api.v1.fraud import router as fraud_router
 
 api_v1_router = APIRouter()
 
@@ -32,5 +38,11 @@ api_v1_router.include_router(analytics_router)
 api_v1_router.include_router(ai_router)
 api_v1_router.include_router(marketplace_router)
 api_v1_router.include_router(inventory_router)
+api_v1_router.include_router(pricing_router)
+api_v1_router.include_router(collectors_router)
+api_v1_router.include_router(customers_router)
+api_v1_router.include_router(recyclers_router)
+api_v1_router.include_router(reports_router)
+api_v1_router.include_router(fraud_router)
 
 

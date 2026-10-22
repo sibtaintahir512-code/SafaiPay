@@ -20,6 +20,7 @@ from app.services.auth_service import register_new_user, authenticate_user, gene
 from app.services.otp_service import OTPService
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.core.rate_limiter import rate_limit_auth, rate_limit_otp, rate_limit_password_reset
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Verification"])
 
@@ -49,8 +50,8 @@ async def register(
         }
     )
 
-@router.post("/login", response_model=TokenResponse)
-@router.post("/token", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, dependencies=[Depends(rate_limit_auth)])
+@router.post("/token", response_model=TokenResponse, dependencies=[Depends(rate_limit_auth)])
 async def login(
     payload: UserLoginRequest,
     request: Request,
@@ -76,7 +77,7 @@ async def login(
         }
     )
 
-@router.post("/request-otp", response_model=OTPResponse)
+@router.post("/request-otp", response_model=OTPResponse, dependencies=[Depends(rate_limit_otp)])
 async def request_otp(payload: OTPRequest):
     """Send a phone verification OTP code. In mock mode, uses sandbox default code."""
     code = OTPService.generate_and_send_otp(payload.phone_number)
@@ -87,7 +88,7 @@ async def request_otp(payload: OTPRequest):
         is_verified=False
     )
 
-@router.post("/verify-otp", response_model=OTPResponse)
+@router.post("/verify-otp", response_model=OTPResponse, dependencies=[Depends(rate_limit_otp)])
 async def verify_otp(
     payload: OTPVerifyRequest,
     db: AsyncSession = Depends(get_db)
@@ -156,7 +157,7 @@ async def change_password(
         message="Password has been successfully changed."
     )
 
-@router.post("/forgot-password", response_model=AuthSuccessResponse)
+@router.post("/forgot-password", response_model=AuthSuccessResponse, dependencies=[Depends(rate_limit_password_reset)])
 async def forgot_password(
     payload: ForgotPasswordRequest,
     request: Request,
@@ -182,7 +183,7 @@ async def forgot_password(
         message="If an account matches this identifier, password reset instructions have been sent."
     )
 
-@router.post("/reset-password", response_model=AuthSuccessResponse)
+@router.post("/reset-password", response_model=AuthSuccessResponse, dependencies=[Depends(rate_limit_password_reset)])
 async def reset_password(
     payload: ResetPasswordRequest,
     request: Request,

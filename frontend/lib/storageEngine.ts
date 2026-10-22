@@ -108,8 +108,11 @@ export async function processAndSaveUploadedFile(
   const buffer = Buffer.from(arrayBuffer);
   const dataBase64 = buffer.toString('base64');
 
+  const safeName = path.basename(file.name || 'attachment').replace(/[^a-zA-Z0-9_.-]/g, '_');
+  const safeFilename = safeName.endsWith(`.${ext}`) ? safeName : `${safeName}.${ext}`;
+
   const stored = storeFileRecord({
-    filename: file.name || `attachment.${ext}`,
+    filename: safeFilename,
     mime_type: normalizedMime,
     size_bytes: file.size,
     data_base64: dataBase64,

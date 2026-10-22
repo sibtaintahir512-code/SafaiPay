@@ -125,7 +125,7 @@ class AIService:
 
     @classmethod
     def validate_image_file(cls, file_bytes: bytes, filename: str, mime_type: str) -> None:
-        """Enforce strict file type and size constraints."""
+        """Enforce strict file type, content signature, and size constraints."""
         if not file_bytes or len(file_bytes) < MIN_FILE_SIZE_BYTES:
             raise ValueError(f"Invalid file: image file is empty or corrupted (minimum size {MIN_FILE_SIZE_BYTES} bytes).")
 
@@ -141,6 +141,12 @@ class AIService:
                 raise ValueError(
                     f"Unsupported file format '{mime_type}'. Supported image types are JPEG, PNG, and WebP."
                 )
+
+        # Content inspection: reject executable or script payloads
+        if len(file_bytes) >= 4:
+            head = file_bytes[:64].lower()
+            if any(bad in head for bad in [b"<script", b"<?php", b"<!doctype", b"<html", b"#!/bin", b"mz"]):
+                raise ValueError("Disallowed file content: executable or script signature detected.")
 
     @classmethod
     def compute_sha256(cls, file_bytes: bytes) -> str:

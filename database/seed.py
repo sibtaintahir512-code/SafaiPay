@@ -17,9 +17,51 @@ from app.models.profiles import CustomerProfile, CollectorProfile, RecyclerProfi
 from app.models.material import Material, MaterialPriceHistory
 from app.models.audit import AuditLog
 
+async def seed_materials(session):
+    """Seed core waste material categories and benchmark rates idempotently."""
+    materials_data = [
+        ("PET_PLASTIC", "PET plastic", "Cleaned clear and blue-tinted PET beverage containers", 80.00, 1.00, 0.90, 0.75),
+        ("MIXED_PLASTIC", "Mixed plastic", "Rigid HDPE, LDPE containers, PP and mixed domestic polymers", 45.00, 1.00, 0.90, 0.75),
+        ("CARDBOARD_OCC", "Cardboard/paper", "Dry corrugated shipping boxes and sorted packaging paper", 35.00, 1.00, 0.90, 0.75),
+        ("MIXED_METAL", "Metal", "Scrap aluminum UBC beverage cans, tinplate, iron, and mixed metals", 120.00, 1.00, 0.90, 0.75),
+        ("GLASS_BOTTLES", "Glass", "Clear and amber beverage glass bottles and broken culinary cullet", 25.00, 1.00, 0.85, 0.70),
+        ("E_WASTE", "E-waste", "Consumer electronic scrap, motherboards, electrical cables, and batteries", 200.00, 1.00, 0.85, 0.70),
+        ("ORGANIC_WASTE", "Organic waste", "Segregated vegetable/food scraps and bio-compostable feedstock", 10.00, 1.00, 0.80, 0.60),
+        ("NON_RECYCLABLE", "Non-recyclable waste", "Inert residual municipal waste for safe engineered disposal", 0.00, 1.00, 1.00, 1.00),
+    ]
+    for code, name, desc, rate, ta, tb, tc in materials_data:
+        q = select(Material).where(Material.code == code)
+        mat = (await session.execute(q)).scalar_one_or_none()
+        if not mat:
+            mat = Material(
+                id=uuid.uuid4(),
+                code=code,
+                name=name,
+                description=desc,
+                unit="kg",
+                benchmark_rate_pkr=rate,
+                tier_a_factor=ta,
+                tier_b_factor=tb,
+                tier_c_factor=tc,
+                is_active=True
+            )
+            session.add(mat)
+            await session.flush()
+            session.add(MaterialPriceHistory(
+                id=uuid.uuid4(),
+                material_id=mat.id,
+                benchmark_rate_pkr=rate,
+                notes="Initial benchmark rate calibration"
+            ))
+    await session.commit()
+
 async def seed_database():
-    print("🌱 Initializing SafaiPay database schema...")
-    await init_db()
+    # Only invoke init_db for local SQLite dev environments
+    if settings.ENVIRONMENT not in ("production", "staging") and "sqlite" in settings.DATABASE_URL:
+        print("🌱 Initializing SafaiPay database schema...")
+        await init_db()
+    else:
+        print(f"🌱 Skipping automatic DDL table creation in {settings.ENVIRONMENT} mode. Using Alembic schema.")
 
     async with AsyncSessionLocal() as session:
         print("🌱 Seeding Roles...")
@@ -35,6 +77,14 @@ async def seed_database():
             if not res.scalar_one_or_none():
                 session.add(Role(name=role_name, description=desc))
         await session.commit()
+
+        # In production and staging environments, never auto-seed demo accounts unless explicitly requested
+        allow_demo_seed = os.getenv("SEED_DEMO_USERS", "false").lower() in ("true", "1")
+        if settings.ENVIRONMENT in ("production", "staging") and not allow_demo_seed:
+            print(f"🔒 {settings.ENVIRONMENT} environment detected: Skipping demo users seed. Seeding only reference catalogs.")
+            await seed_materials(session)
+            print(f"✅ {settings.ENVIRONMENT} reference data seeded successfully.")
+            return
 
         demo_pwd_hash = get_password_hash(settings.DEFAULT_DEMO_PASSWORD)
         admin_pwd_hash = get_password_hash(settings.DEFAULT_ADMIN_PASSWORD)
@@ -218,69 +268,7 @@ async def seed_database():
 
         # 5. Materials & Benchmark Rates (8 Core Waste Categories)
         print("🌱 Seeding 8 Core Recyclable Materials & Benchmark Rates...")
-        materials_data = [
-            (
-                "PET_PLASTIC", "PET plastic", "Cleaned clear and blue-tinted PET beverage containers",
-                80.00, 1.00, 0.90, 0.75
-            ),
-            (
-                "MIXED_PLASTIC", "Mixed plastic", "Rigid HDPE, LDPE containers, PP and mixed domestic polymers",
-                45.00, 1.00, 0.90, 0.75
-            ),
-            (
-                "CARDBOARD_OCC", "Cardboard/paper", "Dry corrugated shipping boxes and sorted packaging paper",
-                35.00, 1.00, 0.90, 0.75
-            ),
-            (
-                "MIXED_METAL", "Metal", "Scrap aluminum UBC beverage cans, tinplate, iron, and mixed metals",
-                120.00, 1.00, 0.90, 0.75
-            ),
-            (
-                "GLASS_BOTTLES", "Glass", "Clear and amber beverage glass bottles and broken culinary cullet",
-                25.00, 1.00, 0.85, 0.70
-            ),
-            (
-                "E_WASTE", "E-waste", "Consumer electronic scrap, motherboards, electrical cables, and batteries",
-                200.00, 1.00, 0.85, 0.70
-            ),
-            (
-                "ORGANIC_WASTE", "Organic waste", "Segregated vegetable/food scraps and bio-compostable feedstock",
-                10.00, 1.00, 0.80, 0.60
-            ),
-            (
-                "NON_RECYCLABLE", "Non-recyclable waste", "Inert residual municipal waste for safe engineered disposal",
-                0.00, 1.00, 1.00, 1.00
-            ),
-        ]
-
-        for code, name, desc, rate, ta, tb, tc in materials_data:
-            q = select(Material).where(Material.code == code)
-            mat = (await session.execute(q)).scalar_one_or_none()
-            if not mat:
-                mat = Material(
-                    id=uuid.uuid4(),
-                    code=code,
-                    name=name,
-                    description=desc,
-                    unit="kg",
-                    benchmark_rate_pkr=rate,
-                    tier_a_factor=ta,
-                    tier_b_factor=tb,
-                    tier_c_factor=tc,
-                    is_active=True
-                )
-                session.add(mat)
-                await session.flush()
-
-                session.add(MaterialPriceHistory(
-                    id=uuid.uuid4(),
-                    material_id=mat.id,
-                    benchmark_rate_pkr=rate,
-                    changed_by_user_id=admin_user.id if admin_user else None,
-                    notes="Initial pilot benchmark wholesale scrap rate for Karachi"
-                ))
-                await session.commit()
-                print(f"   ✓ Material: {name} ({code}) - Benchmark: PKR {rate}/kg")
+        await seed_materials(session)
 
         # 6. Material Batches for Recycler Marketplace
         print("🌱 Seeding Wholesale Material Batches...")

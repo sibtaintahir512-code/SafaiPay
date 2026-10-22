@@ -18,10 +18,17 @@ from app.schemas.ai import (
 from app.api.deps import get_current_user, require_roles
 from app.services.ai_service import AIService
 from app.services.audit_service import log_audit_event
+from app.core.security import sanitize_filename
+from app.core.rate_limiter import rate_limit_ai_inference, rate_limit_file_upload
 
 router = APIRouter(prefix="/ai", tags=["AI Classification & Model Governance"])
 
-@router.post("/classify", response_model=PredictionResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/classify",
+    response_model=PredictionResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(rate_limit_ai_inference), Depends(rate_limit_file_upload)]
+)
 async def classify_waste_image(
     file: UploadFile = File(..., description="Recyclable waste photo file (JPEG, PNG, WebP, max 10MB)"),
     pickup_id: Optional[str] = Form(None),
@@ -33,7 +40,7 @@ async def classify_waste_image(
     Enforces file type and size constraints with low-confidence fallback.
     """
     file_bytes = await file.read()
-    filename = file.filename or "upload.jpg"
+    filename = sanitize_filename(file.filename, default="upload.jpg")
     mime_type = file.content_type or "image/jpeg"
 
     try:
