@@ -7,7 +7,11 @@ import { LandingLoginPage } from '@/components/LandingLoginPage';
 import { getDashboardPath } from '@/lib/api';
 import { RefreshCw } from 'lucide-react';
 
-export const LoginView: React.FC = () => {
+interface LoginViewProps {
+  initialView?: 'landing' | 'signin';
+}
+
+export const LoginView: React.FC<LoginViewProps> = ({ initialView = 'landing' }) => {
   const { user, role, login, loginAsGuest, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +69,7 @@ export const LoginView: React.FC = () => {
 
   return (
     <LandingLoginPage
+      initialView={initialView}
       onLogin={handleLogin}
       onGuestLogin={handleGuestLogin}
       isLoading={isSubmitting}
