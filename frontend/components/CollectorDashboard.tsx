@@ -9,6 +9,7 @@ import {
   uploadPickupPhoto,
   submitWeight, 
   confirmPickup,
+  deliverPickupToRecycler,
   getMyEarnings 
 } from '@/lib/api';
 import { INITIAL_MATERIAL_RATES } from '@/lib/mockData';
@@ -68,8 +69,24 @@ const JOBS_BY_MATERIAL_DATA: HorizontalBarItem[] = [
   { label: 'Metal', value: 2, secondaryText: '24 kg aggregate', color: 'from-[#0F3D3E] to-[#12383A]' },
 ];
 
+interface NearbyJobItem {
+  id: string;
+  tracking_number?: string;
+  distance: string;
+  material_code: string;
+  material_name: string;
+  estimated_quantity_kg: number;
+  expected_earning_pkr: number;
+  street_address: string;
+  preferred_time: string;
+  status?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_photo_url?: string | null;
+}
+
 // Realistic nearby mock pickup jobs if none returned from API
-const SAMPLE_NEARBY_JOBS = [
+const SAMPLE_NEARBY_JOBS: NearbyJobItem[] = [
   {
     id: 'sp-req-001',
     distance: '0.8 km',
@@ -79,6 +96,7 @@ const SAMPLE_NEARBY_JOBS = [
     expected_earning_pkr: 1200,
     street_address: 'House 14-C, 7th Commercial St, Phase 2, DHA, Karachi',
     preferred_time: 'Within 45 mins',
+    customer_photo_url: '/uploads/mock_pet_bottle_batch.jpg',
   },
   {
     id: 'sp-req-002',
@@ -89,6 +107,7 @@ const SAMPLE_NEARBY_JOBS = [
     expected_earning_pkr: 770,
     street_address: 'Shop 3, Al-Makkah Market, Block 4, Clifton, Karachi',
     preferred_time: 'Today by 4:00 PM',
+    customer_photo_url: '/uploads/mock_pet_bottle_batch.jpg',
   },
   {
     id: 'sp-req-003',
@@ -99,6 +118,7 @@ const SAMPLE_NEARBY_JOBS = [
     expected_earning_pkr: 960,
     street_address: 'Plot 88, Street 10, Navy Housing Scheme, Karachi',
     preferred_time: 'Flexible Today',
+    customer_photo_url: null,
   },
 ];
 
@@ -150,11 +170,35 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
     completed_at: string;
   } | null>(null);
   const [isTransitioningNextJob, setIsTransitioningNextJob] = useState(false);
+  const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null);
+  const [isDeliveringToRecycler, setIsDeliveringToRecycler] = useState(false);
+  const [isDeliveredToRecycler, setIsDeliveredToRecycler] = useState(false);
 
   // Job acceptance states
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
   const [acceptedJobIds, setAcceptedJobIds] = useState<string[]>([]);
   const [jobActionError, setJobActionError] = useState<string | null>(null);
+
+  const handleDeliverToRecycler = async (pickupId: string) => {
+    setIsDeliveringToRecycler(true);
+    try {
+      await deliverPickupToRecycler(pickupId, {
+        recycler_id: 'usr_guest_recy',
+        recycler_name: 'GreenCycle Processing Hub 4',
+      });
+      setIsDeliveredToRecycler(true);
+      setActionNotice(
+        isUrdu
+          ? 'بیچ کامیابی سے گرین سائیکل ہب کو فراہم کر دیا گیا۔'
+          : 'Batch successfully handed over and delivered to GreenCycle Processing Hub 4! Recycler notified.'
+      );
+      onRefresh();
+    } catch (err: any) {
+      alert(`Delivery Error: ${err.message}`);
+    } finally {
+      setIsDeliveringToRecycler(false);
+    }
+  };
 
   useEffect(() => {
     getMyEarnings()
@@ -298,18 +342,26 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
 
   // Dynamically resolve nearby available jobs
   const availablePickupsList = useMemo(() => {
-    const unassigned = pickups.filter((p) => p.status === 'requested');
+    const unassigned = pickups.filter(
+      (p) =>
+        ['requested', 'available', 'pending'].includes(p.status) ||
+        (!p.assigned_collector_id && p.status !== 'completed' && p.status !== 'cancelled')
+    );
     if (unassigned.length > 0) {
       return unassigned.map((p, idx) => ({
         id: p.id,
+        tracking_number: p.tracking_number,
         distance: `${(0.8 + idx * 0.6).toFixed(1)} km`,
         material_code: p.material_code,
         material_name: p.material_code.replace(/_/g, ' '),
         estimated_quantity_kg: p.estimated_quantity_kg,
-        expected_earning_pkr: p.pricing_calculations?.[0]?.total_price || (p.estimated_quantity_kg * 80),
+        expected_earning_pkr: p.payout_pkr || p.pricing_calculations?.[0]?.total_price || (p.estimated_quantity_kg * 80),
         street_address: p.street_address,
         preferred_time: p.preferred_time || 'Flexible Today',
         status: p.status,
+        customer_name: p.customer_name || 'Customer',
+        customer_phone: p.customer_phone,
+        customer_photo_url: p.customer_photo_url || p.images?.find((i) => i.image_type === 'customer_upload')?.image_url,
       }));
     }
     return SAMPLE_NEARBY_JOBS;
@@ -1192,25 +1244,55 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
                     )}
                   </div>
 
-                  {/* Ready for Next Job CTA */}
-                  <button
-                    type="button"
-                    disabled={isTransitioningNextJob}
-                    onClick={handleReadyForNextJob}
-                    className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold py-4 px-6 rounded-2xl text-base transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
-                  >
-                    {isTransitioningNextJob ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>{isUrdu ? 'اگلا کام تلاش کیا جا رہا ہے...' : 'Finding Next Available Job...'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{isUrdu ? 'اگلا کام شروع کریں' : 'Ready for Next Job'}</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </button>
+                  {/* Handover to Recycler & Next Job CTAs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={isDeliveringToRecycler || isDeliveredToRecycler}
+                      onClick={() => activeWorkflowPickup && handleDeliverToRecycler(activeWorkflowPickup.id)}
+                      className={`w-full py-4 px-5 rounded-2xl text-xs font-extrabold transition flex items-center justify-center space-x-2 border min-h-[48px] ${
+                        isDeliveredToRecycler
+                          ? 'bg-blue-900/40 border-blue-500/40 text-blue-200 cursor-default shadow-xs'
+                          : 'bg-[#0B3A3B] hover:bg-[#124B4C] border-[#2FA37A]/50 text-white shadow-md active:scale-98 cursor-pointer'
+                      }`}
+                    >
+                      {isDeliveringToRecycler ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                          <span>{isUrdu ? 'گرین سائیکل کو پہنچایا جا رہا ہے...' : 'Handing over to Recycler...'}</span>
+                        </>
+                      ) : isDeliveredToRecycler ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                          <span>{isUrdu ? 'ری سائیکلر کو فراہم کر دیا گیا' : 'Delivered to Recycler'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Truck className="w-4 h-4 text-emerald-400" />
+                          <span>{isUrdu ? 'ری سائیکلنگ ہب کو فراہم کریں' : 'Handover / Deliver to Recycler'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isTransitioningNextJob}
+                      onClick={handleReadyForNextJob}
+                      className="w-full bg-[#1B7F5C] hover:bg-[#146B4D] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold py-4 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-[#1B7F5C]/30 flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                    >
+                      {isTransitioningNextJob ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>{isUrdu ? 'اگلا کام تلاش کیا جا رہا ہے...' : 'Finding Next Available Job...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{isUrdu ? 'اگلا کام شروع کریں' : 'Ready for Next Job'}</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
             </>
@@ -1329,15 +1411,34 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
                     <span>{job.street_address}</span>
                   </p>
 
-                  <div className="flex items-center space-x-4 text-xs font-mono pt-1">
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono pt-1">
                     <span className="text-theme-secondary">
                       Est. Weight: <strong className="text-theme-text">{job.estimated_quantity_kg} kg</strong>
                     </span>
                     <span className="text-theme-text font-medium flex items-center gap-1.5">
                       Est. Payout: <strong className="bg-theme-soft-mint text-theme-primary px-2 py-0.5 rounded border border-theme-border">Rs {job.expected_earning_pkr}</strong>
                     </span>
+                    {job.customer_photo_url && (
+                      <span className="text-[10px] text-theme-primary font-bold bg-theme-soft-mint px-2 py-0.5 rounded border border-theme-border flex items-center gap-1">
+                        <Camera className="w-3 h-3" />
+                        <span>Photo Attached</span>
+                      </span>
+                    )}
                   </div>
                 </div>
+
+                {/* Customer Photo Thumbnail if uploaded */}
+                {job.customer_photo_url && (
+                  <div className="shrink-0 flex items-center">
+                    <img
+                      src={job.customer_photo_url}
+                      alt="Customer evidence"
+                      className="w-14 h-14 rounded-xl object-cover border border-theme-border cursor-pointer hover:opacity-85 shadow-xs transition"
+                      onClick={() => setSelectedPhotoModal(job.customer_photo_url)}
+                      title="Click to view customer photo evidence"
+                    />
+                  </div>
+                )}
 
                 {/* One Primary "Accept Job" button per job */}
                 <div className="shrink-0 flex items-center space-x-3">
@@ -1374,6 +1475,40 @@ export const CollectorDashboard: React.FC<CollectorDashboardProps> = ({
           })}
         </div>
       </div>
+
+      {/* Enlarged Photo Modal */}
+      {selectedPhotoModal && (
+        <div className="fixed inset-0 z-50 bg-[#072021]/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-theme-surface border border-theme-border rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-extrabold text-theme-text">Customer Photo Evidence</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedPhotoModal(null)}
+                className="p-1 rounded-lg hover:bg-theme-bg text-theme-secondary hover:text-theme-text"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-theme-border bg-black/5 dark:bg-black/40">
+              <img
+                src={selectedPhotoModal}
+                alt="Enlarged photo evidence"
+                className="w-full max-h-[70vh] object-contain mx-auto"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedPhotoModal(null)}
+                className="px-5 py-2.5 bg-theme-primary text-white font-extrabold text-xs rounded-xl shadow-xs"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

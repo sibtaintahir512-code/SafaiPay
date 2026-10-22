@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updatePickup, findOrCreatePickup } from '@/lib/pickupStore';
+import { updateJobStatus } from '@/lib/db';
+import { findOrCreatePickup } from '@/lib/pickupStore';
+import { verifyJwt } from '@/lib/serverAuth';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: NextRequest,
@@ -11,7 +15,13 @@ export async function POST(
       return NextResponse.json({ detail: 'Pickup ID is required.' }, { status: 400 });
     }
 
-    const pickup = findOrCreatePickup(pickupId);
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const decoded = token ? verifyJwt(token) : null;
+    const collectorId = decoded?.sub || decoded?.id || 'usr_guest_coll';
+    const collectorName = decoded?.full_name || decoded?.name || 'Tariq Mehmood';
+
+    const pickup = findOrCreatePickup(pickupId, collectorId);
 
     // Prerequisite 1: Photo proof must exist
     const hasPhoto = Boolean(pickup.scale_photo_url || (pickup.images && pickup.images.length > 0));
@@ -31,23 +41,23 @@ export async function POST(
       );
     }
 
-    // Idempotent execution: If already completed, return existing settlement without double payment
-    if (pickup.status === 'completed' && pickup.payment?.status === 'completed') {
+    // Idempotent execution: If already completed or settled, return existing settlement
+    if ((pickup.status === 'completed' || pickup.status === 'picked_up') && pickup.payment?.status === 'completed') {
       return NextResponse.json(
         {
           ...pickup,
+          status: 'completed',
+          settlement: {
+            verified_weight_kg: verifiedCalc?.verified_weight_kg || pickup.verified_weight_kg,
+            total_payout_pkr: pickup.payout_pkr || pickup.payment?.amount_pkr,
+            transaction_ref: pickup.payment?.transaction_reference,
+            completed_at: pickup.updated_at || new Date().toISOString(),
+          },
           already_completed: true,
           message: 'Pickup settlement was already completed previously.',
         },
         { status: 200 }
       );
-    }
-
-    let body: any = {};
-    try {
-      body = await req.json();
-    } catch {
-      // Optional body
     }
 
     const finalPayout = verifiedCalc.total_price;
@@ -59,30 +69,38 @@ export async function POST(
       retry_count: 0,
     };
 
-    const updated = updatePickup(pickupId, {
-      status: 'completed',
-      payment,
-      notes: `${pickup.notes || ''} [Settlement completed: Rs ${finalPayout} disbursed]`.trim(),
-    });
+    const updated = updateJobStatus(
+      pickupId,
+      'completed',
+      { user_id: collectorId, user_role: 'collector', user_name: collectorName },
+      {
+        status: 'completed',
+        payment,
+        payout_pkr: finalPayout,
+      },
+      `Collector confirmed collection and settled payout PKR ${finalPayout} (Ref: ${payment.transaction_reference})`
+    );
+
+    const settlement = {
+      verified_weight_kg: verifiedCalc.verified_weight_kg,
+      total_payout_pkr: finalPayout,
+      transaction_ref: payment.transaction_reference,
+      completed_at: new Date().toISOString(),
+    };
 
     return NextResponse.json(
       {
         ...updated,
-        settlement: {
-          verified_weight_kg: verifiedCalc.verified_weight_kg,
-          rate_applied: verifiedCalc.material_rate_applied,
-          quality_factor: verifiedCalc.quality_factor,
-          total_payout_pkr: finalPayout,
-          transaction_ref: payment.transaction_reference,
-          completed_at: new Date().toISOString(),
-        },
-        message: 'Settlement finalized and disbursed to verified wallet.',
+        settlement,
+        message: 'Pickup settlement finalized successfully.',
+        payout_pkr: finalPayout,
+        transaction_reference: payment.transaction_reference,
       },
       { status: 200 }
     );
   } catch (err: any) {
     return NextResponse.json(
-      { detail: err.message || 'Failed to confirm pickup completion.' },
+      { detail: err.message || 'Failed to finalize settlement.' },
       { status: 500 }
     );
   }

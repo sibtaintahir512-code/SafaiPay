@@ -434,11 +434,6 @@ export async function createPickup(payload: {
 }
 
 export async function getPickups(userRole?: UserRole | 'unknown'): Promise<PickupRequest[]> {
-  // If recycler, avoid 403 on /admin/pickups
-  if (userRole === 'recycler') {
-    return [];
-  }
-
   try {
     if (userRole === 'customer') {
       return await request<PickupRequest[]>('/pickups/my-requests');
@@ -446,24 +441,53 @@ export async function getPickups(userRole?: UserRole | 'unknown'): Promise<Picku
     if (userRole === 'collector') {
       return await request<PickupRequest[]>('/pickups/available');
     }
-    if (userRole === 'admin') {
-      return await request<PickupRequest[]>('/admin/pickups');
+    if (userRole === 'recycler') {
+      return await request<PickupRequest[]>('/pickups?role=recycler');
     }
-    return [];
+    if (userRole === 'admin') {
+      return await request<PickupRequest[]>('/pickups');
+    }
+    return await request<PickupRequest[]>('/pickups');
   } catch {
     // Offline / fallback storage
     const local = getLocalPickups();
     if (userRole === 'customer') {
-      return local.filter(p => p.customer_id === 'usr-cust-001');
+      return local.filter(p => p.customer_id === 'usr_guest_cust' || p.customer_id === 'usr-cust-001');
     }
     if (userRole === 'collector') {
-      return local.filter(p => p.status === 'requested' || p.status === 'assigned' || p.status === 'accepted' || p.status === 'in_progress' || p.status === 'weight_verified');
+      return local.filter(p => ['available', 'pending', 'requested', 'assigned', 'accepted', 'in_progress', 'pickup_started', 'weight_verified'].includes(p.status));
     }
-    if (userRole === 'admin') {
-      return local;
+    if (userRole === 'recycler') {
+      return local.filter(p => ['picked_up', 'delivered_to_recycler', 'processing', 'completed'].includes(p.status));
     }
     return local;
   }
+}
+
+export async function deliverPickupToRecycler(pickupId: string, data?: { recycler_id?: string; recycler_name?: string }) {
+  return await request<PickupRequest>(`/pickups/${pickupId}/deliver-recycler`, {
+    method: 'POST',
+    body: JSON.stringify(data || {}),
+  });
+}
+
+export async function processRecyclerBatch(pickupId: string, data: {
+  action?: 'start_processing' | 'complete';
+  recycled_weight_kg?: number;
+  notes?: string;
+  proof_url?: string;
+}) {
+  return await request<PickupRequest>(`/pickups/${pickupId}/process-recycler`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadFile(formData: FormData): Promise<{ file_id: string; file_url: string; filename: string }> {
+  return await request<{ file_id: string; file_url: string; filename: string }>('/storage/upload', {
+    method: 'POST',
+    body: formData,
+  });
 }
 
 export async function getMyPickups(): Promise<PickupRequest[]> {

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updatePickup, findOrCreatePickup } from '@/lib/pickupStore';
-import { INITIAL_MATERIAL_RATES } from '@/lib/mockData';
+import { updateJobStatus, MATERIAL_BENCHMARKS } from '@/lib/db';
+import { findOrCreatePickup } from '@/lib/pickupStore';
+import { verifyJwt } from '@/lib/serverAuth';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: NextRequest,
@@ -12,7 +15,13 @@ export async function POST(
       return NextResponse.json({ detail: 'Pickup ID is required.' }, { status: 400 });
     }
 
-    const pickup = findOrCreatePickup(pickupId);
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const decoded = token ? verifyJwt(token) : null;
+    const collectorId = decoded?.sub || decoded?.id || 'usr_guest_coll';
+    const collectorName = decoded?.full_name || decoded?.name || 'Tariq Mehmood';
+
+    const pickup = findOrCreatePickup(pickupId, collectorId);
 
     // Enforce prerequisite: Photo proof must exist before verifying weight
     const hasPhoto = Boolean(pickup.scale_photo_url || (pickup.images && pickup.images.length > 0));
@@ -41,11 +50,10 @@ export async function POST(
 
     const rawQuality = Number(body.quality_factor);
     const qualityFactor = !isNaN(rawQuality) && rawQuality >= 0.5 && rawQuality <= 1.0 ? rawQuality : 1.0;
-    const qualityGrade = body.quality_grade || (qualityFactor >= 0.95 ? 'A' : qualityFactor >= 0.8 ? 'B' : 'C');
 
     // Resolve material rate
-    const rateItem = INITIAL_MATERIAL_RATES.find((r) => r.code === pickup.material_code) || INITIAL_MATERIAL_RATES[0];
-    const unitRate = rateItem ? rateItem.benchmark_rate_pkr : 80;
+    const benchmark = MATERIAL_BENCHMARKS[pickup.material_code] || { name: 'Recyclables', rate: 80.0 };
+    const unitRate = benchmark.rate;
     const totalPrice = Number((rawWeight * unitRate * qualityFactor).toFixed(2));
 
     const calculation = {
@@ -59,20 +67,25 @@ export async function POST(
       is_estimated: false,
     };
 
-    const updated = updatePickup(pickupId, {
-      status: 'weight_verified',
-      scale_photo_url: body.scale_photo_url || pickup.scale_photo_url,
-      pricing_calculations: [calculation],
-    });
+    const qualityGrade = body.quality_grade || (qualityFactor >= 0.95 ? 'A' : qualityFactor >= 0.8 ? 'B' : 'C');
+
+    const updated = updateJobStatus(
+      pickupId,
+      'weight_verified',
+      { user_id: collectorId, user_role: 'collector', user_name: collectorName },
+      {
+        verified_weight_kg: rawWeight,
+        payout_pkr: totalPrice,
+        pricing_calculations: [calculation],
+      },
+      `Scale verified: ${rawWeight} kg @ Rs ${unitRate}/kg = PKR ${totalPrice}`
+    );
 
     return NextResponse.json(
       {
         ...updated,
         verified_weight: rawWeight,
         quality_grade: qualityGrade,
-        quality_factor: qualityFactor,
-        payout_pkr: totalPrice,
-        message: 'Scale weight verified and logged to SafaiPay ledger.',
       },
       { status: 200 }
     );

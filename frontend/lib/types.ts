@@ -63,19 +63,40 @@ export interface PickupRequest {
   id: string;
   tracking_number: string;
   customer_id: string;
+  customer_name?: string;
+  customer_phone?: string;
   assigned_collector_id?: string | null;
+  collector_name?: string;
+  collector_phone?: string;
+  assigned_recycler_id?: string | null;
+  recycler_name?: string;
   material_code: string;
   estimated_quantity_kg: number;
+  verified_weight_kg?: number | null;
+  recycled_weight_kg?: number | null;
+  recycler_notes?: string | null;
+  payout_pkr?: number | null;
   street_address: string;
   city: string;
   preferred_time?: string;
   notes?: string;
   status: string;
   created_at: string;
+  updated_at?: string;
   pricing_calculations: PricingCalculation[];
   images?: WasteImage[];
   payment?: PaymentRecord | null;
+  customer_photo_url?: string | null;
   scale_photo_url?: string | null;
+  recycler_photo_url?: string | null;
+  status_history?: Array<{
+    status: string;
+    timestamp: string;
+    user_id?: string;
+    user_role?: string;
+    user_name?: string;
+    note?: string;
+  }>;
 }
 
 export interface CollectorEarningsSummary {

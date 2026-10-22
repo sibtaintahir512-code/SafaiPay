@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updatePickup, findOrCreatePickup } from '@/lib/pickupStore';
+import { getJobById, attachJobImage, updateJobStatus } from '@/lib/db';
+import { findOrCreatePickup } from '@/lib/pickupStore';
+import { processAndSaveUploadedFile } from '@/lib/storageEngine';
 import { WasteImage } from '@/lib/types';
+import { verifyJwt } from '@/lib/serverAuth';
+
+export const dynamic = 'force-dynamic';
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/jpg']);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -16,9 +21,18 @@ export async function POST(
       return NextResponse.json({ detail: 'Pickup ID is required.' }, { status: 400 });
     }
 
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const decoded = token ? verifyJwt(token) : null;
+    const actorRole = decoded?.role || 'collector';
+    const actorUserId = decoded?.sub || decoded?.id || 'usr_guest_coll';
+
+    // Ensure pickup exists
+    findOrCreatePickup(pickupId, actorUserId);
+
     const contentType = req.headers.get('content-type') || '';
     let imageUrl = '';
-    let imageType = 'scale_display';
+    let imageType = actorRole === 'customer' ? 'customer_upload' : actorRole === 'recycler' ? 'recycler_proof' : 'scale_display';
     let caption = 'On-site scale photo evidence';
 
     if (contentType.includes('multipart/form-data')) {
@@ -55,11 +69,15 @@ export async function POST(
         );
       }
 
-      // Generate deterministic storage URL for the uploaded photo proof
-      const fileId = `proof-${pickupId}-${Date.now()}`;
-      imageUrl = `/uploads/proofs/${fileId}.${ext || 'jpg'}`;
+      // Process and store in backend storage
+      const uploadResult = await processAndSaveUploadedFile(file, {
+        uploaded_by_user_id: actorUserId,
+        uploaded_by_role: actorRole,
+        job_id: pickupId,
+      });
+
+      imageUrl = uploadResult.file_url;
     } else {
-      // Support JSON payload containing pre-uploaded or converted image URL / data URL
       let jsonBody: any = {};
       try {
         jsonBody = await req.json();
@@ -75,7 +93,6 @@ export async function POST(
       }
     }
 
-    const pickup = findOrCreatePickup(pickupId);
     const newImage: WasteImage = {
       id: `img-${Date.now()}`,
       image_type: imageType,
@@ -83,28 +100,18 @@ export async function POST(
       caption,
     };
 
-    const existingImages = pickup.images || [];
-    const updatedImages = [...existingImages.filter((img) => img.image_type !== imageType), newImage];
-
-    const updated = updatePickup(pickupId, {
-      images: updatedImages,
-      // Record scale_photo_url so it is accessible directly
-      scale_photo_url: imageUrl,
-      // If pickup is currently in_progress, transition to photo_uploaded
-      status: pickup.status === 'accepted' ? 'in_progress' : pickup.status,
-    });
+    const updated = attachJobImage(pickupId, newImage, { user_id: actorUserId, user_role: actorRole });
 
     return NextResponse.json(
       {
         ...updated,
         uploaded_image: newImage,
-        message: 'Photo proof uploaded and verified successfully.',
       },
       { status: 200 }
     );
   } catch (err: any) {
     return NextResponse.json(
-      { detail: err.message || 'Failed to process photo upload.' },
+      { detail: err.message || 'Failed to upload photo proof.' },
       { status: 500 }
     );
   }

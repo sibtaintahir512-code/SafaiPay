@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { PickupRequest, MaterialRate } from '@/lib/types';
-import { createPickup, confirmPickup, disputePickup, ratePickup } from '@/lib/api';
+import { createPickup, confirmPickup, disputePickup, ratePickup, cancelPickup } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { LineTrendChart, LineDataPoint } from '@/components/charts/LineTrendChart';
 import { 
@@ -98,6 +98,22 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionSuccessNotice, setActionSuccessNotice] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<PickupRequest | null>(null);
+  const [selectedImageModal, setSelectedImageModal] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleCancelPickup = async (pickupId: string) => {
+    if (!confirm('Are you sure you want to cancel this pickup request?')) return;
+    setIsCancelling(true);
+    try {
+      await cancelPickup(pickupId, 'Customer cancelled pickup');
+      setActionSuccessNotice('Pickup request cancelled successfully.');
+      onRefresh();
+    } catch (err: any) {
+      alert(`Cancellation Error: ${err.message}`);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   // Dispute Modal State
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -523,10 +539,43 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             </p>
           </div>
 
-          <span className="self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold bg-theme-soft-mint text-theme-primary border border-theme-border uppercase tracking-wide">
-            {activePickup?.status?.replace(/_/g, ' ') || 'IN PROGRESS'}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {activePickup && ['requested', 'available', 'pending'].includes(activePickup.status) && (
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => handleCancelPickup(activePickup.id)}
+                className="px-3 py-1 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 hover:bg-red-100 transition flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>{isCancelling ? 'Cancelling...' : 'Cancel Request'}</span>
+              </button>
+            )}
+            <span className="self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold bg-theme-soft-mint text-theme-primary border border-theme-border uppercase tracking-wide">
+              {activePickup?.status?.replace(/_/g, ' ') || 'IN PROGRESS'}
+            </span>
+          </div>
         </div>
+
+        {/* Assigned Collector & Facility Info if present */}
+        {activePickup && (activePickup.assigned_collector_id || activePickup.collector_name) && (
+          <div className="mb-6 p-3.5 rounded-2xl bg-theme-bg border border-theme-border flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-theme-secondary">Assigned Collector:</span>
+              <strong className="text-theme-text font-bold">{activePickup.collector_name || 'Tariq Mehmood'}</strong>
+              {activePickup.collector_phone && (
+                <span className="text-theme-secondary font-mono">({activePickup.collector_phone})</span>
+              )}
+            </div>
+            {activePickup.assigned_recycler_id && (
+              <div className="flex items-center space-x-1.5 text-theme-secondary">
+                <span>Facility:</span>
+                <strong className="text-theme-text">{activePickup.recycler_name || 'GreenCycle Hub 4'}</strong>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 5-Step Horizontal Timeline with responsive touch scroll on mobile */}
         <div className="overflow-x-auto pb-2 scrollbar-none">
@@ -598,6 +647,75 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               >
                 Dispute Weight
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Photo Evidence Gallery */}
+        {activePickup && (activePickup.customer_photo_url || activePickup.scale_photo_url || activePickup.recycler_photo_url || (activePickup.images && activePickup.images.length > 0)) && (
+          <div className="mt-6 pt-5 border-t border-theme-border/60">
+            <p className="text-xs font-bold text-theme-secondary uppercase tracking-wider mb-3">
+              Verified Photo Proofs & Physical Evidence
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Customer Photo */}
+              {(activePickup.customer_photo_url || activePickup.images?.find((i) => i.image_type === 'customer_upload')) && (
+                <div className="bg-theme-bg rounded-2xl p-3 border border-theme-border flex items-center gap-3">
+                  <img
+                    src={activePickup.customer_photo_url || activePickup.images?.find((i) => i.image_type === 'customer_upload')?.image_url}
+                    alt="Customer upload"
+                    className="w-14 h-14 rounded-xl object-cover border border-theme-border shrink-0 cursor-pointer hover:opacity-90 transition"
+                    onClick={() => setSelectedImageModal(activePickup.customer_photo_url || activePickup.images?.find((i) => i.image_type === 'customer_upload')?.image_url || null)}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-theme-primary bg-theme-soft-mint px-2 py-0.5 rounded border border-theme-border">
+                      Customer
+                    </span>
+                    <p className="text-xs font-bold text-theme-text truncate mt-1">Doorstep Recyclables</p>
+                    <p className="text-[10px] text-theme-secondary">Click photo to zoom</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Collector Scale Photo */}
+              {(activePickup.scale_photo_url || activePickup.images?.find((i) => i.image_type === 'scale_display' || i.image_type === 'collector_proof')) && (
+                <div className="bg-theme-bg rounded-2xl p-3 border border-theme-border flex items-center gap-3">
+                  <img
+                    src={activePickup.scale_photo_url || activePickup.images?.find((i) => i.image_type === 'scale_display' || i.image_type === 'collector_proof')?.image_url}
+                    alt="Scale display"
+                    className="w-14 h-14 rounded-xl object-cover border border-theme-border shrink-0 cursor-pointer hover:opacity-90 transition"
+                    onClick={() => setSelectedImageModal(activePickup.scale_photo_url || activePickup.images?.find((i) => i.image_type === 'scale_display' || i.image_type === 'collector_proof')?.image_url || null)}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                      Collector
+                    </span>
+                    <p className="text-xs font-bold text-theme-text truncate mt-1">Certified Scale Display</p>
+                    <p className="text-[10px] text-theme-secondary">
+                      {activePickup.verified_weight_kg || activePickup.pricing_calculations?.[0]?.verified_weight_kg || '15'} kg certified
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Recycler Facility Photo */}
+              {(activePickup.recycler_photo_url || activePickup.images?.find((i) => i.image_type === 'recycler_proof')) && (
+                <div className="bg-theme-bg rounded-2xl p-3 border border-theme-border flex items-center gap-3">
+                  <img
+                    src={activePickup.recycler_photo_url || activePickup.images?.find((i) => i.image_type === 'recycler_proof')?.image_url}
+                    alt="Recycler facility"
+                    className="w-14 h-14 rounded-xl object-cover border border-theme-border shrink-0 cursor-pointer hover:opacity-90 transition"
+                    onClick={() => setSelectedImageModal(activePickup.recycler_photo_url || activePickup.images?.find((i) => i.image_type === 'recycler_proof')?.image_url || null)}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-500/30">
+                      Recycler
+                    </span>
+                    <p className="text-xs font-bold text-theme-text truncate mt-1">Processed Batch</p>
+                    <p className="text-[10px] text-theme-secondary">Certified recycled yield</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -944,6 +1062,40 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ENLARGED PHOTO EVIDENCE MODAL ================= */}
+      {selectedImageModal && (
+        <div className="fixed inset-0 z-50 bg-[#072021]/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-theme-surface border border-theme-border rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-extrabold text-theme-text">Verified Physical Evidence</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedImageModal(null)}
+                className="p-1 rounded-lg hover:bg-theme-bg text-theme-secondary hover:text-theme-text"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-theme-border bg-black/5 dark:bg-black/40">
+              <img
+                src={selectedImageModal}
+                alt="Enlarged evidence"
+                className="w-full max-h-[70vh] object-contain mx-auto"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedImageModal(null)}
+                className="px-5 py-2.5 bg-theme-primary text-white font-extrabold text-xs rounded-xl shadow-xs"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

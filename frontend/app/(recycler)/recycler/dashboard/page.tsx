@@ -6,10 +6,12 @@ import { Navbar } from '@/components/Navbar';
 import { RecyclerDashboard } from '@/components/RecyclerDashboard';
 import { PickupRequest, MaterialRate } from '@/lib/types';
 import { getPickups, getMaterialRates } from '@/lib/api';
+import { useRealtimeSync } from '@/lib/useRealtimeSync';
 
 export default function RecyclerDashboardPage() {
   const [pickups, setPickups] = useState<PickupRequest[]>([]);
   const [materialRates, setMaterialRates] = useState<MaterialRate[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
@@ -20,13 +22,21 @@ export default function RecyclerDashboardPage() {
       setPickups(pData);
       setMaterialRates(rData);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load recycler dashboard data:', err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Real-time synchronization without manual refresh
+  useRealtimeSync({
+    role: 'recycler',
+    onRefresh: fetchData,
+  });
 
   return (
     <ProtectedRoute allowedRole="recycler">

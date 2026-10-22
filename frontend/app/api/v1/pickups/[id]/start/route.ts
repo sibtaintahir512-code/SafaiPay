@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updatePickup, findOrCreatePickup } from '@/lib/pickupStore';
+import { updateJobStatus, getJobById } from '@/lib/db';
+import { findOrCreatePickup } from '@/lib/pickupStore';
 import { verifyJwt } from '@/lib/serverAuth';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: NextRequest,
@@ -14,11 +17,14 @@ export async function POST(
 
     const authHeader = req.headers.get('authorization') || '';
     let collectorId = 'usr_guest_coll';
+    let collectorName = 'Tariq Mehmood';
+
     if (authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
       const payload = verifyJwt(token);
       if (payload && payload.sub) {
         collectorId = payload.sub;
+        collectorName = payload.full_name || payload.name || collectorName;
       }
     }
 
@@ -36,17 +42,21 @@ export async function POST(
 
     // Validate collector authorization if assigned
     if (current.assigned_collector_id && current.assigned_collector_id !== collectorId && !collectorId.includes('admin')) {
-      // In guest mode, allow guest collector to operate on guest pickups
       if (!collectorId.includes('guest') || !current.assigned_collector_id.includes('guest')) {
         return NextResponse.json({ detail: 'You are not the assigned collector for this pickup.' }, { status: 403 });
       }
     }
 
-    const updated = updatePickup(pickupId, {
-      status: 'in_progress',
-      assigned_collector_id: current.assigned_collector_id || collectorId,
-      notes: `${current.notes || ''} [Trip started at lat:${lat}, lng:${lng}]`.trim(),
-    });
+    const updated = updateJobStatus(
+      pickupId,
+      'in_progress',
+      { user_id: collectorId, user_role: 'collector', user_name: collectorName },
+      {
+        assigned_collector_id: current.assigned_collector_id || collectorId,
+        notes: `${current.notes || ''} [Trip started at lat:${lat}, lng:${lng}]`.trim(),
+      },
+      `Collector started trip towards customer location [lat:${lat}, lng:${lng}]`
+    );
 
     return NextResponse.json(updated, { status: 200 });
   } catch (err: any) {

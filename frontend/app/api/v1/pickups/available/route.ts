@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
-import { getAllPickups } from '@/lib/pickupStore';
+import { NextRequest, NextResponse } from 'next/server';
+import { getJobsForUser } from '@/lib/db';
+import { verifyJwt } from '@/lib/serverAuth';
 
-export async function GET() {
-  const available = getAllPickups().filter(
-    p => p.status === 'requested' || p.status === 'assigned' || p.status === 'accepted' || p.status === 'in_progress' || p.status === 'weight_verified'
-  );
-  return NextResponse.json(available);
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  const decoded = token ? verifyJwt(token) : null;
+
+  const collectorId = decoded?.sub || decoded?.id || 'usr_guest_coll';
+  const collectorJobs = getJobsForUser({ id: collectorId, role: 'collector' });
+
+  return NextResponse.json(collectorJobs);
 }

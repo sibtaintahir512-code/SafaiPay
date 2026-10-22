@@ -1,52 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { INITIAL_MATERIAL_RATES } from '@/lib/mockData';
-import { PickupRequest } from '@/lib/types';
-import { getAllPickups } from '@/lib/pickupStore';
+import { getAllJobs, getJobsForUser, createJob } from '@/lib/db';
+import { verifyJwt } from '@/lib/serverAuth';
 
-export async function GET() {
-  return NextResponse.json(getAllPickups());
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  const decoded = token ? verifyJwt(token) : null;
+
+  const { searchParams } = new URL(req.url);
+  const queryRole = searchParams.get('role');
+
+  if (decoded) {
+    const role = queryRole || decoded.role;
+    const userId = decoded.sub || decoded.id;
+    const jobs = getJobsForUser({ id: userId, role });
+    return NextResponse.json(jobs);
+  }
+
+  if (queryRole) {
+    const defaultUserId = queryRole === 'collector' ? 'usr_guest_coll' : queryRole === 'recycler' ? 'usr_guest_recy' : 'usr_guest_cust';
+    const jobs = getJobsForUser({ id: defaultUserId, role: queryRole });
+    return NextResponse.json(jobs);
+  }
+
+  return NextResponse.json(getAllJobs());
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const decoded = token ? verifyJwt(token) : null;
+
     const body = await req.json();
-    const rateItem = INITIAL_MATERIAL_RATES.find(r => r.code === body.material_code) || INITIAL_MATERIAL_RATES[0];
-    const unitRate = rateItem.benchmark_rate_pkr;
+
+    const customerId = decoded?.sub || decoded?.id || body.customer_id || 'usr_guest_cust';
+    const customerName = decoded?.full_name || decoded?.name || body.customer_name || 'Amina Khan';
+    const customerPhone = decoded?.phone_number || body.customer_phone || '+92 300 1234567';
+
+    const materialCode = body.material_code || 'PET_PLASTIC';
     const qty = Number(body.estimated_quantity_kg) || 10;
-    const estTotal = qty * unitRate;
+    const streetAddress = body.street_address || 'PECHS Block 6, Karachi';
+    const city = body.city || 'Karachi';
+    const preferredTime = body.preferred_time || 'Today';
+    const notes = body.notes || 'Doorstep recyclable collection';
+    const customerPhotoUrl = body.customer_photo_url || body.photo_url || undefined;
 
-    const newPickup: PickupRequest = {
-      id: `sp-req-${Date.now().toString().slice(-6)}`,
-      tracking_number: `SP-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-      customer_id: 'usr-cust-001',
-      assigned_collector_id: null,
-      material_code: body.material_code || 'PET_PLASTIC',
+    if (qty <= 0) {
+      return NextResponse.json({ detail: 'Estimated quantity must be greater than zero.' }, { status: 400 });
+    }
+
+    if (!streetAddress.trim()) {
+      return NextResponse.json({ detail: 'Street address is required.' }, { status: 400 });
+    }
+
+    const newJob = createJob({
+      customer_id: customerId,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      material_code: materialCode,
       estimated_quantity_kg: qty,
-      street_address: body.street_address || 'PECHS Block 6, Karachi',
-      city: body.city || 'Karachi',
-      preferred_time: body.preferred_time || 'Today',
-      notes: body.notes || 'Doorstep recyclable collection',
-      status: 'requested',
-      created_at: new Date().toISOString(),
-      pricing_calculations: [
-        {
-          id: `calc-${Date.now()}`,
-          material_code: body.material_code || 'PET_PLASTIC',
-          verified_weight_kg: qty,
-          material_rate_applied: unitRate,
-          quality_factor: 1.0,
-          total_price: estTotal,
-          calculation_breakdown: `${qty} kg * PKR ${unitRate.toFixed(2)}/kg * Q(1.00) (Estimated)`,
-          is_estimated: true,
-        },
-      ],
-    };
+      street_address: streetAddress,
+      city,
+      preferred_time: preferredTime,
+      notes,
+      customer_photo_url: customerPhotoUrl,
+    });
 
-    const store = getAllPickups();
-    store.unshift(newPickup);
-
-    return NextResponse.json(newPickup, { status: 201 });
+    return NextResponse.json(newJob, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ detail: 'Invalid pickup creation payload' }, { status: 400 });
+    return NextResponse.json({ detail: err.message || 'Invalid pickup creation payload' }, { status: 400 });
   }
 }
