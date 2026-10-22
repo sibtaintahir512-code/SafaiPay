@@ -6,36 +6,24 @@ import { SafaiPayLogoIcon } from '@/components/SafaiPayLogo';
 import { Sparkles, Scale, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface MobileOrbitLandingProps {
-  onStart?: () => void;
-  onTour?: () => void;
+  onStart: () => void;
   onSignIn?: () => void;
   isLoading?: boolean;
 }
 
 export const MobileOrbitLanding: React.FC<MobileOrbitLandingProps> = ({
   onStart,
-  onTour,
   onSignIn,
   isLoading = false,
 }) => {
   const { language, setLanguage, isUrdu } = useLanguage();
 
-  const handleTourClick = () => {
-    if (onTour) onTour();
-    else if (onStart) onStart();
-  };
-
-  const handleSignInClick = () => {
-    if (onSignIn) onSignIn();
-    else if (onStart) onStart();
-  };
-
   return (
     <div 
-      className="relative h-[100dvh] w-full max-h-[100dvh] bg-[#073D3B] text-white flex flex-col justify-between overflow-hidden select-none font-sans"
+      className="relative min-h-[100dvh] w-full bg-[#073D3B] text-white flex flex-col justify-between overflow-x-hidden select-none font-sans"
       style={{
-        paddingTop: 'max(0.6rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(0.6rem, env(safe-area-inset-bottom))',
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
       }}
       dir={isUrdu ? 'rtl' : 'ltr'}
     >
@@ -92,7 +80,7 @@ export const MobileOrbitLanding: React.FC<MobileOrbitLandingProps> = ({
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-2 sm:py-4">
         
         {/* Central Circular Orbit Visual */}
-        <div className="relative w-[clamp(210px,28vh,270px)] h-[clamp(210px,28vh,270px)] flex items-center justify-center my-auto">
+        <div className="relative w-[280px] h-[280px] xs:w-[310px] xs:h-[310px] sm:w-[330px] sm:h-[330px] flex items-center justify-center my-auto">
           
           {/* Yellow Radial Glow behind Center */}
           <div className="absolute w-44 h-44 rounded-full bg-[#F4B400]/25 blur-2xl pointer-events-none animate-pulse" />
@@ -223,88 +211,86 @@ export const MobileOrbitLanding: React.FC<MobileOrbitLandingProps> = ({
       </main>
 
       {/* ================= 3. FLOATING BOTTOM JOURNEY CARD ================= */}
-      <footer className="relative z-20 w-full px-3.5 sm:px-4 pt-1 pb-1">
-        <div className="w-full max-w-sm mx-auto bg-white rounded-[24px] sm:rounded-[28px] p-[clamp(0.75rem,2vh,1.25rem)] shadow-[0_16px_40px_rgba(0,0,0,0.28)] border border-[#D7E8E1] text-[#0B3D3B] space-y-[clamp(0.5rem,1.2vh,0.85rem)]">
+      <footer className="relative z-20 w-full px-4 pt-2">
+        <div className="w-full max-w-sm mx-auto bg-white rounded-[28px] p-5 xs:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.28)] border border-[#D7E8E1] text-[#0B3D3B] space-y-4">
           
           {/* Card Title */}
-          <div className="flex items-center justify-between border-b border-[#E8F2EC] pb-2">
-            <h2 className="text-xs sm:text-sm font-extrabold text-[#0B3D3B] tracking-tight">
+          <div className="flex items-center justify-between border-b border-[#E8F2EC] pb-2.5">
+            <h2 className="text-sm font-extrabold text-[#0B3D3B] tracking-tight">
               {isUrdu ? 'آپ کا صفائی کا سفر' : 'Your clean journey'}
             </h2>
-            <span className="text-[9px] sm:text-[10px] font-bold text-[#16865F] uppercase tracking-wider bg-[#E1F4EB] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-[#16865F] uppercase tracking-wider bg-[#E1F4EB] px-2 py-0.5 rounded-full">
               3 Steps
             </span>
           </div>
 
           {/* 3 Step Journey */}
-          <div className="relative space-y-2 sm:space-y-2.5">
+          <div className="relative space-y-3">
             {/* Subtle Vertical Connecting Line */}
             <div 
-              className={`absolute top-2.5 bottom-2.5 w-0.5 bg-[#E1F4EB] ${
-                isUrdu ? 'right-3' : 'left-3'
+              className={`absolute top-3 bottom-3 w-0.5 bg-[#E1F4EB] ${
+                isUrdu ? 'right-3.5' : 'left-3.5'
               }`} 
               aria-hidden="true" 
             />
 
             {/* Step 1 */}
-            <div className="relative flex items-center space-x-2.5 rtl:space-x-reverse z-10">
-              <div className="w-6 h-6 rounded-full bg-[#E1F4EB] text-[#16865F] font-extrabold text-[11px] flex items-center justify-center shrink-0 border border-[#9EE3C4]/60">
+            <div className="relative flex items-center space-x-3 rtl:space-x-reverse z-10">
+              <div className="w-7 h-7 rounded-full bg-[#E1F4EB] text-[#16865F] font-extrabold text-xs flex items-center justify-center shrink-0 border border-[#9EE3C4]/60">
                 1
               </div>
-              <span className="text-[11px] sm:text-xs font-bold text-[#0B3D3B]">
+              <span className="text-xs font-bold text-[#0B3D3B]">
                 {isUrdu ? 'پک اپ بک کریں' : 'Book a pickup'}
               </span>
             </div>
 
             {/* Step 2 */}
-            <div className="relative flex items-center space-x-2.5 rtl:space-x-reverse z-10">
-              <div className="w-6 h-6 rounded-full bg-[#E1F4EB] text-[#16865F] font-extrabold text-[11px] flex items-center justify-center shrink-0 border border-[#9EE3C4]/60">
+            <div className="relative flex items-center space-x-3 rtl:space-x-reverse z-10">
+              <div className="w-7 h-7 rounded-full bg-[#E1F4EB] text-[#16865F] font-extrabold text-xs flex items-center justify-center shrink-0 border border-[#9EE3C4]/60">
                 2
               </div>
-              <span className="text-[11px] sm:text-xs font-bold text-[#0B3D3B]">
+              <span className="text-xs font-bold text-[#0B3D3B]">
                 {isUrdu ? 'وزن کی تصدیق کریں' : 'Verify the weight'}
               </span>
             </div>
 
             {/* Step 3 */}
-            <div className="relative flex items-center space-x-2.5 rtl:space-x-reverse z-10">
-              <div className="w-6 h-6 rounded-full bg-[#E1F4EB] text-[#16865F] font-extrabold text-[11px] flex items-center justify-center shrink-0 border border-[#9EE3C4]/60">
+            <div className="relative flex items-center space-x-3 rtl:space-x-reverse z-10">
+              <div className="w-7 h-7 rounded-full bg-[#E1F4EB] text-[#16865F] font-extrabold text-xs flex items-center justify-center shrink-0 border border-[#9EE3C4]/60">
                 3
               </div>
-              <span className="text-[11px] sm:text-xs font-bold text-[#0B3D3B]">
+              <span className="text-xs font-bold text-[#0B3D3B]">
                 {isUrdu ? 'منصفانہ قیمت حاصل کریں' : 'Receive fair value'}
               </span>
             </div>
           </div>
 
-          {/* Action Buttons: 1. Take a Tour (Clear & Visible) & 2. Sign In */}
-          <div className="space-y-2 pt-1">
-            {/* Option 1: Take a Tour */}
-            <button
-              type="button"
-              onClick={handleTourClick}
-              disabled={isLoading}
-              className="w-full min-h-[46px] sm:min-h-[48px] bg-[#0B4A47] hover:bg-[#115C58] active:scale-[0.98] text-[#9EE3C4] hover:text-white border border-[#16865F] font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-xs transition-all flex items-center justify-center space-x-2 rtl:space-x-reverse cursor-pointer disabled:opacity-60"
-              aria-label={isUrdu ? 'پلیٹ فارم کا ٹور دیکھیں' : 'Take a Tour'}
-            >
-              <Sparkles className="w-4 h-4 text-[#F4B400] shrink-0" />
-              <span>{isUrdu ? 'پلیٹ فارم کا ٹور دیکھیں' : 'Take a Tour'}</span>
-            </button>
+          {/* Primary CTA Button: Start -> */}
+          <button
+            type="button"
+            onClick={onStart}
+            disabled={isLoading}
+            className="w-full min-h-[52px] bg-[#16865F] hover:bg-[#126E4E] active:scale-[0.98] text-white font-extrabold text-sm rounded-2xl shadow-md shadow-[#16865F]/30 transition-all flex items-center justify-center space-x-2 rtl:space-x-reverse disabled:opacity-60 disabled:cursor-not-allowed"
+            aria-label={isUrdu ? 'شروع کریں' : 'Start'}
+          >
+            <span>{isUrdu ? 'شروع کریں' : 'Start'}</span>
+            {isUrdu ? (
+              <ArrowLeft className="w-4 h-4" />
+            ) : (
+              <ArrowRight className="w-4 h-4" />
+            )}
+          </button>
 
-            {/* Option 2: Sign In */}
+          {/* Secondary Link: Sign In */}
+          <div className="text-center pt-1">
             <button
               type="button"
-              onClick={handleSignInClick}
-              disabled={isLoading}
-              className="w-full min-h-[46px] sm:min-h-[48px] bg-[#16865F] hover:bg-[#126E4E] active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-md shadow-[#16865F]/30 transition-all flex items-center justify-center space-x-2 rtl:space-x-reverse cursor-pointer disabled:opacity-60"
-              aria-label={isUrdu ? 'سائن ان کریں' : 'Sign In'}
+              onClick={onSignIn || onStart}
+              className="text-xs font-semibold text-[#16865F] hover:text-[#126E4E] transition min-h-[44px] flex items-center justify-center w-full"
             >
-              <span>{isUrdu ? 'سائن ان کریں' : 'Sign In'}</span>
-              {isUrdu ? (
-                <ArrowLeft className="w-4 h-4 shrink-0" />
-              ) : (
-                <ArrowRight className="w-4 h-4 shrink-0" />
-              )}
+              {isUrdu 
+                ? 'پہلے سے اکاؤنٹ ہے؟ سائن ان کریں'
+                : 'Already have an account? Sign in'}
             </button>
           </div>
 
