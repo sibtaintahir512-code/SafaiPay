@@ -21,8 +21,10 @@ import {
   FileText, 
   KeyRound, 
   LogOut,
-  Globe
+  Globe,
+  MessageSquare
 } from 'lucide-react';
+import { fetchChatUnreadCount } from '@/lib/chatApi';
 
 interface NavbarProps {
   backendOnline?: boolean;
@@ -38,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState<number>(0);
   const [showHelp, setShowHelp] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -60,8 +63,10 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
     // Fetch initial unread count
     if (user) {
       fetchUnreadCount().then((cnt) => setUnreadCount(cnt)).catch(() => {});
+      fetchChatUnreadCount().then((cnt) => setChatUnreadCount(cnt)).catch(() => {});
     } else {
       setUnreadCount(0);
+      setChatUnreadCount(0);
     }
 
     // Close menus on click / touch outside
@@ -306,6 +311,39 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
             />
           </div>
 
+          {/* 6.5. Real-Time Chat Button */}
+          {user && (
+            <button
+              type="button"
+              onClick={() => router.push('/chat')}
+              className="w-[44px] h-[44px] rounded-full flex items-center justify-center transition-colors duration-150 relative pill-focus hover:opacity-85 shrink-0"
+              style={{
+                color: isDark ? '#C9DDD4' : '#12302A',
+                backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+              }}
+              aria-label={
+                chatUnreadCount > 0
+                  ? (isUrdu ? `پیغامات، ${chatUnreadCount} نئے` : `Messages, ${chatUnreadCount} unread`)
+                  : (isUrdu ? 'پیغامات' : 'Messages')
+              }
+              title={isUrdu ? 'پیغامات' : 'Messages'}
+            >
+              <MessageSquare className="w-5 h-5 stroke-[1.8] stroke-linecap-round stroke-linejoin-round" />
+              {chatUnreadCount > 0 && (
+                <span
+                  className="absolute top-2 right-2 w-[9px] h-[9px] rounded-full ring-2"
+                  style={{
+                    backgroundColor: isDark ? '#9FE6C6' : '#1F7A55',
+                    boxShadow: isDark
+                      ? '0 0 0 2px #142C26'
+                      : '0 0 0 2px #EEF6F2',
+                  }}
+                  aria-hidden="true"
+                />
+              )}
+            </button>
+          )}
+
           {/* 7. Help Icon: 44px x 44px round button, matching notification styling */}
           <button
             type="button"
@@ -511,6 +549,32 @@ export const Navbar: React.FC<NavbarProps> = ({ backendOnline: propBackendOnline
               <HelpCircle className="w-4 h-4" />
               <span>{t('nav.help')}</span>
             </button>
+
+            {/* Messages / Chat Link in Mobile Drawer */}
+            {user && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  router.push('/chat');
+                }}
+                className="w-full h-[44px] rounded-2xl flex items-center justify-between px-4 font-bold text-xs transition-colors"
+                style={{
+                  backgroundColor: isDark ? '#142C26' : '#EEF6F2',
+                  color: isDark ? '#E8F3EE' : '#12302A',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>{isUrdu ? 'پیغامات (چیٹ)' : 'Messages (Chat)'}</span>
+                </div>
+                {chatUnreadCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-bold">
+                    {chatUnreadCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Mobile Profile Actions */}
             {user && (

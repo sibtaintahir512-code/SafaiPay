@@ -13,7 +13,15 @@ export interface RealtimeEvent {
     | 'recycler_processing' 
     | 'job_completed' 
     | 'job_cancelled' 
-    | 'notification';
+    | 'notification'
+    | 'chat_message'
+    | 'chat_message_update'
+    | 'chat_message_delete'
+    | 'chat_reaction'
+    | 'chat_read_receipt'
+    | 'chat_typing'
+    | 'chat_presence'
+    | 'chat_conversation_new';
   job_id?: string;
   target_user_id?: string;
   target_role?: string;

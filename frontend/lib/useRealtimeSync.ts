@@ -76,6 +76,14 @@ export function useRealtimeSync({
           'job_completed',
           'job_cancelled',
           'notification',
+          'chat_message',
+          'chat_message_update',
+          'chat_message_delete',
+          'chat_reaction',
+          'chat_read_receipt',
+          'chat_typing',
+          'chat_presence',
+          'chat_conversation_new',
         ];
 
         eventTypes.forEach((type) => {
